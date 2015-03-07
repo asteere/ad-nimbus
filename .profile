@@ -1,4 +1,4 @@
-hostname | grep Troppus > /dev/null
+hostname | grep asteere > /dev/null
 if test "$?" == 0
 then
     # Custom bash prompt via kirsle.net/wizards/ps1.html
@@ -25,13 +25,34 @@ alias d=docker
 alias dps='docker ps -a'
 alias dpsa='docker ps -a'
 alias di='docker images'
-alias dlogin="docker login -e awsteere@aol.com -u asteere -p 'WannaBe2T*()_'"
 
 alias f=fleetctl
 alias flm='fleetctl list-machines -l'
 alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
+
+function buildnginx() {
+    buildContainer nginx
+}
+
+function buildnet-location() {
+    buildContainer net-location
+}
+
+function buildContainer() {
+    cdad
+
+    # this will result in two repositories asteere/nginx:latest and nginx:latest containing collections of images
+    docker build --tag asteere/"$1":raptor $1 
+
+    dlogin 
+
+    docker push asteere/"$1":raptor
+
+    cd -
+
+}
 
 function fdestroy() {
     if test "$1" = ""
@@ -119,11 +140,16 @@ export PATH
 (which boot2docker) &> /dev/null
 if test "$?" == 0
 then
-    if test ! `boot2docker status` == "running"
+    b2dstatus=`boot2docker status 2>&1`
+    echo $b2dstatus
+    echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
+    if test $? == 0
     then
-        boot2docker up
-    else
+        echo boot2docker init
         boot2docker init
+    elif test ! "$b2dstatus" == "running"
+    then
+        echo boot2docker up
         boot2docker up
     fi
     $(boot2docker shellinit)

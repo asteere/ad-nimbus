@@ -3,7 +3,7 @@ $new_discovery_url='https://discovery.etcd.io/new'
 # To automatically replace the discovery token on 'vagrant up', uncomment
 # the lines below:
 #
-if File.exists?('user-data') && ARGV[0].eql?('up')
+if File.exists?('user-data') && ( ARGV[0].eql?('up') || ARGV[0].eql?('reload') )
   require 'open-uri'
   require 'yaml'
  
@@ -56,5 +56,6 @@ $share_home=true
 
 # Customize VMs
 $vm_gui = false
-$vm_memory = 1024
+# Used to be 1024 but 5 cores is killing my machine if left up overnight
+$vm_memory = 512
 $vm_cpus = 1
