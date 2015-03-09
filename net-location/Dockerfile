@@ -20,7 +20,7 @@ RUN npm i maxmind-db-reader
 #COPY ./src /src
 
 # Install app.
-RUN cd /src; npm i
+#RUN cd /src; npm i
 
 # Map port.
 EXPOSE 8080
