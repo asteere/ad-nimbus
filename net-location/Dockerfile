@@ -17,7 +17,7 @@ RUN npm i maxmind-db-reader
 # From: https://www.digitalocean.com/community/tutorials/how-to-host-multiple-node-js-applications-on-a-single-vps-with-nginx-forever-and-crontab
 
 # Copy app source to VM.
-COPY ./src /src
+#COPY ./src /src
 
 # Install app.
 RUN cd /src; npm i

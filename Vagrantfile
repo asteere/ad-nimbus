@@ -101,6 +101,8 @@ Vagrant.configure("2") do |config|
         end
       end
 
+      config.ssh.forward_agent = true;
+
       if $expose_docker_tcp
         $guest_port = "2%s75" % $i;
         $host_port = $expose_docker_tcp + ($i.to_i * 100);

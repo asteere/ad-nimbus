@@ -21,10 +21,11 @@ alias vsh5='vagrant ssh core-05'
 alias b2d=boot2docker
 
 alias cdad="cd $VAGRANT_CWD"
-alias d=docker
-alias dps='docker ps -a'
-alias dpsa='docker ps -a'
-alias di='docker images'
+
+alias dps='runDocker ps -a'
+alias dpsa='runDocker ps -a'
+alias di='runDocker images'
+alias d='runDocker'
 
 alias f=fleetctl
 alias flm='fleetctl list-machines -l'
@@ -45,8 +46,16 @@ function buildContainer() {
 
     # this will result in two repositories asteere/nginx:latest and nginx:latest containing collections of images
     docker build --tag asteere/"$1":raptor $1 
+    if test ! $? == 0
+    then
+        return
+    fi
 
     dlogin 
+    if test ! $? == 0
+    then
+        return
+    fi
 
     docker push asteere/"$1":raptor
 
@@ -104,7 +113,7 @@ function vdestroy() {
 
     done
 
-    vms=`getListOfVms`
+    vms=`getListOfVms | grep -v boot2docker`
     if test ! "$1" == ""
     then
         vms=`echo $vms | grep $1`
@@ -125,33 +134,51 @@ function vdestroy() {
     #vagrant status
 }
 
+function setupDocker() {
+    if test ! "$DOCKER_HOST" == ""
+    then
+        # boot2docker already setup
+        return
+    fi
+
+    (which boot2docker) &> /dev/null
+    if test "$?" == 0
+    then
+        b2dstatus=`boot2docker status 2>&1`
+        echo $b2dstatus
+        echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
+        if test $? == 0
+        then
+            echo boot2docker init
+            boot2docker init
+        elif test ! "$b2dstatus" == "running"
+        then
+            echo boot2docker up
+            boot2docker up
+        fi
+        $(boot2docker shellinit)
+    fi
+}
+
+function runDocker() {
+    setupDocker
+
+    docker $*
+}
+
 FORWARD_DOCKER_PORTS=true
 
-if test -d "$VAGRANT_CWD"
-then
-    cdad
-fi
+# Setup fleetctl status
+eval $(ssh-agent)
+ssh-add 
 
 # Setting PATH for Python 3.4
 # The orginal version is saved in .profile.pysave
 PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
 export PATH
 
-(which boot2docker) &> /dev/null
-if test "$?" == 0
+if test -d "$VAGRANT_CWD"
 then
-    b2dstatus=`boot2docker status 2>&1`
-    echo $b2dstatus
-    echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
-    if test $? == 0
-    then
-        echo boot2docker init
-        boot2docker init
-    elif test ! "$b2dstatus" == "running"
-    then
-        echo boot2docker up
-        boot2docker up
-    fi
-    $(boot2docker shellinit)
+    cdad
 fi
 
