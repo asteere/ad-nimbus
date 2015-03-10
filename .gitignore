@@ -2,3 +2,5 @@
 .vagrant/
 .*.swp
 
+# Ignore the log files until we decide we want to keep them
+*/JMeter/*.log
