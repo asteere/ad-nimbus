@@ -204,5 +204,7 @@ export PATH
 if test -d "$VAGRANT_CWD"
 then
     cdad
+else
+    cd share
 fi
 
