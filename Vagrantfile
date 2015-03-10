@@ -48,6 +48,7 @@ end
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
   config.ssh.insert_key = false
+  config.ssh.forward_agent = true;
 
   config.vm.box = "coreos-%s" % $update_channel
   config.vm.box_version = ">= 522.6.0"
@@ -100,8 +101,6 @@ Vagrant.configure("2") do |config|
           vb.customize ["modifyvm", :id, "--uartmode1", serialFile]
         end
       end
-
-      config.ssh.forward_agent = true;
 
       if $expose_docker_tcp
         $guest_port = "2%s75" % $i;

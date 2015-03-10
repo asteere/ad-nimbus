@@ -1,6 +1,7 @@
 *.mmdb
 .vagrant/
 .*.swp
+insecure_private_key
 
 # Ignore the log files until we decide we want to keep them
 */JMeter/*.log

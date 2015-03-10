@@ -1,38 +1,3 @@
-hostname | grep coreos > /dev/null
-if test "$?" == 1
-then
-    # Custom bash prompt via kirsle.net/wizards/ps1.html
-    export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n\[$(tput setaf 0)\]$ \[$(tput sgr0)\]"
-fi
-
-export CLICOLOR=1
-
-alias vbm=VBoxManage
-alias gvmi=getvminfo
-alias v=vagrant
-alias vs='vagrant status'
-alias vgs='vagrant global-status'
-alias vsh1='vagrant ssh core-01'
-alias vsh2='vagrant ssh core-02'
-alias vsh3='vagrant ssh core-03'
-alias vsh4='vagrant ssh core-04'
-alias vsh5='vagrant ssh core-05'
-
-alias b2d=boot2docker
-
-alias cdad="cd $VAGRANT_CWD"
-
-alias dps='runDocker ps -a'
-alias dpsa='runDocker ps -a'
-alias di='runDocker images'
-alias d='runDocker'
-
-alias f=fleetctl
-alias flm='fleetctl list-machines -l'
-alias flu='fleetctl list-units'
-alias fluf='fleetctl list-unit-files'
-alias ftunnel='fleetctl --tunnel 10.10.10.10'
-
 function startnet-location() {
     service=net-location
 
@@ -190,21 +155,84 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-FORWARD_DOCKER_PORTS=true
+alias vbm=VBoxManage
+alias gvmi=getvminfo
+alias v=vagrant
+alias vs='vagrant status'
+alias vgs='vagrant global-status'
+alias vsh1='vagrant ssh core-01'
+alias vsh2='vagrant ssh core-02'
+alias vsh3='vagrant ssh core-03'
+alias vsh4='vagrant ssh core-04'
+alias vsh5='vagrant ssh core-05'
+
+alias b2d=boot2docker
+
+alias cdad="cd $VAGRANT_CWD"
+
+alias dps='runDocker ps -a'
+alias dpsa='runDocker ps -a'
+alias di='runDocker images'
+alias d='runDocker'
+
+alias f=fleetctl
+alias flm='fleetctl list-machines -l'
+alias flu='fleetctl list-units'
+alias fluf='fleetctl list-unit-files'
+alias ftunnel='fleetctl --tunnel 10.10.10.10'
+
+# TODO: grep on OS name is somewhat fragile
+uname -a | grep Linux > /dev/null
+if test "$?" == 1
+then
+    # Setup Mac/Windows
+    if test "$VAGRANT_CWD" == ""
+    then
+        echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
+        echo If VAGRANT_CWD is set, things like fleetctl status 'net-location@1.service' will work. Thanks.
+        echo For example:
+        echo '    export VAGRANT_CWD=~/Research/asteere/ad-nimbus'
+    fi
+
+    if test -d "$VAGRANT_CWD"
+    then
+        cdad
+    fi
+
+    # Make vagrant's key accessible to coreos 
+    vagrantInsecureKey=insecure_private_key
+    if test -f ~/.vagrant.d/insecure_private_key
+    then
+        cp ~/.vagrant.d/insecure_private_key .
+    fi
+
+    # Custom bash prompt via kirsle.net/wizards/ps1.html
+    export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n\[$(tput setaf 0)\]$ \[$(tput sgr0)\]"
+
+else
+    # Do all the coreos setup
+
+    cd share
+
+    ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
+    if test ! $? == 0
+    then
+        ssh-add insecure_private_key
+    fi
+
+fi
+
+export CLICOLOR=1
 
 # Setup fleetctl status
-eval $(ssh-agent)
-ssh-add 
+if test "$SSH_AUTH_SOCK" == ""
+then
+    eval $(ssh-agent)
+fi
 
 # Setting PATH for Python 3.4
 # The orginal version is saved in .profile.pysave
 PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
 export PATH
 
-if test -d "$VAGRANT_CWD"
-then
-    cdad
-else
-    cd share
-fi
 
