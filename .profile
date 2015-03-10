@@ -1,5 +1,5 @@
-hostname | grep asteere > /dev/null
-if test "$?" == 0
+hostname | grep coreos > /dev/null
+if test "$?" == 1
 then
     # Custom bash prompt via kirsle.net/wizards/ps1.html
     export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n\[$(tput setaf 0)\]$ \[$(tput sgr0)\]"
@@ -33,6 +33,26 @@ alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
+function startnet-location() {
+    service=net-location
+
+    cd ~/share/$service
+
+    fleetctl start ${service}@{1..4}.service
+
+    cd -
+}
+
+function startnginx() {
+    service=nginx
+
+    cd ~/share/$service
+
+    fleetctl start ${service}@1.service
+
+    cd -
+}
+
 function buildnginx() {
     buildContainer nginx
 }
@@ -45,19 +65,19 @@ function buildContainer() {
     cdad
 
     # this will result in two repositories asteere/nginx:latest and nginx:latest containing collections of images
-    docker build --tag asteere/"$1":raptor $1 
+    runDocker build --tag asteere/"$1":raptor $1 
     if test ! $? == 0
     then
         return
     fi
 
-    dlogin 
+    #dlogin 
     if test ! $? == 0
     then
         return
     fi
 
-    docker push asteere/"$1":raptor
+    runDocker push asteere/"$1":raptor
 
     cd -
 
@@ -164,6 +184,10 @@ function runDocker() {
     setupDocker
 
     docker $*
+}
+
+function dlogin() {
+    docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
 FORWARD_DOCKER_PORTS=true
