@@ -1,6 +1,14 @@
 # Host .profile
 # Everything to do with using vagrant and building docker containers
 
+function getLatestCurl() {
+    cdad
+    cd confd
+
+    # TODO: Figure out how to get latest from github rather than hardcoding this
+    curl -L https://github.com/kelseyhightower/confd/releases/download/v0.8.0/confd-0.8.0-linux-amd64 > confd
+}
+
 function buildnginx() {
     buildContainer nginx
 }

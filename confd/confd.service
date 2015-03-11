@@ -1,0 +1,18 @@
+[Unit]
+Description=confd service %m %H:%i 
+
+Requires=etcd.service
+
+After=etcd.service
+
+[Service]
+# Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
+EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
+
+# Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
+TimeoutStartSec=0
+
+ExecStart=/home/core/share/confd
+
+[X-Fleet]
