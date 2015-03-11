@@ -1,0 +1,79 @@
+function startnet-location() {
+    numInstances=`grep '^$num_instances' config.rb | sed 's/.*=//'`
+    startService net-location $numInstances
+}
+
+function startnginx() {
+    startService nginx 1
+}
+
+function startService() {
+    service=$1
+    numInstances=$2
+
+    cd ~/share/$service
+
+    echo Be patient, this can take awhile before you get the first output
+
+    # TODO: figure out how to get {1..$numInstances} to work
+    if test $numInstances == 1
+    then
+        fleetctl start ${service}@1.service
+    else
+        fleetctl start ${service}@{1..4}.service
+    fi
+
+    cd -
+
+}
+
+function fdestroy() {
+    if test "$1" = ""
+    then
+        svcs=$(fleetctl list-unit-files | awk '{print $1}')
+    else
+        svcs=$1
+    fi
+
+    for i in $svcs
+    do
+        fleetctl destroy $i
+    done
+    fluf
+}
+
+alias d='docker'
+alias dps='docker ps -a'
+alias dpsa='docker ps -a'
+alias di='docker images'
+
+alias f='fleetctl'
+alias flm='fleetctl list-machines -l'
+alias flu='fleetctl list-units'
+alias fluf='fleetctl list-unit-files'
+alias ftunnel='fleetctl --tunnel 10.10.10.10'
+
+# if we are already there, don't error out
+if test ! `pwd` == "/home/core/share"
+then
+    cd share 
+fi
+
+ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
+if test ! $? == 0
+then
+    ssh-add insecure_private_key
+fi
+
+# Setup fleetctl status
+if test "$SSH_AUTH_SOCK" == ""
+then
+    eval $(ssh-agent)
+fi
+
+# Custom bash prompt via kirsle.net/wizards/ps1.html
+# Common to both .profiles
+export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n\[$(tput setaf 0)\]$ \[$(tput sgr0)\]"
+export CLICOLOR=1
+
+

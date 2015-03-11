@@ -1,7 +1,12 @@
 *.mmdb
 .vagrant/
 .*.swp
+
+# Vagrant generated ssh key used by fleetctl
 insecure_private_key
+
+# Environment file to allow the systemd unit files to know which docker registry to use
+adNimbusEnvironment
 
 # Ignore the log files until we decide we want to keep them
 */JMeter/*.log

@@ -11,14 +11,15 @@ KillMode=none
 
 # Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
 EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
 
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker kill %p
 ExecStartPre=-/usr/bin/docker rm -f %p
-ExecStartPre=/usr/bin/docker pull asteere/%p:raptor
-ExecStart=/usr/bin/docker run -p ${COREOS_PUBLIC_IPV4}:49160:8080 -v /home/core/share/net-location/src:/src asteere/%p:raptor /src/runNpm.sh
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/%p:raptor
+ExecStart=/usr/bin/docker run -p ${COREOS_PUBLIC_IPV4}:49160:8080 -v /home/core/share/net-location/src:/src ${DOCKER_REGISTRY}/%p:raptor /src/runNpm.sh
 ExecStop=/usr/bin/docker stop %p
 
 #Restart=always
