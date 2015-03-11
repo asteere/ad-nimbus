@@ -1,3 +1,6 @@
+# Host .profile
+# Everything to do with using vagrant and building docker containers
+
 function buildnginx() {
     buildContainer nginx
 }
@@ -183,7 +186,8 @@ fi
 
 # Tell the services what docker registry to use
 # From: https://wiki.archlinux.org/index.php/Systemd/User
-echo 'DOCKER_REGISTRY='$DOCKER_REGISTRY > adNimbusEnvironment
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
+sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' adNimbusEnvironment.tmpl > adNimbusEnvironment
 
 # Setting PATH for Python 3.4
 # The orginal version is saved in .profile.pysave

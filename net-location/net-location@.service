@@ -1,7 +1,11 @@
 [Unit]
 Description=Network geo-location service %m %H:%i
-After=docker.service
+
 Requires=docker.service
+Requires=etcd.service
+
+After=docker.service
+After=etcd.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -16,14 +20,20 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStartPre=-/usr/bin/docker kill %p
-ExecStartPre=-/usr/bin/docker rm -f %p
-ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/%p:raptor
-ExecStart=/usr/bin/docker run -p ${COREOS_PUBLIC_IPV4}:49160:8080 -v /home/core/share/net-location/src:/src ${DOCKER_REGISTRY}/%p:raptor /src/runNpm.sh
-ExecStop=/usr/bin/docker stop %p
+ExecStartPre=-/usr/bin/docker kill ${netLocationDockerTag}
+ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
+ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/usr/bin/etcdctl set /${netLocationDockerTag}/${netLocationService}/%H ${COREOS_PUBLIC_IPV4}
+ExecStartPre=-/usr/bin/etcdctl get /${netLocationDockerTag}/${netLocationService}/%H
+
+ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} -p ${COREOS_PUBLIC_IPV4}:${netLocationHostPort}:${netLocationContainerPort} -v /home/core/share/%p/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
+
+ExecStop=/usr/bin/docker stop ${netLocationDockerTag}
+ExecStopPost=-/usr/bin/etcdctl rm /${netLocationDockerTag}/${netLocationService}/%H 
 
 #Restart=always
 
 [X-Fleet]
-Conflicts=nginx@*.service
-Conflicts=net-location@*.service
+Conflicts=${nginxService}@*.service
+Conflicts=%p@*.service

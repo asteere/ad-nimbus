@@ -1,7 +1,11 @@
 [Unit]
 Description=nginx load balancer aka reverse proxy %m %H:%i 
-After=docker.service
+
 Requires=docker.service
+Requires=etcd.service
+
+After=docker.service
+After=etcd.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -11,18 +15,19 @@ KillMode=none
 
 # Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
 EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
 
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStartPre=-/usr/bin/docker kill %p
-ExecStartPre=-/usr/bin/docker rm -f %p
-ExecStartPre=/usr/bin/docker pull asteere/%p:raptor
-ExecStart=/usr/bin/docker run  --rm -p ${COREOS_PUBLIC_IPV4}:49160:80 -v /home/core/share/nginx:/opt/nginx asteere/%p:raptor %p -c /opt/nginx/nginx.conf
-ExecStop=/usr/bin/docker stop %p
+ExecStartPre=-/usr/bin/docker kill ${nginxDockerTag}
+ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
+ExecStart=/usr/bin/docker run --name=${nginxDockerTag} --rm -p ${COREOS_PUBLIC_IPV4}:${nginxHostPort}:${nginxContainerPort} -v /home/core/share/%p:/opt/nginx ${DOCKER_REGISTRY}/%p:${nginxDockerTag} %p -c /opt/nginx/nginx.conf
+ExecStop=/usr/bin/docker stop ${nginxDockerTag} 
 
 #Restart=always
 
 [X-Fleet]
-Conflicts=net-location@*.service
-Conflicts=nginx@*.service
+Conflicts=${netLocationService}@*.service
+Conflicts=%p@*.service

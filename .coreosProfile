@@ -1,5 +1,5 @@
 function startnet-location() {
-    numInstances=`grep '^$num_instances' config.rb | sed 's/.*=//'`
+    numInstances=`grep '^$num_instances' ~/share/config.rb | sed 's/.*=//'`
     startService net-location $numInstances
 }
 
@@ -39,7 +39,7 @@ function fdestroy() {
     do
         fleetctl destroy $i
     done
-    fluf
+    fleetctl list-unit-files
 }
 
 alias d='docker'
@@ -53,11 +53,7 @@ alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
-# if we are already there, don't error out
-if test ! `pwd` == "/home/core/share"
-then
-    cd share 
-fi
+cd ~/share 
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
