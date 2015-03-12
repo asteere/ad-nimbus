@@ -13,6 +13,6 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStart=/home/core/share/confd -confdir=/home/core/share/confd -debug=true -verbose=true -watch=true
+ExecStart=/home/core/share/confd/confd -backend etcd -confdir=/home/core/share/confd -debug=true -verbose=true -watch=true -interval=10
 
 [X-Fleet]

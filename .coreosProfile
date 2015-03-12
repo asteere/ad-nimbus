@@ -1,30 +1,75 @@
-function startnet-location() {
+alias d='docker'
+alias dps='docker ps -a'
+alias dpsa='docker ps -a'
+alias di='docker images'
+
+alias f='fleetctl'
+alias flm='fleetctl list-machines -l'
+alias flu='fleetctl list-units'
+alias fluf='fleetctl list-unit-files'
+alias ftunnel='fleetctl --tunnel 10.10.10.10'
+
+etctree () 
+{ 
+    etcdctl ls -recursive
+
+    for i in {1..5};
+    do
+        key=/raptor/net-location/core-0$i
+        echo -n $key=
+        etcdctl get $key
+    done
+}
+
+function fstartnet-location() {
     numInstances=`grep '^$num_instances' ~/share/config.rb | sed 's/.*=//'`
-    startService net-location $numInstances
+    fstartService net-location $numInstances
 }
 
-function startnginx() {
-    startService nginx 1
+function fstartnginx() {
+    fstartService nginx 1
 }
 
-function startService() {
+function fstartconfd() {
+    fstartService confd 0
+}
+
+function fstartService() {
     service=$1
     numInstances=$2
 
     cd ~/share/$service
 
-    echo Be patient, this can take awhile before you get the first output
+    echo Be patient, this can take awhile before you get the first output on $service
 
     # TODO: figure out how to get {1..$numInstances} to work
-    if test $numInstances == 1
-    then
-        fleetctl start ${service}@1.service
-    else
+    case $numInstances in
+    0)
+	fleetctl start ${service}.service
+	;;
+
+    1)
+	fleetctl start ${service}@1.service
+	;;
+    *)
         fleetctl start ${service}@{1..4}.service
-    fi
+	;;
+    esac
 
     cd -
 
+}
+
+function fstartall() {
+    drmf
+
+    fstartconfd
+
+    fstartnet-location
+
+    fstartnginx
+
+    fluf
 }
 
 function fdestroy() {
@@ -42,16 +87,12 @@ function fdestroy() {
     fleetctl list-unit-files
 }
 
-alias d='docker'
-alias dps='docker ps -a'
-alias dpsa='docker ps -a'
-alias di='docker images'
-
-alias f='fleetctl'
-alias flm='fleetctl list-machines -l'
-alias flu='fleetctl list-units'
-alias fluf='fleetctl list-unit-files'
-alias ftunnel='fleetctl --tunnel 10.10.10.10'
+function drmf() {
+    for i in {101..105}
+    do 
+	ssh 172.17.8.$i docker rm -f raptor
+    done
+}
 
 cd ~/share 
 

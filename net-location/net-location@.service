@@ -20,16 +20,16 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStartPre=-/usr/bin/docker kill ${netLocationDockerTag}
 ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
+
 ExecStartPre=/usr/bin/etcdctl set /${netLocationDockerTag}/${netLocationService}/%H ${COREOS_PUBLIC_IPV4}:${netLocationHostPort}
 ExecStartPre=-/usr/bin/etcdctl get /${netLocationDockerTag}/${netLocationService}/%H
 
 ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} -p ${COREOS_PUBLIC_IPV4}:${netLocationHostPort}:${netLocationContainerPort} -v /home/core/share/%p/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
 
-ExecStop=/usr/bin/docker stop ${netLocationDockerTag}
+ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
 ExecStopPost=-/usr/bin/etcdctl rm /${netLocationDockerTag}/${netLocationService}/%H 
 
 #Restart=always
