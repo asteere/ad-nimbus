@@ -1,0 +1,9 @@
+[template]
+src = "/home/core/share/nginx/templates/nginx.conf.tmpl"
+dest = "/home/core/share/nginx/nginx.conf"
+keys = [
+    "/raptor/net-location",
+]
+check_cmd = "/usr/sbin/nginx -t"
+#reload_cmd = "/bin/bash /etc/confd/reload_nginx.sh"
+reload_cmd = "/usr/sbin/service nginx reload"

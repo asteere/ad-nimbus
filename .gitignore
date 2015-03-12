@@ -10,3 +10,7 @@ adNimbusEnvironment
 
 # Ignore the log files until we decide we want to keep them
 */JMeter/*.log
+
+# TODO: Is npm install of net-location which requires express and maxmind saving them to net-location/src/node_modules? 
+# TODO: Is there a better way to get nodejs running without writing node_modules
+net-location/src/node_modules
