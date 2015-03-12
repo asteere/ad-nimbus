@@ -14,3 +14,6 @@ adNimbusEnvironment
 # TODO: Is npm install of net-location which requires express and maxmind saving them to net-location/src/node_modules? 
 # TODO: Is there a better way to get nodejs running without writing node_modules
 net-location/src/node_modules
+
+# confd is updating nginx.conf every time a net-location service is added or subtracted
+nginx/nginx.conf

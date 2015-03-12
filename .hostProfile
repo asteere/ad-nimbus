@@ -1,6 +1,27 @@
 # Host .profile
 # Everything to do with using vagrant and building docker containers
 
+alias vbm=VBoxManage
+alias gvmi=getvminfo
+alias v=vagrant
+alias vs='vagrant status'
+alias vgs='vagrant global-status'
+alias vup='vagrant up'
+alias vsh1='vagrant ssh core-01'
+alias vsh2='vagrant ssh core-02'
+alias vsh3='vagrant ssh core-03'
+alias vsh4='vagrant ssh core-04'
+alias vsh5='vagrant ssh core-05'
+
+alias b2d=boot2docker
+
+alias cdad="cd $VAGRANT_CWD"
+
+alias dps='runDocker ps -a'
+alias dpsa='runDocker ps -a'
+alias di='runDocker images'
+alias d='runDocker'
+
 function getLatestCurl() {
     cdad
     cd confd
@@ -89,8 +110,9 @@ function vdestroy() {
     echo Remaining vms
     getListOfVms
 
+    # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
     echo vgs
-    vgs
+    vgs --prune
 
     echo vagrant status
     #vagrant status
@@ -132,26 +154,6 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-alias vbm=VBoxManage
-alias gvmi=getvminfo
-alias v=vagrant
-alias vs='vagrant status'
-alias vgs='vagrant global-status'
-alias vsh1='vagrant ssh core-01'
-alias vsh2='vagrant ssh core-02'
-alias vsh3='vagrant ssh core-03'
-alias vsh4='vagrant ssh core-04'
-alias vsh5='vagrant ssh core-05'
-
-alias b2d=boot2docker
-
-alias cdad="cd $VAGRANT_CWD"
-
-alias dps='runDocker ps -a'
-alias dpsa='runDocker ps -a'
-alias di='runDocker images'
-alias d='runDocker'
-
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
@@ -179,7 +181,7 @@ fi
 
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 # Common to both .profiles
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n\[$(tput setaf 0)\]$ \[$(tput sgr0)\]"
+export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
 export CLICOLOR=1
 
 if test "$DOCKER_REGISTRY" == ""

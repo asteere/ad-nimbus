@@ -64,9 +64,9 @@ function fstartall() {
     drmf
 
     fstartconfd
-
+    sleep 5
     fstartnet-location
-
+    sleep 5
     fstartnginx
 
     fluf
@@ -110,7 +110,7 @@ fi
 
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 # Common to both .profiles
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n\[$(tput setaf 0)\]$ \[$(tput sgr0)\]"
+export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
 export CLICOLOR=1
 
 
