@@ -16,7 +16,7 @@ http {
     upstream raptor {
       #least_conn;
 
-      {{range getvs "/raptor/net-location/*"}}
+      {{range getvs "/raptor/netlocation/*"}}
           server {{.}};
       {{end}}
     }

@@ -14,12 +14,12 @@ alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
 function fstartnetlocation() {
     numNetLocationInstances=3
-    fstartService net-location $numNetLocationInstances
+    fstartService netlocation $numNetLocationInstances
 }
 
 function etctree() { 
     # TODO: get the key from adNimbusEnvironment, shouldn't be hardcoded
-    for key in `etcdctl ls -recursive /raptor/net-location`
+    for key in `etcdctl ls -recursive /raptor/netlocation`
     do
         echo -n $key=
         etcdctl get $key
@@ -55,7 +55,7 @@ function fstartService() {
 	fleetctl start ${service}@1.service
 	;;
     *)
-        serviceRange='net-location@{1..'$numServers'}.service'
+        serviceRange='netlocation@{1..'$numServers'}.service'
         `eval fleetctl start $serviceRange`
 	;;
     esac

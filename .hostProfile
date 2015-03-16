@@ -35,8 +35,8 @@ function buildnginx() {
     buildContainer nginx
 }
 
-function buildnet-location() {
-    buildContainer net-location
+function buildnetlocation() {
+    buildContainer netlocation
 }
 
 function buildContainer() {
@@ -157,7 +157,7 @@ function dlogin() {
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
-    echo If VAGRANT_CWD is set, things like fleetctl status 'net-location@1.service' will work. Thanks.
+    echo If VAGRANT_CWD is set, things like fleetctl status 'netlocation@1.service' will work. Thanks.
     echo For example:
     echo '    export VAGRANT_CWD=~/Research/asteere/ad-nimbus'
     return
