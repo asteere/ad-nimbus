@@ -15,8 +15,8 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Always leave at least 1 net-location server running
 #  
 
-ExecStart=/bin/bash net-locationMonitor.sh start
-ExecStop=/bin/bash net-locationMonitor.sh stop
+ExecStart=/bin/bash /home/core/share/monitor/monitor.sh start
+ExecStop=/bin/bash /home/core/share/monitor/monitor.sh stop
 
 [X-Fleet]
 # Don't want the monitoring software to be on a server that could lock up

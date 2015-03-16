@@ -12,21 +12,18 @@ alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
-etctree () 
-{ 
-    etcdctl ls -recursive
+function fstartnetlocation() {
+    numNetLocationInstances=3
+    fstartService net-location $numNetLocationInstances
+}
 
-    for i in {1..5};
+function etctree() { 
+    # TODO: get the key from adNimbusEnvironment, shouldn't be hardcoded
+    for key in `etcdctl ls -recursive /raptor/net-location`
     do
-        key=/raptor/net-location/core-0$i
         echo -n $key=
         etcdctl get $key
     done
-}
-
-function fstartnet-location() {
-    numNetLocationInstances=4
-    fstartService net-location $numNetLocationInstances
 }
 
 function fstartnginx() {
@@ -37,13 +34,17 @@ function fstartconfd() {
     fstartService confd 0
 }
 
+function fstartmon() {
+    fstartService monitor 1
+}
+
 function fstartService() {
     service=$1
     numServers=$2
 
     cd ~/share/$service
 
-    echo Be patient, this can take awhile before you get the first output on $service
+    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers
 
     case $numServers in
     0)
@@ -68,10 +69,11 @@ function fstartall() {
 
     fstartconfd
     sleep 5
-    fstartnet-location
+    fstartnetlocation
     sleep 5
     fstartnginx
-
+    sleep 3
+    fstartmon
     fluf
 }
 
