@@ -1,0 +1,25 @@
+[Unit]
+Description=Monitor all net-location services across all clusters. Precursor to using Salt or Sensu.
+
+[Service]
+# Allow access to environment variables.
+EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
+
+# HACK: While loop (should it be a shell script) to handle starting and stopping net-location services
+# Start/Stop additional net-location servers based on
+#   CPU thresholds over a high water mark for N seconds or under a low water mark for Y seconds
+#   TODO: Memory usage over a high water mark for N seconds or under a low water mark for Y seconds
+#   TODO: Response time greater than M seconds. Response time will not shut down net-location servers
+# 
+# Always leave at least 1 net-location server running
+#  
+
+ExecStart=/bin/bash net-locationMonitor.sh start
+ExecStop=/bin/bash net-locationMonitor.sh stop
+
+[X-Fleet]
+# Don't want the monitoring software to be on a server that could lock up
+Conflicts=${netLocationService}@*.service
+Conflicts=${nginxService}@*.service
+

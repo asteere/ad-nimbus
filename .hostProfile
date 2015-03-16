@@ -204,5 +204,6 @@ sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' adNimbusEnvironment.tmpl > adNimbusEnviro
 # The orginal version is saved in .profile.pysave
 PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
 export PATH
+export numInstances=`grep '^$num_instances' "$VAGRANT_CWD/config.rb" | sed 's/.*=//'`
 
 

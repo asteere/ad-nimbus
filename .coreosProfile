@@ -1,3 +1,6 @@
+# CoreOS .profile
+
+# Aliases go first so they can be used by the functions
 alias d='docker'
 alias dps='docker ps -a'
 alias dpsa='docker ps -a'
@@ -22,8 +25,8 @@ etctree ()
 }
 
 function fstartnet-location() {
-    numInstances=`grep '^$num_instances' ~/share/config.rb | sed 's/.*=//'`
-    fstartService net-location $numInstances
+    numNetLocationInstances=4
+    fstartService net-location $numNetLocationInstances
 }
 
 function fstartnginx() {
@@ -36,14 +39,13 @@ function fstartconfd() {
 
 function fstartService() {
     service=$1
-    numInstances=$2
+    numServers=$2
 
     cd ~/share/$service
 
     echo Be patient, this can take awhile before you get the first output on $service
 
-    # TODO: figure out how to get {1..$numInstances} to work
-    case $numInstances in
+    case $numServers in
     0)
 	fleetctl start ${service}.service
 	;;
@@ -52,7 +54,8 @@ function fstartService() {
 	fleetctl start ${service}@1.service
 	;;
     *)
-        fleetctl start ${service}@{1..4}.service
+        serviceRange='net-location@{1..'$numServers'}.service'
+        `eval fleetctl start $serviceRange`
 	;;
     esac
 
@@ -112,5 +115,6 @@ fi
 # Common to both .profiles
 export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
 export CLICOLOR=1
+export numInstances=`grep '^$num_instances' ~/share/config.rb | sed 's/.*=//'`
 
 

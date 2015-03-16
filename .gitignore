@@ -2,6 +2,10 @@
 .vagrant/
 .*.swp
 
+# Discovery token gets updated everytime "vagrant up" or "vagrant reload" occurs. 
+# Use a template file to minimize what gets committed.
+user-data
+
 # Vagrant generated ssh key used by fleetctl
 insecure_private_key
 
