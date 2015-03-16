@@ -129,7 +129,7 @@ function setupDocker() {
     if test "$?" == 0
     then
         b2dstatus=`boot2docker status 2>&1`
-        echo $b2dstatus
+        echo boot2docker status: $b2dstatus
         echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
         if test $? == 0
         then
