@@ -6,17 +6,11 @@ Description=Monitor all netlocation services across all clusters. Precursor to u
 EnvironmentFile=/etc/environment
 EnvironmentFile=/home/core/share/adNimbusEnvironment
 
-# HACK: While loop (should it be a shell script) to handle starting and stopping netlocation services
-# Start/Stop additional netlocation servers based on
-#   CPU thresholds over a high water mark for N seconds or under a low water mark for Y seconds
-#   TODO: Memory usage over a high water mark for N seconds or under a low water mark for Y seconds
-#   TODO: Response time greater than M seconds. Response time will not shut down netlocation servers
-# 
-# Always leave at least 1 netlocation server running
-#  
+User=core
 
-ExecStart=/bin/bash /home/core/share/monitor/monitor.sh start
-ExecStop=/bin/bash /home/core/share/monitor/monitor.sh stop
+ExecStart=/bin/bash -c "/home/core/share/monitor/monitor.sh start"
+
+ExecStop=/bin/bash -c "/home/core/share/monitor/monitor.sh stop"
 
 [X-Fleet]
 # Don't want the monitoring software to be on a server that could lock up

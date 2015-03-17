@@ -1,4 +1,5 @@
 # CoreOS .profile
+# Currently, this file is sourced by monitor.sh. When run as part of a service things like '~' are not defined. Always use the full path.
 
 # Aliases go first so they can be used by the functions
 alias d='docker'
@@ -15,7 +16,7 @@ alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 function fstartnetlocation() {
-    numNetLocationInstances=3
+    numNetLocationInstances=1
     fstartService netlocation $numNetLocationInstances
 }
 
@@ -44,9 +45,9 @@ function fstartService() {
     service=$1
     numServers=$2
 
-    cd ~/share/$service
+    cd /home/core/share/$service
 
-    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers
+    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers 'service(s)'
 
     case $numServers in
     0)
@@ -101,7 +102,7 @@ function drmf() {
     done
 }
 
-cd ~/share 
+cd /home/core/share 
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
@@ -115,10 +116,12 @@ then
     eval $(ssh-agent)
 fi
 
+export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
+
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 # Common to both .profiles
 export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
 export CLICOLOR=1
-export numInstances=`grep '^$num_instances' ~/share/config.rb | sed 's/.*=//'`
+export numInstances=`grep '^$num_instances' /home/core/share/config.rb | sed 's/.*=//'`
 
 

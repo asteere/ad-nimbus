@@ -23,4 +23,7 @@ netlocation/src/node_modules
 nginx/nginx.conf
 nginx/.nginx.conf*
 
+# Not sure who is creating these
+monitor/.nfs*
+
 
