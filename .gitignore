@@ -21,3 +21,6 @@ netlocation/src/node_modules
 
 # confd is updating nginx.conf every time a netlocation service is added or subtracted
 nginx/nginx.conf
+nginx/.nginx.conf*
+
+
