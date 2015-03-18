@@ -27,6 +27,8 @@ ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/etcdctl set /${netLocationDockerTag}/${netLocationService}/%H ${COREOS_PUBLIC_IPV4}:${netLocationHostPort}
 ExecStartPre=-/usr/bin/etcdctl get /${netLocationDockerTag}/${netLocationService}/%H
 
+# TODO: Do we want to name the container and have to use docker rm or use no name and use docker stop. What are the perf diffs?
+# From: https://github.com/coreos/fleet/issues/612
 ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} -p ${COREOS_PUBLIC_IPV4}:${netLocationHostPort}:${netLocationContainerPort} -v /home/core/share/%p/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}

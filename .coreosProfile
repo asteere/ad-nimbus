@@ -34,7 +34,7 @@ function fstartnginx() {
 }
 
 function fstartconfd() {
-    fstartService confd 0
+    fstartService confd 1
 }
 
 function fstartmon() {

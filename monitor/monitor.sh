@@ -5,7 +5,7 @@ set -a
 . /etc/environment
 . /home/core/share/adNimbusEnvironment
 set +a
-set -x
+
 # TODO: BEGIN: Remove when we don't need the aliases and function to help development
 function etctree() { 
     # TODO: get the key from adNimbusEnvironment, shouldn't be hardcoded
@@ -33,12 +33,12 @@ function startStopServiceBasedOnCpuUsage() {
     clusterAvgCpuUsage=$1
     numInCluster=$2
 
-    numInstancesLaunched=`fleetctl list-unit-files | grep $netLocationService | grep 'launched *launched' | wc -l`
+    numInstancesLaunched=`fleetctl list-unit-files -fields="unit,dstate,state" | grep -e netlocation | grep -e 'launched.*launched' | wc -l`
 
     if test $numInstancesLaunched != $numInCluster
     then
-        set +x
-        echo Error: fleetctl reports $numInstancesLaunched of $netLocationService launched. etcdctl reports $numInCluster IP addresses
+        echo Error: fleetctl reports $numInstancesLaunched of $netLocationService launched. 
+        echo etcdctl reports $numInCluster IP addresses.
         echo fleetctl:
         fleetctl list-unit-files
 
@@ -46,10 +46,9 @@ function startStopServiceBasedOnCpuUsage() {
         etctree
 
         echo Attempt to continue, results may be confusing
-        set -x
     fi
  
-    if [[ "$hostCpuAverage" -gt 70 && "$numInstancesLaunched" -lt "$maxNetLocationServices" ]] || \
+    if [[ "$hostCpuAverage" -gt 70 && "$numInstancesLaunched" -le "$maxNetLocationServices" ]] || \
         [[ -f /home/core/share/addService ]]
     then
         nextInstance=$((numInCluster+1))

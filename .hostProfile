@@ -116,6 +116,9 @@ function vdestroy() {
 
     echo vagrant status
     #vagrant status
+
+    # TODO: Figure out who should delete these files - confd? nginx? service files?
+    rm -f "$VAGRANT_CWD"/nginx/.nginx.conf*
 }
 
 function setupDocker() {
