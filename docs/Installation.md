@@ -4,10 +4,11 @@ Create accounts on GitHub and DockerHub
 Create your own ad-nimbus/master by forking the GitHug mark-larter/ad-nimbus/master branch 
 Create a develop branch off your ad-nimbus/master
 Clone your ad-nimbus/develop 
+
 In your .profile, add the following:
 
     # Don't export this so the coreos ssh sessions won't pick this up
-    VAGRANT_CWD=<somefolder>/<yourGitHubAccount>ad-nimbus
+    VAGRANT_CWD=<somefolder>/<yourGitHubAccount>/ad-nimbus
 
     # Allow the ad-nimbus .profile to login to docker hub and to use the right registry
     export DOCKER_REGISTRY=asteere
@@ -29,6 +30,13 @@ Open a mac terminal which will source your updated .profile
 
 # The remaining instructions are written as if this was a shell script
 cd "$VAGRANT_CWD"
+
+# Ask Mark or Andy for the location/zip/tar of the maxmind database.
+# Assuming it is a zip file in the Downloads directory on the mac
+mkdir -p "$VAGRANT_CWD"/netlocation/src/data
+cd "$VAGRANT_CWD"/netlocation/src/data
+unzip ~/Downloads/maxMind-ss.zip
+mv maxMind-ss maxMind
 
 # The next step will create, provision and start the coreos VMs. This can take a while the first time. 
 # Stick around until you are prompted for your password. After that you can get a cup of coffee.
