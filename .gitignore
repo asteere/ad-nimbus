@@ -19,6 +19,9 @@ adNimbusEnvironment
 # TODO: Is there a better way to get nodejs running without writing node_modules
 netlocation/src/node_modules
 
+# Don't include maxmind stuff until we get our own repository for git and docker
+netlocation/src/maxmind/*
+
 # confd is updating nginx.conf every time a netlocation service is added or subtracted
 nginx/nginx.conf
 nginx/.nginx.conf*

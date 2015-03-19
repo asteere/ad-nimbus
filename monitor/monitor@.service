@@ -1,5 +1,5 @@
 [Unit]
-Description=Monitor all netlocation services across all clusters. Precursor to using Salt or Sensu.
+Description=Monitor of all netlocation services across all clusters. Precursor to using Salt or Sensu.
 
 [Service]
 # Allow access to environment variables.
