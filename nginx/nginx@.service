@@ -29,7 +29,7 @@ ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${nginxDockerTag} --rm -p ${COREOS_PUBLIC_IPV4}:${nginxHostPort}:${nginxContainerPort} -v /home/core/share/%p:/opt/nginx ${DOCKER_REGISTRY}/%p:${nginxDockerTag} %p -c /opt/nginx/nginx.conf
+ExecStart=/usr/bin/docker run --name=${nginxDockerTag} --rm -v /var/run/docker.sock:/var/run/docker.sock -p ${COREOS_PUBLIC_IPV4}:${nginxHostPort}:${nginxContainerPort} -v /home/core/share/%p:/opt/nginx ${DOCKER_REGISTRY}/%p:${nginxDockerTag} %p -c /opt/nginx/nginx.conf
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a

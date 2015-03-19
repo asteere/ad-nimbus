@@ -1,11 +1,18 @@
 [Unit]
-Description=confd service %m %H:%i 
+Description=confd docker service %m %H:%i 
 
 Requires=etcd.service
+Requires=docker.service
 
 After=etcd.service
+After=docker.service
 
 [Service]
+# From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-fi    les
+# Change killmode from "control-group" to "none" to let Docker remove
+# work correctly.
+KillMode=none
+
 # Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
 EnvironmentFile=/etc/environment
 EnvironmentFile=/home/core/share/adNimbusEnvironment
@@ -13,6 +20,13 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStart=/home/core/share/confd/confd -backend etcd -confdir=/home/core/share/confd -debug=true -verbose=true -watch=true -interval=10
+ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}
+ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
+
+ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm -v /var/run/docker.sock:/var/run/docker.sock -p ${COREOS_PUBLIC_IPV4}:${confdHostPort}:${confdContainerPort} -v /home/core/share/%p:/opt/confd ${DOCKER_REGISTRY}/%p:${confdDockerTag} /etc/confd/confd -backend etcd -confdir=/opt/confd -debug=true -verbose=true -watch=true -interval=10
+
+ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}
+ExecStopPost=-/usr/bin/docker ps -a
 
 [X-Fleet]

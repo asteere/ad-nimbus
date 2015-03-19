@@ -1,10 +1,20 @@
 DOCKER_REGISTRY=REPLACE_ME
+
+# confd 
+confdService=confd
+confdDockerTag=raptor
+confdHostPort=49160
+confdContainerPort=80
+
+# netLocation
 netLocationService=netlocation
 netLocationDockerTag=raptor
 netLocationHostPort=49160
 netLocationContainerPort=8080
 minNetLocationServices=1
 maxNetLocationServices=4
+
+# nginx
 nginxService=nginx
 nginxDockerTag=raptor
 nginxHostPort=49160

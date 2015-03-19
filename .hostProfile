@@ -31,6 +31,10 @@ function getLatestCurl() {
     chmod +x confd
 }
 
+function buildconfd() {
+    buildContainer confd
+}
+
 function buildnginx() {
     buildContainer nginx
 }
