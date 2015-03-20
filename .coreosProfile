@@ -96,6 +96,8 @@ function fdestroy() {
 }
 
 function drmf() {
+    echo Removing the raptor docker containers from each coreos. Ignore errors agout no docker container. 
+    echo This means the services shutdown cleanly. 
     for i in {101..105}
     do 
 	ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f raptor

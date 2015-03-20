@@ -13,6 +13,9 @@ events {
 }
 
 http {
+
+    log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
+
     upstream raptor {
       #least_conn;
 

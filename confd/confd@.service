@@ -1,10 +1,8 @@
 [Unit]
-Description=confd docker service %m %H:%i 
+Description=confd docker service 
 
-Requires=etcd.service
 Requires=docker.service
 
-After=etcd.service
 After=docker.service
 
 [Service]
@@ -24,7 +22,7 @@ ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm -v /var/run/docker.sock:/var/run/docker.sock -p ${COREOS_PUBLIC_IPV4}:${confdHostPort}:${confdContainerPort} -v /home/core/share/%p:/opt/confd ${DOCKER_REGISTRY}/%p:${confdDockerTag} /etc/confd/confd -backend etcd -confdir=/opt/confd -debug=true -verbose=true -watch=true -interval=10
+ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -v /var/run/docker.sock:/var/run/docker.sock -p ${COREOS_PUBLIC_IPV4}:${confdHostPort}:${confdContainerPort} -v /home/core/share/%p:/opt/confd ${DOCKER_REGISTRY}/%p:${confdDockerTag} /etc/confd/confd -backend etcd -confdir=/opt/confd -debug=true -verbose=true -watch=true -interval=10
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a

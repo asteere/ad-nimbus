@@ -4,4 +4,4 @@ dest = "/home/core/share/nginx/nginx.conf"
 keys = [
     "/raptor/netlocation",
 ]
-#reload_cmd = "/usr/sbin/service nginx reload"
+reload_cmd = "echo -e 'POST /con tainers/nginx/kill?signal=HUP HTTP/1.0\r\n' | nc -U /var/run/docker.sock
