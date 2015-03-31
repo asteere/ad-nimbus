@@ -4,4 +4,13 @@ dest = "/home/core/share/nginx/nginx.conf"
 keys = [
     "/raptor/netlocation",
 ]
-reload_cmd = "echo -e 'POST /con tainers/nginx/kill?signal=HUP HTTP/1.0\r\n' | nc -U /var/run/docker.sock
+
+# File ownership and mode information
+owner = "root"
+mode = "0644"
+
+#check_cmd = "/usr/sbin/nginx -t"
+
+# Send a signal to nginx to reload the configuration file
+# From: http://blog.dixo.net/category/docker/
+reload_cmd = "echo -e 'POST /containers/nginx/kill?signal=SIGHUP HTTP/1.0\r\n' | nc -U /var/run/docker.sock"

@@ -22,11 +22,17 @@ function fstartnetlocation() {
 
 function etctree() { 
     # TODO: get the key from adNimbusEnvironment, shouldn't be hardcoded
-    for key in `etcdctl ls -recursive /raptor/netlocation`
+    for key in `etcdctl ls -recursive ${netLocationKey}`
     do
         echo -n $key=
         etcdctl get $key
     done
+}
+
+function curlNetLocation() {
+    nginxIpAddress=`fluf | grep nginx | sed 's/.*\///'`
+    curl -X GET -H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' \
+        "http://$nginxIpAddress:49160"
 }
 
 function fstartnginx() {
@@ -70,14 +76,29 @@ function fstartService() {
 function fstartall() {
     drmf
 
-    fstartconfd
-    sleep 5
     fstartnetlocation
+    sleep 5
+    fstartconfd
     sleep 5
     fstartnginx
     sleep 3
     fstartmon
     fluf
+}
+
+function fstatusall() {
+    for service in `fluf -fields=unit | grep -v UNIT`; 
+    do 
+        echo $service 
+        f status $service 
+        read a 
+        if test "$a" = "q"
+        then
+            return
+        fi
+        echo; 
+        echo '==============' 
+    done
 }
 
 function fdestroy() {
@@ -96,15 +117,24 @@ function fdestroy() {
 }
 
 function drmf() {
-    echo Removing the raptor docker containers from each coreos. Ignore errors agout no docker container. 
-    echo This means the services shutdown cleanly. 
+    # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
+    # there are no docker containers to remove
     for i in {101..105}
     do 
-	ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f raptor
+        dImages=`ssh -oStrictHostKeyChecking=no 172.17.8.$i docker ps -a 2>&1 | grep -v NAME | awk '{print $NF}'`
+        if test ! "$dImages" == ""
+        then
+            ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f $dImages 
+        fi
     done
 }
 
 cd /home/core/share 
+
+# Make the fleetctl service variables available to shell scripts
+set -a
+. adNimbusEnvironment
+set +a
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0

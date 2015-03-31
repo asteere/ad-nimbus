@@ -2,8 +2,10 @@
 Description=confd docker service 
 
 Requires=docker.service
+Requires=netlocation@*.service
 
 After=docker.service
+After=netlocation@*.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-fi    les
@@ -22,9 +24,10 @@ ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -v /var/run/docker.sock:/var/run/docker.sock -p ${COREOS_PUBLIC_IPV4}:${confdHostPort}:${confdContainerPort} -v /home/core/share/%p:/opt/confd ${DOCKER_REGISTRY}/%p:${confdDockerTag} /etc/confd/confd -backend etcd -confdir=/opt/confd -debug=true -verbose=true -watch=true -interval=10
+ExecStart=/usr/bin/docker run --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${confdHostPort}:${confdContainerPort} -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/%p:/opt/confd ${DOCKER_REGISTRY}/%p:${confdDockerTag} /etc/confd/confd -backend=etcd -confdir=/opt/confd -debug=true -verbose=true -watch=true -interval=10 -node=${COREOS_PUBLIC_IPV4}:${etcdPort}
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
 
 [X-Fleet]
+Conflicts=${netLocationService}@*.service

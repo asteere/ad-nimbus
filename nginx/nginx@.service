@@ -3,11 +3,11 @@ Description=nginx load balancer aka reverse proxy %m %H:%i
 
 Requires=docker.service
 Requires=etcd.service
-#Requires=confd.service
+Requires=confd@*.service
 
 After=docker.service
 After=etcd.service
-#After=confd.service
+After=confd@*.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -29,7 +29,7 @@ ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${nginxDockerTag} --rm -v /var/run/docker.sock:/var/run/docker.sock -p ${COREOS_PUBLIC_IPV4}:${nginxHostPort}:${nginxContainerPort} -v /home/core/share/%p:/opt/nginx ${DOCKER_REGISTRY}/%p:${nginxDockerTag} %p -c /opt/nginx/nginx.conf
+ExecStart=/usr/bin/docker run --name=${nginxService} --rm=true --name=${nginxDockerTag} --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${nginxService}:/opt/${nginxService} -p ${COREOS_PUBLIC_IPV4}:${nginxHostPort}:${nginxContainerPort} ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} ${nginxService} -c /opt/nginx/nginx.conf
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
@@ -39,3 +39,6 @@ ExecStopPost=-/usr/bin/docker ps -a
 [X-Fleet]
 Conflicts=${netLocationService}@*.service
 Conflicts=${nginxService}@*.service
+
+# TODO: This should be ${confdService}@*.service
+MachineOf=confd@1.service
