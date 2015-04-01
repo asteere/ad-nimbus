@@ -29,7 +29,25 @@ function etctree() {
     done
 }
 
+function checkAllNetlocationServices() {
+    while true 
+    do 
+        echo '============================='; 
+        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
+        do 
+            echo $service
+            f journal -lines=5 $service
+            echo
+            echo
+            read a
+        done
+    done
+}
+
 function curlNetLocation() {
+    # Output the timestamp for comparison with other logs
+    date
+
     nginxIpAddress=`fluf | grep nginx | sed 's/.*\///'`
     curl -X GET -H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' \
         "http://$nginxIpAddress:49160"
