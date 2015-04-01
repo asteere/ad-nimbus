@@ -31,6 +31,12 @@ function getLatestCurl() {
     chmod +x confd
 }
 
+function buildall() {
+    buildconfd
+    buildnginx
+    buildnetlocation
+}
+
 function buildconfd() {
     buildContainer confd
 }
@@ -46,8 +52,10 @@ function buildnetlocation() {
 function buildContainer() {
     cdad
 
-    # this will result in two repositories asteere/nginx:latest and nginx:latest containing collections of images
-    runDocker build --tag asteere/"$1":raptor $1 
+    echo Building docker container $1
+
+    # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
+    runDocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
     if test ! $? == 0
     then
         return
@@ -59,7 +67,7 @@ function buildContainer() {
         return
     fi
 
-    runDocker push asteere/"$1":raptor
+    runDocker push $DOCKER_REGISTRY/"$1":$1
 
     cd -
 
@@ -136,7 +144,7 @@ function setupDocker() {
     if test "$?" == 0
     then
         b2dstatus=`boot2docker status 2>&1`
-        echo boot2docker status: $b2dstatus
+        echo boot2docker current status: $b2dstatus
         echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
         if test $? == 0
         then
@@ -160,6 +168,15 @@ function runDocker() {
 function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
+
+function updateAdNimbusEnvironment() {
+    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
+    . "$VAGRANT_CWD"/adNimbusEnvironment
+}
+
+set -a
+. adNimbusEnvironment
+set +a
 
 if test "$VAGRANT_CWD" == ""
 then
@@ -205,7 +222,7 @@ fi
 # Tell the services what docker registry to use
 # From: https://wiki.archlinux.org/index.php/Systemd/User
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
-sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' adNimbusEnvironment.tmpl > adNimbusEnvironment
+updateAdNimbusEnvironment
 
 # Setting PATH for Python 3.4
 # The orginal version is saved in .profile.pysave

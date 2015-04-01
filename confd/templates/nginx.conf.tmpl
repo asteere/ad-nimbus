@@ -5,7 +5,7 @@
 
 daemon off;
 
-error_log /var/log/nginx/nginx_error.log info;
+error_log /opt/nginx/nginx_error.log debug;
 
 events {
     # TODO: should we be using 1024 as 4096 might be overkill
@@ -13,9 +13,6 @@ events {
 }
 
 http {
-
-    log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
-
     upstream raptor {
       #least_conn;
 
@@ -25,7 +22,8 @@ http {
     }
 
     server {
-      access_log /var/log/nginx/nginx_access.log;
+      log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
+      access_log /opt/nginx/nginx_access.log upstreamlog;
 
       # ports nginx server is listen to
       listen 80;

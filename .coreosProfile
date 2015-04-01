@@ -124,6 +124,7 @@ function drmf() {
         dImages=`ssh -oStrictHostKeyChecking=no 172.17.8.$i docker ps -a 2>&1 | grep -v NAME | awk '{print $NF}'`
         if test ! "$dImages" == ""
         then
+            echo Removing docker images $dImages
             ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f $dImages 
         fi
     done

@@ -1,13 +1,13 @@
 [template]
 src = "nginx.conf.tmpl"
-dest = "/home/core/share/nginx/nginx.conf"
+dest = "/opt/nginx/nginx.conf"
 keys = [
     "/raptor/netlocation",
 ]
 
 # File ownership and mode information
 owner = "root"
-mode = "0644"
+mode = "0777"
 
 #check_cmd = "/usr/sbin/nginx -t"
 
