@@ -1,4 +1,5 @@
 # CoreOS .profile
+# Currently, this file is sourced by monitor.sh. When run as part of a service things like '~' are not defined. Always use the full path.
 
 # Aliases go first so they can be used by the functions
 alias d='docker'
@@ -15,17 +16,41 @@ alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 function fstartnetlocation() {
-    numNetLocationInstances=3
+    numNetLocationInstances=1
     fstartService netlocation $numNetLocationInstances
 }
 
 function etctree() { 
     # TODO: get the key from adNimbusEnvironment, shouldn't be hardcoded
-    for key in `etcdctl ls -recursive /raptor/netlocation`
+    for key in `etcdctl ls -recursive ${netLocationKey}`
     do
         echo -n $key=
         etcdctl get $key
     done
+}
+
+function checkAllNetlocationServices() {
+    while true 
+    do 
+        echo '============================='; 
+        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
+        do 
+            echo $service
+            f journal -lines=5 $service
+            echo
+            echo
+            read a
+        done
+    done
+}
+
+function curlNetLocation() {
+    # Output the timestamp for comparison with other logs
+    date
+
+    nginxIpAddress=`fluf | grep nginx | sed 's/.*\///'`
+    curl -X GET -H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' \
+        "http://$nginxIpAddress:49160"
 }
 
 function fstartnginx() {
@@ -33,7 +58,7 @@ function fstartnginx() {
 }
 
 function fstartconfd() {
-    fstartService confd 0
+    fstartService confd 1
 }
 
 function fstartmon() {
@@ -44,9 +69,9 @@ function fstartService() {
     service=$1
     numServers=$2
 
-    cd ~/share/$service
+    cd /home/core/share/$service
 
-    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers
+    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers 'service(s)'
 
     case $numServers in
     0)
@@ -62,21 +87,36 @@ function fstartService() {
 	;;
     esac
 
-    cd -
+    cd - > /dev/null
 
 }
 
 function fstartall() {
     drmf
 
-    fstartconfd
-    sleep 5
     fstartnetlocation
+    sleep 5
+    fstartconfd
     sleep 5
     fstartnginx
     sleep 3
     fstartmon
     fluf
+}
+
+function fstatusall() {
+    for service in `fluf -fields=unit | grep -v UNIT`; 
+    do 
+        echo $service 
+        f status $service 
+        read a 
+        if test "$a" = "q"
+        then
+            return
+        fi
+        echo; 
+        echo '==============' 
+    done
 }
 
 function fdestroy() {
@@ -95,13 +135,27 @@ function fdestroy() {
 }
 
 function drmf() {
+    # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
+    # there are no docker containers to remove
     for i in {101..105}
     do 
-	ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f raptor
+        dImages=`ssh -oStrictHostKeyChecking=no 172.17.8.$i docker ps -a 2>&1 | grep -v NAME | awk '{print $NF}'`
+        if test ! "$dImages" == ""
+        then
+            echo Removing docker images $dImages
+            ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f $dImages 
+        fi
     done
 }
 
-cd ~/share 
+cd /home/core/share 
+
+# Make the fleetctl service variables available to shell scripts
+set -a
+# TODO: does this break anything if we have these variables defined
+#. /etc/environment
+. adNimbusEnvironment
+set +a
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
@@ -115,10 +169,12 @@ then
     eval $(ssh-agent)
 fi
 
+export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
+
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 # Common to both .profiles
 export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
 export CLICOLOR=1
-export numInstances=`grep '^$num_instances' ~/share/config.rb | sed 's/.*=//'`
+export numInstances=`grep '^$num_instances' /home/core/share/config.rb | sed 's/.*=//'`
 
 
