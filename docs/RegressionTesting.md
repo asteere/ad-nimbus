@@ -8,16 +8,20 @@ touch ~/share/addService
 while true; do date; fluf; sleep 5; echo; done
 
 # Test that the load balancer is using all the netlocation servies in a round robin fashion.
-# Do a page reload (^R) for each netlocation service. A simple reload is likely to use the cache and not make a new request.
-# Look at the logs to see that each netlocation is fielding a request. TODO: make sure this works, provide example.
-f journal netlocation@{1..N}.service
 
-# TODO: Create a bash function that runs a curl command for each net location service
+# To view nginx reloading after confd sends the SIGHUP
+tail -f ~/share/nginx/nginx_error.log
+
+# To view nginx redirecting the curl request to the different netlocation service
+tail -f ~/share/nginx/nginx_access.log
+
+# Run checkNetLocation to send the netlocation request to nginx.
+checkNetLocation
 
 # Remove the addService file, watch the netlocation services decrease to the adNimbusEnvironment minNetLocationServices value.
 while true; do date; fluf; sleep 5; echo; done
 
-# The netlocation State and Dstate columns should go from launched to ?loaded? starting at the highest number netlocation service.
+# The netlocation State and Dstate columns should go from launched to loaded 
 
 # The monitor service will output an Error message if the number of launched instances doesn't match the etcdctl number of netlocation keys. I am uncertain if this is a real issue.
 

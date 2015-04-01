@@ -152,6 +152,8 @@ cd /home/core/share
 
 # Make the fleetctl service variables available to shell scripts
 set -a
+# TODO: does this break anything if we have these variables defined
+#. /etc/environment
 . adNimbusEnvironment
 set +a
 

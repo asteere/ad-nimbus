@@ -23,7 +23,6 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 TimeoutStartSec=0
 
 # TODO: Is there a performance startup improvement if we use stop and don't remove the container
-# TODO: Can we do a docker run and name the container if we already have it running?
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a

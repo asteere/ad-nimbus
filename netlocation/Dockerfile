@@ -13,10 +13,7 @@ RUN yum install -y nodejs
 # Install app dependencies.
 RUN npm i maxmind-db-reader
 
-# TODO: Do we want to use forever to make sure nodejs restarts
-# From: https://www.digitalocean.com/community/tutorials/how-to-host-multiple-node-js-applications-on-a-single-vps-with-nginx-forever-and-crontab
-
-# Copy app source to VM.
+# Copy app source to VM. If you do this, then you need to rebuild the container whenever anything in src changes
 #COPY ./src /src
 
 # Install app.
