@@ -23,10 +23,10 @@ console.log("begin forEach " + ifname + " ipAddress: " + ipAddress);
 
     if (alias >= 1) {
       // this single interface has multiple ipv4 addresses
-      console.log(ifname + ':' + alias, iface.address);
+      console.log(ifname + ':' + alias + ' iface.address: ' +  iface.address);
     } else {
       // this interface has only one ipv4 adress
-      console.log(ifname, iface.address);
+      console.log(ifname + ':' + alias + ' iface.address: ' +  iface.address);
     }
     ipAddress += iface.address + ", ";
   });
@@ -46,4 +46,4 @@ app.get('/', function (req, res) {
 });
 
 app.listen(PORT);
-console.log(new Date() + ' Running on http://' + ipAddress);
+console.log(new Date() + ' Running on host ' + os.hostname() + ' http://' + ipAddress);

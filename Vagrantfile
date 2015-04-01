@@ -48,6 +48,7 @@ end
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
   config.ssh.insert_key = false
+  config.ssh.forward_agent = true;
 
   config.vm.box = "coreos-%s" % $update_channel
   config.vm.box_version = ">= 522.6.0"
@@ -121,7 +122,7 @@ Vagrant.configure("2") do |config|
         vb.cpus = vm_cpus
       end
 
-      ip = "172.17.8.#{i+99}"
+      ip = "172.17.8.#{i+100}"
       config.vm.network :private_network, ip: ip
 
       # Enable NFS for sharing the host machine into the VM.

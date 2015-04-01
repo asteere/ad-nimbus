@@ -1,0 +1,233 @@
+# Host .profile
+# Everything to do with using vagrant and building docker containers
+
+alias vbm=VBoxManage
+alias gvmi=getvminfo
+alias v=vagrant
+alias vs='vagrant status'
+alias vgs='vagrant global-status'
+alias vup='vagrant up'
+alias vsh1='vagrant ssh core-01'
+alias vsh2='vagrant ssh core-02'
+alias vsh3='vagrant ssh core-03'
+alias vsh4='vagrant ssh core-04'
+alias vsh5='vagrant ssh core-05'
+
+alias b2d=boot2docker
+
+alias cdad="cd $VAGRANT_CWD"
+
+alias dps='runDocker ps -a'
+alias dpsa='runDocker ps -a'
+alias di='runDocker images'
+alias d='runDocker'
+
+function getLatestCurl() {
+    cdad
+    cd confd
+
+    # TODO: Figure out how to get latest from github rather than hardcoding this
+    curl -L https://github.com/kelseyhightower/confd/releases/download/v0.8.0/confd-0.8.0-linux-amd64 -o confd
+    chmod +x confd
+}
+
+function buildall() {
+    buildconfd
+    buildnginx
+    buildnetlocation
+}
+
+function buildconfd() {
+    buildContainer confd
+}
+
+function buildnginx() {
+    buildContainer nginx
+}
+
+function buildnetlocation() {
+    buildContainer netlocation
+}
+
+function buildContainer() {
+    cdad
+
+    echo Building docker container $1
+
+    # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
+    runDocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
+    if test ! $? == 0
+    then
+        return
+    fi
+
+    #dlogin 
+    if test ! $? == 0
+    then
+        return
+    fi
+
+    runDocker push $DOCKER_REGISTRY/"$1":$1
+
+    cd -
+
+}
+
+function getListOfVms() {
+    vbm list vms | awk '{print $1}' | sed 's/"//g'
+}
+
+function getvminfo() {
+    for vm in  `getListOfVms | grep $1`
+    do
+        echo 
+        echo '********************************************************'
+        echo
+        echo VM: $vm
+        vbm showvminfo $vm
+    done 
+}
+
+function vdestroy() {
+    if test "$1" = ""
+    then
+        vboxes=`v status | grep virtualbox | awk '{print $1}'`
+    else
+        vboxes=$1
+    fi
+
+    for i in $vboxes
+    do 
+        v destroy --force $i
+
+        machineDir=".vagrant/machines/$i"
+        if test -d "$machineDir"
+        then
+            rm -r "$machineDir"
+        fi
+
+    done
+
+    vms=`getListOfVms | grep -v boot2docker`
+    if test ! "$1" == ""
+    then
+        vms=`echo $vms | grep $1`
+    fi
+    for vm in $vms
+    do 
+        vbm controlvm $vm poweroff 
+        vbm unregistervm --delete $vm
+    done
+
+    echo Remaining vms
+    getListOfVms
+
+    # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
+    echo vgs
+    vgs --prune
+
+    echo vagrant status
+    #vagrant status
+
+    # TODO: Figure out who should delete these files - confd? nginx? service files?
+    rm -f "$VAGRANT_CWD"/nginx/.nginx.conf*
+}
+
+function setupDocker() {
+    if test ! "$DOCKER_HOST" == ""
+    then
+        # boot2docker already setup
+        return
+    fi
+
+    (which boot2docker) &> /dev/null
+    if test "$?" == 0
+    then
+        b2dstatus=`boot2docker status 2>&1`
+        echo boot2docker current status: $b2dstatus
+        echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
+        if test $? == 0
+        then
+            echo boot2docker init
+            boot2docker init
+        elif test ! "$b2dstatus" == "running"
+        then
+            echo boot2docker up
+            boot2docker up
+        fi
+        $(boot2docker shellinit)
+    fi
+}
+
+function runDocker() {
+    setupDocker
+
+    docker $*
+}
+
+function dlogin() {
+    docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
+}
+
+function updateAdNimbusEnvironment() {
+    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
+    . "$VAGRANT_CWD"/adNimbusEnvironment
+}
+
+set -a
+. adNimbusEnvironment
+set +a
+
+if test "$VAGRANT_CWD" == ""
+then
+    echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
+    echo If VAGRANT_CWD is set, things like fleetctl status 'netlocation@1.service' will work. Thanks.
+    echo For example:
+    echo '    export VAGRANT_CWD=~/Research/asteere/ad-nimbus'
+    return
+fi
+
+if test ! -d "$VAGRANT_CWD"
+then
+    echo The environment variable "$VAGRANT_CWD" does not point to a valid folder, please set VAGRANT_CWD to your ad-nimbus folder and resource this .profile
+    echo VAGRANT_CWD=$VAGRANT_CWD
+    return
+fi
+
+cdad
+
+# Make vagrant's key accessible to coreos 
+vagrantInsecureKey=insecure_private_key
+if test -f ~/.vagrant.d/insecure_private_key
+then
+    cp ~/.vagrant.d/insecure_private_key .
+fi
+
+# Custom bash prompt via kirsle.net/wizards/ps1.html
+# Common to both .profiles
+export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
+export CLICOLOR=1
+
+if test "$DOCKER_REGISTRY" == ""
+then
+    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
+    return
+fi
+if test "$DOCKER_USER" == ""
+then
+    echo Please set and export DOCKER_USER in your ~/.profile to the docker registry user you want to use '(asteere, mark-larter, etc.)'.
+    return
+fi
+
+# Tell the services what docker registry to use
+# From: https://wiki.archlinux.org/index.php/Systemd/User
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
+updateAdNimbusEnvironment
+
+# Setting PATH for Python 3.4
+# The orginal version is saved in .profile.pysave
+PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
+export PATH
+export numInstances=`grep '^$num_instances' "$VAGRANT_CWD/config.rb" | sed 's/.*=//'`
+
+

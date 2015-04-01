@@ -1,30 +1,30 @@
 # Conglomerate gleanings from various websites
 # From: http://stackoverflow.com/questions/26314461/mac-os-x-vagrant-docker-nginx-node-how-do-ports-play-together
 # From: https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-and-use-nginx-as-a-proxy
+# From: https://www.digitalocean.com/community/tutorials/how-to-use-confd-and-etcd-to-dynamically-reconfigure-services-in-coreos
 
 daemon off;
 
-error_log /var/log/nginx/nginx_error.log info;
+error_log /opt/nginx/nginx_error.log debug;
 
 events {
+    # TODO: should we be using 1024 as 4096 might be overkill
     worker_connections   4096; # default is 1024
 }
 
 http {
+    log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
+
     upstream raptor {
       #least_conn;
 
-      # using the vagrant private network IP (I guess?)
-      # using the node port
-      server 172.17.8.101:49160;
-      server 172.17.8.102:49160;
-      server 172.17.8.103:49160;
-      server 172.17.8.104:49160;
-
+      {{range getvs "/raptor/netlocation/*"}}
+          server {{.}};
+      {{end}}
     }
 
     server {
-      access_log /var/log/nginx/nginx_access.log;
+      access_log /opt/nginx/nginx_access.log upstreamlog;
 
       # ports nginx server is listen to
       listen 80;
