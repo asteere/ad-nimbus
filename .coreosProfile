@@ -29,7 +29,7 @@ function etctree() {
     done
 }
 
-function checkAllNetlocationServices() {
+function fstatusNetlocationServices() {
     while true 
     do 
         echo '============================='; 
@@ -44,14 +44,6 @@ function checkAllNetlocationServices() {
     done
 }
 
-function curlNetLocation() {
-    # Output the timestamp for comparison with other logs
-    date
-
-    nginxIpAddress=`fluf | grep nginx | sed 's/.*\///'`
-    curl -X GET -H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' \
-        "http://$nginxIpAddress:49160"
-}
 
 function fstartnginx() {
     fstartService nginx 1
@@ -94,10 +86,11 @@ function fstartService() {
 function fstartall() {
     drmf
 
+    fstartconfd
     fstartnetlocation
     sleep 5
-    fstartconfd
-    sleep 5
+
+    # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
     fstartnginx
     sleep 3
     fstartmon
@@ -135,27 +128,28 @@ function fdestroy() {
 }
 
 function drmf() {
+    ipRoot=172.17.8
+
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
     for i in {101..105}
     do 
-        dImages=`ssh -oStrictHostKeyChecking=no 172.17.8.$i docker ps -a 2>&1 | grep -v NAME | awk '{print $NF}'`
+        ipAddr=${ipRoot}.$i
+        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | awk '{print $NF}' | grep -v NAME`
         if test ! "$dImages" == ""
         then
-            echo Removing docker images $dImages
-            ssh -oStrictHostKeyChecking=no 172.17.8.$i docker rm -f $dImages 
+            echo Removing docker images $dImages on $ipAddr
+            ssh -oStrictHostKeyChecking=no $ipAddr docker rm -f $dImages 
         fi
     done
 }
 
-cd /home/core/share 
+if test -d /home/core/share 
+then
+    cd /home/core/share 
 
-# Make the fleetctl service variables available to shell scripts
-set -a
-# TODO: does this break anything if we have these variables defined
-#. /etc/environment
-. adNimbusEnvironment
-set +a
+    . .sharedProfile
+fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
@@ -170,11 +164,3 @@ then
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
-
-# Custom bash prompt via kirsle.net/wizards/ps1.html
-# Common to both .profiles
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
-export CLICOLOR=1
-export numInstances=`grep '^$num_instances' /home/core/share/config.rb | sed 's/.*=//'`
-
-
