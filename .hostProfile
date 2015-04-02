@@ -171,12 +171,9 @@ function dlogin() {
 
 function updateAdNimbusEnvironment() {
     sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
-    . "$VAGRANT_CWD"/adNimbusEnvironment
-}
 
-set -a
-. adNimbusEnvironment
-set +a
+    sourceAdNimbusEnvironment
+}
 
 if test "$VAGRANT_CWD" == ""
 then
@@ -194,7 +191,34 @@ then
     return
 fi
 
+if test "$DOCKER_REGISTRY" == ""
+then
+    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
+    return
+fi
+
+if test "$DOCKER_USER" == ""
+then
+    echo Please set and export DOCKER_USER in your ~/.profile to the docker registry user you want to use '(asteere, mark-larter, etc.)'.
+    return
+fi
+
+# User's .profile or .bash_profile set up correctly, time to get to work
 cdad
+
+# Pull in the common aliases, functions, etc.
+. .sharedProfile
+
+# Tell the services what docker registry to use
+# From: https://wiki.archlinux.org/index.php/Systemd/User
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
+
+updateAdNimbusEnvironment
+
+# Setting PATH for Python 3.4
+# The orginal version is saved in .profile.pysave
+PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
+export PATH
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key
@@ -202,32 +226,5 @@ if test -f ~/.vagrant.d/insecure_private_key
 then
     cp ~/.vagrant.d/insecure_private_key .
 fi
-
-# Custom bash prompt via kirsle.net/wizards/ps1.html
-# Common to both .profiles
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
-export CLICOLOR=1
-
-if test "$DOCKER_REGISTRY" == ""
-then
-    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
-    return
-fi
-if test "$DOCKER_USER" == ""
-then
-    echo Please set and export DOCKER_USER in your ~/.profile to the docker registry user you want to use '(asteere, mark-larter, etc.)'.
-    return
-fi
-
-# Tell the services what docker registry to use
-# From: https://wiki.archlinux.org/index.php/Systemd/User
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
-updateAdNimbusEnvironment
-
-# Setting PATH for Python 3.4
-# The orginal version is saved in .profile.pysave
-PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
-export PATH
-export numInstances=`grep '^$num_instances' "$VAGRANT_CWD/config.rb" | sed 's/.*=//'`
 
 
