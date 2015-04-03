@@ -29,21 +29,9 @@ function etctree() {
     done
 }
 
-function fstatusNetlocationServices() {
-    while true 
-    do 
-        echo '============================='; 
-        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
-        do 
-            echo $service
-            f journal -lines=5 $service
-            echo
-            echo
-            read a
-        done
-    done
+function fjournal() {
+    f journal $*
 }
-
 
 function fstartnginx() {
     fstartService nginx 1
@@ -95,6 +83,8 @@ function fstartall() {
     sleep 3
     fstartmon
     fluf
+
+    flu
 }
 
 function fstatusall() {
@@ -110,6 +100,25 @@ function fstatusall() {
         echo; 
         echo '==============' 
     done
+}
+
+function fstatusNetlocationServices() {
+    while true 
+    do 
+        echo '============================='; 
+        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
+        do 
+            echo $service
+            f journal -lines=5 $service
+            echo
+            echo
+            read a
+        done
+    done
+}
+
+function fstatus() {
+    f status $1
 }
 
 function fdestroy() {
@@ -135,7 +144,10 @@ function drmf() {
     for i in {101..105}
     do 
         ipAddr=${ipRoot}.$i
-        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | awk '{print $NF}' | grep -v NAME`
+        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
+            grep -v -e 'list of known hosts' -e NAME | \
+            awk '{print $NF}'`
+
         if test ! "$dImages" == ""
         then
             echo Removing docker images $dImages on $ipAddr

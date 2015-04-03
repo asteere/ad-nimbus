@@ -106,6 +106,7 @@ Vagrant.configure("2") do |config|
         $guest_port = "2%s75" % $i;
         $host_port = $expose_docker_tcp + ($i.to_i * 100);
         config.vm.network "forwarded_port", guest: $guest_port, host: $host_port, auto_correct: true
+        config.vm.network "forwarded_port", guest_ip: "172.17.8.105", guest: 49160, host_ip: "10.254.54.141", host: 8088, auto_correct: true
       end
 
       ["vmware_fusion", "vmware_workstation"].each do |vmware|

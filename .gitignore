@@ -1,5 +1,6 @@
 *.mmdb
 .vagrant/
+.vagrant.d/
 .*.swp
 
 # Discovery token gets updated everytime "vagrant up" or "vagrant reload" occurs. 

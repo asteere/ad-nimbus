@@ -36,5 +36,6 @@ ExecStopPost=-/usr/bin/etcdctl rm /${netLocationKey}/%H
 #Restart=always
 
 [X-Fleet]
+Conflicts=${confdService}@*.service
 Conflicts=${nginxService}@*.service
 Conflicts=${netLocationService}@*.service

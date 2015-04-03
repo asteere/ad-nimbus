@@ -129,8 +129,8 @@ function vdestroy() {
     echo vagrant status
     #vagrant status
 
-    # TODO: Figure out who should delete these files - confd? nginx? service files?
-    rm -f "$VAGRANT_CWD"/nginx/.nginx.conf*
+    # TODO: Are these tmp files still getting created?
+    (cd "$VAGRANT_CWD"/nginx; rm -f .nginx.conf*)
 }
 
 function setupDocker() {
@@ -217,6 +217,8 @@ fi
 
 # User's .profile or .bash_profile set up correctly, time to get to work
 cdad
+
+export VAGRANT_HOME="$VAGRANT_CWD/.vagrant.d"
 
 # Pull in the common aliases, functions, etc.
 . .sharedProfile
