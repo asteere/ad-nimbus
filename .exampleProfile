@@ -1,0 +1,22 @@
+#! /bin/bash
+
+# If you don't have a .profile, copy this file to your $HOME directory and rename it to .profile.
+
+# Otherwise, the code below to your ~/.profile.
+
+# Allow the ad-nimbus .profile to login to docker hub and to use the right registry
+export DOCKER_REGISTRY=asteere
+
+# Change these value to your DockerHub account so you can build and push containers
+export DOCKER_USER=asteere
+export DOCKER_EMAIL='awsteere@aol.com'
+export DOCKER_PWD='REPLACEME'
+
+export VAGRANT_CWD=~/REPLACE/ME/WITH/THE/RIGHT/FOLDER/asteere/ad-nimbus
+
+# Aliases, functions and variables to make it easier to use vagrant, coreos, docker, etc.
+if test -f "$VAGRANT_CWD/.hostProfile"
+then
+    . "$VAGRANT_CWD/.hostProfile"
+fi
+
