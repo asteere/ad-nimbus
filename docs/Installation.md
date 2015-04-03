@@ -5,23 +5,7 @@ Create your own ad-nimbus/master by forking the GitHug mark-larter/ad-nimbus/mas
 Create a develop branch off your ad-nimbus/master
 Clone your ad-nimbus/develop 
 
-In your .profile, add the following:
-
-    # Don't export this so the coreos ssh sessions won't pick this up
-    VAGRANT_CWD=<somefolder>/<yourGitHubAccount>/ad-nimbus
-
-    # Allow the ad-nimbus .profile to login to docker hub and to use the right registry
-    export DOCKER_REGISTRY=asteere
-    export DOCKER_USER=<yourDockerUser>
-    export DOCKER_EMAIL=<yourDockerEmail>
-    export DOCKER_PWD=<yourDockerPassword>
-
-    if test -f "$VAGRANT_CWD/.hostProfile"
-    then
-        . "$VAGRANT_CWD/.hostProfile"
-    fi
-
-There are a lot of helper aliases and functions to do the repetitive work in the .hostProfile and .coreosProfile. In addition they handle getting the vagrant private key onto the vms to allow the fleetctl commands to work.
+Add the contents of the .exampleProfile to your .profile. The .*Profile files have a lot of helper aliases and functions to do the repetitive work. In addition they handle getting the vagrant private key onto the vms to allow the fleetctl commands to work.
 
 Starting and Using Vagrant/Docker/Coreos Cluster
 The remaining instructions assume you have familiarized yourself with the .hostProfile and .coreosProfile files.
