@@ -191,6 +191,18 @@ then
     return
 fi
 
+maxMindFolder="$VAGRANT_CWD/netlocation/src/data/maxMind"
+for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
+do
+    if test ! -f "$maxMindFolder/$dataFile" 
+    then
+        echo Error: Missing file $maxMindFolder/$dataFile.
+        echo One or more of the MaxMind data files are missing from folder $maxMindFolder. 
+        echo Ask someone on the ArchTech team for the files.
+        return
+    fi
+done
+
 if test "$DOCKER_REGISTRY" == ""
 then
     echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
