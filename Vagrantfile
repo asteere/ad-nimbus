@@ -9,7 +9,6 @@ unless Vagrant.has_plugin?("vagrant-triggers")
 raise Vagrant::Errors::VagrantError.new, "Please install the vagrant-triggers plugin running 'vagrant plugin install vagrant-triggers'"
 end
 
-NGINX_CONFIG_PATH = File.join(File.dirname(__FILE__), "nginx")
 CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "user-data")
 CONFIG = File.join(File.dirname(__FILE__), "config.rb")
 
@@ -68,6 +67,7 @@ Vagrant.configure("2") do |config|
 
   (1..$num_instances).each do |i|
     $vmName = "%s-%02d" % [$instance_name_prefix, i] 
+    ip = "172.17.8.#{i+100}"
 
     config.vm.provider :virtualbox do |v|
       # On VirtualBox, we don't have guest additions or a functional vboxsf
@@ -106,8 +106,14 @@ Vagrant.configure("2") do |config|
         $guest_port = "2%s75" % $i;
         $host_port = $expose_docker_tcp + ($i.to_i * 100);
         config.vm.network "forwarded_port", guest: $guest_port, host: $host_port, auto_correct: true
-        config.vm.network "forwarded_port", guest_ip: "172.17.8.105", guest: 49160, host_ip: "10.254.54.141", host: 8088, auto_correct: true
       end
+
+      config.vm.network "public_network", bridge: "en0: Ethernet"
+
+      # NFS needs a host-only network to be created
+      config.vm.network :private_network, ip: ip
+
+#     config.vm.network "forwarded_port", guest: 49160, host: 8088, auto_correct: true
 
       ["vmware_fusion", "vmware_workstation"].each do |vmware|
         config.vm.provider vmware do |v|
@@ -122,9 +128,6 @@ Vagrant.configure("2") do |config|
         vb.memory = vm_memory
         vb.cpus = vm_cpus
       end
-
-      ip = "172.17.8.#{i+100}"
-      config.vm.network :private_network, ip: ip
 
       # Enable NFS for sharing the host machine into the VM.
       config.vm.synced_folder ".", "/home/core/share", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
