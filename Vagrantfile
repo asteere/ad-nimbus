@@ -108,12 +108,13 @@ Vagrant.configure("2") do |config|
         config.vm.network "forwarded_port", guest: $guest_port, host: $host_port, auto_correct: true
       end
 
-      config.vm.network "public_network", bridge: "en0: Ethernet"
+      # Create bridged network
+      # config.vm.network "public_network", bridge: "en0: Ethernet"
 
       # NFS needs a host-only network to be created
       config.vm.network :private_network, ip: ip
 
-#     config.vm.network "forwarded_port", guest: 49160, host: 8088, auto_correct: true
+      config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
 
       ["vmware_fusion", "vmware_workstation"].each do |vmware|
         config.vm.provider vmware do |v|

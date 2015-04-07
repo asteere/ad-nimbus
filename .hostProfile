@@ -17,12 +17,13 @@ alias b2d=boot2docker
 
 alias cdad="cd $VAGRANT_CWD"
 
-alias dps='runDocker ps -a'
-alias dpsa='runDocker ps -a'
-alias di='runDocker images'
-alias d='runDocker'
+alias dps='rundocker ps -a'
+alias dpsa='rundocker ps -a'
+alias di='rundocker images'
+alias d='rundocker'
 
-function getLatestCurl() {
+# For foolish consistency use lowercase for function names
+function getlatestcurl() {
     cdad
     cd confd
 
@@ -55,7 +56,7 @@ function buildContainer() {
     echo Building docker container $1
 
     # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
-    runDocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
+    rundocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
     if test ! $? == 0
     then
         return
@@ -67,18 +68,18 @@ function buildContainer() {
         return
     fi
 
-    runDocker push $DOCKER_REGISTRY/"$1":$1
+    rundocker push $DOCKER_REGISTRY/"$1":$1
 
     cd -
 
 }
 
-function getListOfVms() {
+function getlistofvms() {
     vbm list vms | awk '{print $1}' | sed 's/"//g'
 }
 
 function getvminfo() {
-    for vm in  `getListOfVms | grep $1`
+    for vm in  `getlistofvms | grep $1`
     do
         echo 
         echo '********************************************************'
@@ -108,7 +109,7 @@ function vdestroy() {
 
     done
 
-    vms=`getListOfVms | grep -v boot2docker`
+    vms=`getlistofvms | grep -v boot2docker`
     if test ! "$1" == ""
     then
         vms=`echo $vms | grep $1`
@@ -120,7 +121,7 @@ function vdestroy() {
     done
 
     echo Remaining vms
-    getListOfVms
+    getlistofvms
 
     # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
     echo vgs
@@ -133,7 +134,7 @@ function vdestroy() {
     (cd "$VAGRANT_CWD"/nginx; rm -f .nginx.conf*)
 }
 
-function setupDocker() {
+function setupdocker() {
     if test ! "$DOCKER_HOST" == ""
     then
         # boot2docker already setup
@@ -159,8 +160,8 @@ function setupDocker() {
     fi
 }
 
-function runDocker() {
-    setupDocker
+function rundocker() {
+    setupdocker
 
     docker $*
 }
