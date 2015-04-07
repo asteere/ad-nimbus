@@ -6,7 +6,7 @@ alias gvmi=getvminfo
 alias v=vagrant
 alias vs='vagrant status'
 alias vgs='vagrant global-status'
-alias vup='vagrant up'
+alias vup='vagrant up 2>&1 | tee /tmp/vup.log'
 alias vsh1='vagrant ssh core-01'
 alias vsh2='vagrant ssh core-02'
 alias vsh3='vagrant ssh core-03'
@@ -39,18 +39,18 @@ function buildall() {
 }
 
 function buildconfd() {
-    buildContainer confd
+    buildcontainer confd
 }
 
 function buildnginx() {
-    buildContainer nginx
+    buildcontainer nginx
 }
 
 function buildnetlocation() {
-    buildContainer netlocation
+    buildcontainer netlocation
 }
 
-function buildContainer() {
+function buildcontainer() {
     cdad
 
     echo Building docker container $1
@@ -229,11 +229,6 @@ export VAGRANT_HOME="$VAGRANT_CWD/.vagrant.d"
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
 
 updateadnimbusenvironment
-
-# Setting PATH for Python 3.4
-# The orginal version is saved in .profile.pysave
-PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
-export PATH
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key
