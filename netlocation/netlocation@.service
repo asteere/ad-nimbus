@@ -24,11 +24,11 @@ ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 
-ExecStartPre=/usr/bin/etcdctl set /${netLocationKey}/%H ${COREOS_PUBLIC_IPV4}:${netLocationHostPort}
+ExecStartPre=/usr/bin/etcdctl set /${netLocationKey}/%H ${COREOS_PUBLIC_IPV4}:${netLocationGuestOSPort}
 ExecStartPre=-/usr/bin/etcdctl get /${netLocationKey}/%H
 
 # From: https://github.com/coreos/fleet/issues/612
-ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} --rm=true -p ${netLocationHostPort}:${netLocationContainerPort} -v /home/core/share/${netLocationService}/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
+ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} --rm=true -p ${netLocationGuestOSPort}:${netLocationContainerPort} -v /home/core/share/${netLocationService}/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
 ExecStopPost=-/usr/bin/etcdctl rm /${netLocationKey}/%H 

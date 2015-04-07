@@ -170,10 +170,10 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-function updateAdNimbusEnvironment() {
+function updateadnimbusenvironment() {
     sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
 
-    sourceAdNimbusEnvironment
+    sourceadnimbusenvironment
 }
 
 if test "$VAGRANT_CWD" == ""
@@ -228,7 +228,7 @@ export VAGRANT_HOME="$VAGRANT_CWD/.vagrant.d"
 # From: https://wiki.archlinux.org/index.php/Systemd/User
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
 
-updateAdNimbusEnvironment
+updateadnimbusenvironment
 
 # Setting PATH for Python 3.4
 # The orginal version is saved in .profile.pysave
