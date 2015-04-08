@@ -6,14 +6,14 @@ etcdPort=4001
 # confd 
 confdService=confd
 confdDockerTag=confd
-confdHostPort=49180
-confdContainerPort=88
+confdGuestOSPort=49180
+confdContainerPort=8090
 
 # netLocation
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation
-netLocationHostPort=49160
+netLocationGuestOSPort=49170
 netLocationContainerPort=8080
 minNetLocationServices=1
 maxNetLocationServices=4
@@ -21,7 +21,7 @@ maxNetLocationServices=4
 # nginx
 nginxService=nginx
 nginxDockerTag=nginx
-nginxHostPort=49160
+nginxGuestOSPort=49160
 nginxContainerPort=80
-nginxIpAddress=172.17.8.105
+nginxIpAddress=172.17.8.101
 

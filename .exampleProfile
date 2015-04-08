@@ -14,9 +14,17 @@ export DOCKER_PWD='REPLACEME'
 
 export VAGRANT_CWD=~/REPLACE/ME/WITH/THE/RIGHT/FOLDER/asteere/ad-nimbus
 
+if test "$1" != ""
+then
+    export VAGRANT_CWD=~/$1/asteere/ad-nimbus
+    echo Changing to project $VAGRANT_CWD
+fi
+
 # Aliases, functions and variables to make it easier to use vagrant, coreos, docker, etc.
 if test -f "$VAGRANT_CWD/.hostProfile"
 then
     . "$VAGRANT_CWD/.hostProfile"
 fi
+
+
 

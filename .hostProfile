@@ -6,7 +6,7 @@ alias gvmi=getvminfo
 alias v=vagrant
 alias vs='vagrant status'
 alias vgs='vagrant global-status'
-alias vup='vagrant up'
+alias vup='vagrant up 2>&1 | tee /tmp/vup.log'
 alias vsh1='vagrant ssh core-01'
 alias vsh2='vagrant ssh core-02'
 alias vsh3='vagrant ssh core-03'
@@ -17,12 +17,13 @@ alias b2d=boot2docker
 
 alias cdad="cd $VAGRANT_CWD"
 
-alias dps='runDocker ps -a'
-alias dpsa='runDocker ps -a'
-alias di='runDocker images'
-alias d='runDocker'
+alias dps='rundocker ps -a'
+alias dpsa='rundocker ps -a'
+alias di='rundocker images'
+alias d='rundocker'
 
-function getLatestCurl() {
+# For foolish consistency use lowercase for function names
+function getlatestcurl() {
     cdad
     cd confd
 
@@ -38,24 +39,24 @@ function buildall() {
 }
 
 function buildconfd() {
-    buildContainer confd
+    buildcontainer confd
 }
 
 function buildnginx() {
-    buildContainer nginx
+    buildcontainer nginx
 }
 
 function buildnetlocation() {
-    buildContainer netlocation
+    buildcontainer netlocation
 }
 
-function buildContainer() {
+function buildcontainer() {
     cdad
 
     echo Building docker container $1
 
     # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
-    runDocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
+    rundocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
     if test ! $? == 0
     then
         return
@@ -67,18 +68,18 @@ function buildContainer() {
         return
     fi
 
-    runDocker push $DOCKER_REGISTRY/"$1":$1
+    rundocker push $DOCKER_REGISTRY/"$1":$1
 
     cd -
 
 }
 
-function getListOfVms() {
+function getlistofvms() {
     vbm list vms | awk '{print $1}' | sed 's/"//g'
 }
 
 function getvminfo() {
-    for vm in  `getListOfVms | grep $1`
+    for vm in  `getlistofvms | grep $1`
     do
         echo 
         echo '********************************************************'
@@ -108,7 +109,7 @@ function vdestroy() {
 
     done
 
-    vms=`getListOfVms | grep -v boot2docker`
+    vms=`getlistofvms | grep -v boot2docker`
     if test ! "$1" == ""
     then
         vms=`echo $vms | grep $1`
@@ -120,7 +121,7 @@ function vdestroy() {
     done
 
     echo Remaining vms
-    getListOfVms
+    getlistofvms
 
     # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
     echo vgs
@@ -129,11 +130,11 @@ function vdestroy() {
     echo vagrant status
     #vagrant status
 
-    # TODO: Figure out who should delete these files - confd? nginx? service files?
-    rm -f "$VAGRANT_CWD"/nginx/.nginx.conf*
+    # TODO: Are these tmp files still getting created?
+    (cd "$VAGRANT_CWD"/nginx; rm -f .nginx.conf*)
 }
 
-function setupDocker() {
+function setupdocker() {
     if test ! "$DOCKER_HOST" == ""
     then
         # boot2docker already setup
@@ -159,8 +160,8 @@ function setupDocker() {
     fi
 }
 
-function runDocker() {
-    setupDocker
+function rundocker() {
+    setupdocker
 
     docker $*
 }
@@ -169,10 +170,10 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-function updateAdNimbusEnvironment() {
+function updateadnimbusenvironment() {
     sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
 
-    sourceAdNimbusEnvironment
+    sourceadnimbusenvironment
 }
 
 if test "$VAGRANT_CWD" == ""
@@ -218,6 +219,8 @@ fi
 # User's .profile or .bash_profile set up correctly, time to get to work
 cdad
 
+export VAGRANT_HOME="$VAGRANT_CWD/.vagrant.d"
+
 # Pull in the common aliases, functions, etc.
 . .sharedProfile
 
@@ -225,12 +228,7 @@ cdad
 # From: https://wiki.archlinux.org/index.php/Systemd/User
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
 
-updateAdNimbusEnvironment
-
-# Setting PATH for Python 3.4
-# The orginal version is saved in .profile.pysave
-PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
-export PATH
+updateadnimbusenvironment
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key

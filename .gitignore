@@ -1,6 +1,10 @@
 *.mmdb
 .vagrant/
+.vagrant.d/
 .*.swp
+
+# TODO: Decide if we want a bin folder of Linux exes to help with debugging
+bin
 
 # Discovery token gets updated everytime "vagrant up" or "vagrant reload" occurs. 
 # Use a template file to minimize what gets committed.

@@ -13,11 +13,17 @@ alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
+if test -x "/home/core/share/bin/jq"
+then
+    alias jq='/home/core/share/bin/jq .'
+fi
+
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
+# Foolish consistency sake, functions are lower case
 function fstartnetlocation() {
     numNetLocationInstances=1
-    fstartService netlocation $numNetLocationInstances
+    fstartservice netlocation $numNetLocationInstances
 }
 
 function etctree() { 
@@ -29,35 +35,23 @@ function etctree() {
     done
 }
 
-function fstatusNetlocationServices() {
-    while true 
-    do 
-        echo '============================='; 
-        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
-        do 
-            echo $service
-            f journal -lines=5 $service
-            echo
-            echo
-            read a
-        done
-    done
+function fjournal() {
+    f journal $*
 }
 
-
 function fstartnginx() {
-    fstartService nginx 1
+    fstartservice nginx 1
 }
 
 function fstartconfd() {
-    fstartService confd 1
+    fstartservice confd 1
 }
 
 function fstartmon() {
-    fstartService monitor 1
+    fstartservice monitor 1
 }
 
-function fstartService() {
+function fstartservice() {
     service=$1
     numServers=$2
 
@@ -95,6 +89,8 @@ function fstartall() {
     sleep 3
     fstartmon
     fluf
+
+    flu
 }
 
 function fstatusall() {
@@ -110,6 +106,25 @@ function fstatusall() {
         echo; 
         echo '==============' 
     done
+}
+
+function fstatusnetlocationservices() {
+    while true 
+    do 
+        echo '============================='; 
+        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
+        do 
+            echo $service
+            f journal -lines=5 $service
+            echo
+            echo
+            read a
+        done
+    done
+}
+
+function fstatus() {
+    f status $1
 }
 
 function fdestroy() {
@@ -132,10 +147,13 @@ function drmf() {
 
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
-    for i in {101..105}
+    for i in {1..5}
     do 
-        ipAddr=${ipRoot}.$i
-        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | awk '{print $NF}' | grep -v NAME`
+        ipAddr=${ipRoot}.10$i
+        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
+            grep -v -e 'list of known hosts' -e NAME | \
+            awk '{print $NF}'`
+
         if test ! "$dImages" == ""
         then
             echo Removing docker images $dImages on $ipAddr
@@ -164,3 +182,5 @@ then
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
+export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
+

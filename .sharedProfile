@@ -1,6 +1,7 @@
 #! /bin/bash
 
-function checkNetLocation() {
+# For foolish consistency use lowercase for function names
+function checknetlocation() {
     # Output the timestamp for comparison with other logs
     date
 
@@ -8,10 +9,11 @@ function checkNetLocation() {
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
+    echo curl -X GET $headers "http://$nginxIpAddress:$nginxHostPort?ipAddress=198.243.23.131"
     curl -X GET $headers "http://$nginxIpAddress:$nginxHostPort?ipAddress=198.243.23.131"
 }
 
-function sourceAdNimbusEnvironment() {
+function sourceadnimbusenvironment() {
     # Make the fleetctl service variables available to shell scripts
     set -a
 
@@ -22,15 +24,19 @@ function sourceAdNimbusEnvironment() {
     set +a
 }
 
-function gzipAdNimbus() {
-    cdad
-    cd ..
-    folder=ad-nimbus 
-    gzipFile=$folder_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzipFile --exclude '.vagrant' --exclude '.git' --exclude src $folder
+function createtar() {
+    cd "$VAGRANT_CWD"/..
+
+    daProject=ad-nimbus
+    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    tar -zcvf $gzFile --exclude '.vagrant' --exclude '.git' --exclude src --exclude=.vagrant.d $daProject
+
+    ls -l $gzFile
+
+    cd -
 }
 
-sourceAdNimbusEnvironment
+sourceadnimbusenvironment
 
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"

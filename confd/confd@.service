@@ -2,15 +2,16 @@
 Description=confd docker service 
 
 Requires=docker.service
-Requires=netlocation@*.service
+#Requires=netlocation@*.service
 
 After=docker.service
-After=netlocation@*.service
+#After=netlocation@*.service
 
 # nginx and confd must run on the same machine due to limitations of signaling between docker containers. 
 # There are more complicated solutions but may not be needed if we go to consul and consul-template
-# Postmaster, JMeter, etc. have the nginx IP address hard coded. To reduce edit mistakes force nginx and confd to run on *.105 
-ConditionHost=core-05
+# Postmaster, JMeter, etc. have the nginx IP address hard coded. 
+# To reduce edit mistakes force nginx and confd to run on *.105 
+#ConditionHost=core-05
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -29,10 +30,10 @@ ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${confdHostPort}:${confdContainerPort} -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${confdService}:/opt/${confdService} -v /home/core/share/${nginxService}:/opt/${nginxService} ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} /etc/confd/confd -backend=etcd -confdir=/opt/${confdService} -debug=true -verbose=true -watch=true -interval=10 -node=${COREOS_PUBLIC_IPV4}:${etcdPort}
+ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${confdGuestOSPort}:${confdContainerPort} -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${confdService}:/opt/${confdService} -v /home/core/share/${nginxService}:/opt/${nginxService} ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} /etc/confd/confd -backend=etcd -confdir=/opt/${confdService} -debug=true -verbose=true -watch=true -interval=10 -node=${COREOS_PUBLIC_IPV4}:${etcdPort}
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
 
 [X-Fleet]
-Conflicts=${netLocationService}@*.service
+#Conflicts=${netLocationService}@*.service
