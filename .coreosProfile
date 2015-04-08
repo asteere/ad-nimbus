@@ -13,6 +13,11 @@ alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
+if test -x "/home/core/share/bin/jq"
+then
+    alias jq='/home/core/share/bin/jq .'
+fi
+
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 # Foolish consistency sake, functions are lower case
