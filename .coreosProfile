@@ -45,6 +45,15 @@ function fstartconsul() {
     fstartservice consul 1
 }
 
+# TODO: If needed, expand this to handle a second argument which indicates the number of services to start
+function fstartsvc() {
+    svc=$1
+    svcName=$1@1.service
+    fdestroy $svcName
+    fstartservice $svc 1
+    fjournal -f $svcName
+}
+
 #TODO: Remove once the cutover to consul health-checks and handling is complete
 #function fstartmon() {
 #    fstartservice monitor 1
@@ -178,6 +187,12 @@ function drmf() {
             ssh -oStrictHostKeyChecking=no $ipAddr docker rm -f $dImages 
         fi
     done
+}
+
+function rundockerbash() {
+    # Run the lightest container we have. Useful for seeing what commands are available, what the folder 
+    # hierarchy is, testing different options like -v, etc.
+    docker run -it -v /home/core/share:/usr/share asteere/consul:consul bash
 }
 
 if test -d "/home/core/share"

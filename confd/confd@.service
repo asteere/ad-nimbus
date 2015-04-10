@@ -30,7 +30,7 @@ ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${confdGuestOSPort}:${confdContainerPort} -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${confdService}:/opt/${confdService} -v /home/core/share/${nginxService}:/opt/${nginxService} ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} /etc/confd/confd -backend=${consulService} -confdir=/opt/${confdService} -debug=true -verbose=true -watch=true -interval=10 -node=${COREOS_PUBLIC_IPV4}:${etcdPort}
+ExecStart=/usr/bin/docker run --name=${confdDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${confdGuestOSPort}:${confdContainerPort} -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${confdService}:${confdDir} -v /home/core/share/${nginxService}:${nginxDir} ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} /etc/confd/confd -backend=${consulService} -confdir=${confdDir} -debug=true -verbose=true -watch=true -interval=10 -node=${COREOS_PUBLIC_IPV4}:${etcdPort}
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
