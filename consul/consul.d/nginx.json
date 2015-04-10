@@ -1,0 +1,1 @@
+{"service": {"name": "nginxService", "tags": ["loadBalancer"], "port": 80}}

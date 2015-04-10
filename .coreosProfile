@@ -47,6 +47,10 @@ function fstartconfd() {
     fstartservice confd 1
 }
 
+function fstartconsul() {
+    fstartservice consul $numInstances
+}
+
 function fstartmon() {
     fstartservice monitor 1
 }
@@ -80,6 +84,10 @@ function fstartservice() {
 function fstartall() {
     drmf
 
+    # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
+    rm -f /home/core/share/nginx/nginx.conf
+
+    fstartconsul
     fstartconfd
     fstartnetlocation
     sleep 5
@@ -94,15 +102,22 @@ function fstartall() {
 }
 
 function fstatusall() {
-    for service in `fluf -fields=unit | grep -v UNIT`; 
+    runningServices=`fluf -fields=unit | grep -v UNIT`
+    if test "$runningServices" = ""
+    then
+        echo No ad-nimbus services running
+        return
+    fi
+
+    echo Fetching status on $runningServices
+    for service in $runningServices
     do 
         echo $service 
         f status $service 
+        echo
+        echo 
+        echo Hit enter for next service.
         read a 
-        if test "$a" = "q"
-        then
-            return
-        fi
         echo; 
         echo '==============' 
     done
@@ -111,13 +126,21 @@ function fstatusall() {
 function fstatusnetlocationservices() {
     while true 
     do 
+        runningServices=`fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}'`
+        if test "$runningServices" = ""
+        then
+            echo No ad-nimbus netlocation services running
+            return
+        fi
+
         echo '============================='; 
-        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
+        for service in $runningServices
         do 
             echo $service
             f journal -lines=5 $service
             echo
             echo
+            echo Hit enter for next service.
             read a
         done
     done
