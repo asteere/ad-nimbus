@@ -21,10 +21,11 @@ TimeoutStartSec=0
 # TODO: When things become stable "enough" don't remove the image every time
 ExecStartPre=-/usr/bin/docker rm -f ${consulDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}
+ExecStartPre=/usr/bin/docker pull ${consulDockerRegistry}/${consulService}
 
 # TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
-ExecStart=/usr/bin/docker run --name=${consulDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${consulGuestOSPort}:${consulContainerPort} -p ${consulHttpPort}:${consulHttpPort} -p ${consulDnsPort}:${consulDnsPort}/udp -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${consulService}:/opt/${consulService} -v /home/core/share/${nginxService}:/opt/${nginxService} -h %h ${consulDockerRegistry}/${consulService} ${consulService} agent -server -bootstrap -ui-dir /home/core/share/consul/ui -config-dir /home/core/share/consul/consul.d -retry-join 172.17.8.101 -retry-join 172.17.8.105
+# TODO: How do we get additional servers to join the consul cluster 
+ExecStart=/usr/bin/docker run --name=${consulDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${consulGuestOSPort}:${consulContainerPort} -p ${consulHttpPort}:${consulHttpPort} -p ${consulDnsPort}:${consulDnsPort}/udp -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${consulService}:/opt/${consulService} -v /home/core/share/${nginxService}:/opt/${nginxService} -h %h ${consulDockerRegistry}/${consulService} ${consulService} agent -server -bootstrap-expect=1 -ui-dir /opt/consul/ui -config-dir /opt/consul.d 
 
 ExecStopPost=-/usr/bin/docker rm -f ${consulDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a

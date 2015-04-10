@@ -16,8 +16,6 @@ alias vsh5='vagrant ssh core-05'
 
 alias b2d=boot2docker
 
-alias cdad="cd $VAGRANT_CWD"
-
 alias dps='rundocker ps -a'
 alias dpsa='rundocker ps -a'
 alias di='rundocker images'
@@ -150,7 +148,7 @@ function vdestroy() {
     #vagrant status
 
     # TODO: Are these tmp files still getting created?
-    (cd "$VAGRANT_CWD"/nginx; rm -f .nginx.conf*)
+    (cd "$AD_NIMBUS_DIR"/nginx; rm -f .nginx.conf*)
 }
 
 function setupdocker() {
@@ -189,29 +187,27 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-function updateadnimbusenvironment() {
-    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
-
-    sourceadnimbusenvironment
-}
-
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
     echo If VAGRANT_CWD is set, things like fleetctl status 'netlocation@1.service' will work. Thanks.
     echo For example:
     echo '    export VAGRANT_CWD=~/Research/asteere/ad-nimbus'
+    echo Exiting.
     return
 fi
 
 if test ! -d "$VAGRANT_CWD"
 then
     echo The environment variable "$VAGRANT_CWD" does not point to a valid folder, please set VAGRANT_CWD to your ad-nimbus folder and resource this .profile
-    echo VAGRANT_CWD=$VAGRANT_CWD
+    echo export VAGRANT_CWD=$VAGRANT_CWD
+    echo Exiting.
     return
+else
+    export AD_NIMBUS_DIR=$VAGRANT_CWD
 fi
 
-maxMindFolder="$VAGRANT_CWD/netlocation/src/data/maxMind"
+maxMindFolder="$AD_NIMBUS_DIR/netlocation/src/data/maxMind"
 for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
 do
     if test ! -f "$maxMindFolder/$dataFile" 
@@ -237,12 +233,13 @@ then
 fi
 
 # User's .profile or .bash_profile set up correctly, time to get to work
-cdad
 
-export VAGRANT_HOME="$VAGRANT_CWD/.vagrant.d"
+export VAGRANT_HOME="$AD_NIMBUS_DIR/.vagrant.d"
 
 # Pull in the common aliases, functions, etc.
-. .sharedProfile
+. "$AD_NIMBUS_DIR"/.sharedProfile
+
+cdad
 
 # Tell the services what docker registry to use
 # From: https://wiki.archlinux.org/index.php/Systemd/User

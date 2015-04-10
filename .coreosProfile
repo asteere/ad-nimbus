@@ -13,9 +13,9 @@ alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 
-if test -x "/home/core/share/bin/jq"
+if test -x "$AD_NIMBUS_DIR/bin/jq"
 then
-    alias jq='/home/core/share/bin/jq .'
+    alias jq='$AD_NIMBUS_DIR/bin/jq .'
 fi
 
 alias ssh='ssh -oStrictHostKeyChecking=no'
@@ -44,22 +44,23 @@ function fstartnginx() {
 }
 
 function fstartconfd() {
-    fstartservice confd 1
+    fstartservice confd $numInstances
 }
 
 function fstartconsul() {
-    fstartservice consul $numInstances
+    fstartservice consul 1
 }
 
-function fstartmon() {
-    fstartservice monitor 1
-}
+#TODO: Remove once the cutover to consul health-checks and handling is complete
+#function fstartmon() {
+#    fstartservice monitor 1
+#}
 
 function fstartservice() {
     service=$1
     numServers=$2
 
-    cd /home/core/share/$service
+    cd $AD_NIMBUS_DIR/$service
 
     echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers 'service(s)'
 
@@ -85,7 +86,7 @@ function fstartall() {
     drmf
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    rm -f /home/core/share/nginx/nginx.conf
+    rm -f $AD_NIMBUS_DIR/nginx/nginx.conf
 
     fstartconsul
     fstartconfd
@@ -95,7 +96,7 @@ function fstartall() {
     # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
     fstartnginx
     sleep 3
-    fstartmon
+    #fstartmon
     fluf
 
     flu
@@ -185,11 +186,13 @@ function drmf() {
     done
 }
 
-if test -d /home/core/share 
+if test -d "/home/core/share"
 then
-    cd /home/core/share 
+    AD_NIMBUS_DIR=/home/core/share
 
-    . .sharedProfile
+    . "$AD_NIMBUS_DIR"/.sharedProfile
+
+    cdad
 fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
