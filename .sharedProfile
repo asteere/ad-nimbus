@@ -24,7 +24,7 @@ function sourceadnimbusenvironment() {
 
     # TODO: does this break anything if we have these variables defined
     #. /etc/environment
-    . $AD_NIMBUS_DIR/adNimbusEnvironment
+    . "$AD_NIMBUS_DIR"/adNimbusEnvironment
 
     set +a
 }

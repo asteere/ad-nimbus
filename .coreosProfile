@@ -12,12 +12,6 @@ alias flm='fleetctl list-machines -l'
 alias flu='fleetctl list-units'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
-
-if test -x "$AD_NIMBUS_DIR/bin/jq"
-then
-    alias jq='$AD_NIMBUS_DIR/bin/jq .'
-fi
-
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 # Foolish consistency sake, functions are lower case
@@ -193,6 +187,11 @@ then
     . "$AD_NIMBUS_DIR"/.sharedProfile
 
     cdad
+fi
+
+if test -x "$AD_NIMBUS_DIR/bin/jq"
+then
+    alias jq='$AD_NIMBUS_DIR/bin/jq .'
 fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null

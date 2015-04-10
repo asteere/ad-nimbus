@@ -23,7 +23,7 @@ alias d='rundocker'
 
 # For foolish consistency use lowercase for function names
 function vsh() {
-    vagrant ssh core-0${1}
+    vagrant ssh core-0$1
 }
 
 function vssh() {
@@ -148,7 +148,7 @@ function vdestroy() {
     #vagrant status
 
     # TODO: Are these tmp files still getting created?
-    (cd "$AD_NIMBUS_DIR"/nginx; rm -f .nginx.conf*)
+    (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
 }
 
 function setupdocker() {

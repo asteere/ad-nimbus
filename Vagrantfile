@@ -148,7 +148,7 @@ Vagrant.configure("2") do |config|
                 config.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
             end
 
-            config.vm.provision :file, :source => ".coreosProfile", :destination => "/tmp/.bash_profile"
+            config.vm.provision :file, :source => ".bash_profile", :destination => "/tmp/.bash_profile"
             config.vm.provision :shell, :inline => "mv /tmp/.bash_profile /home/core/", :privileged => true
         end
     end
