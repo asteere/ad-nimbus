@@ -5,6 +5,7 @@ alias vbm=VBoxManage
 alias gvmi=getvminfo
 alias v=vagrant
 alias vs='vagrant status'
+alias vstatus='vagrant status'
 alias vgs='vagrant global-status'
 alias vup='vagrant up 2>&1 | tee /tmp/vup.log'
 alias vsh1='vagrant ssh core-01'
@@ -23,6 +24,14 @@ alias di='rundocker images'
 alias d='rundocker'
 
 # For foolish consistency use lowercase for function names
+function vsh() {
+    vagrant ssh core-0${1}
+}
+
+function vssh() {
+    vsh $1
+}
+
 function getlatestcurl() {
     cdad
     cd confd
@@ -36,10 +45,20 @@ function buildall() {
     buildconfd
     buildnginx
     buildnetlocation
+    buildconsul
+    builddevutils
+}
+
+function builddevutils() {
+    buildcontainer devutils
 }
 
 function buildconfd() {
     buildcontainer confd
+}
+
+function buildconsul() {
+    buildcontainer consul
 }
 
 function buildnginx() {
@@ -207,7 +226,8 @@ done
 if test "$DOCKER_REGISTRY" == ""
 then
     echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
-    return
+    echo Defaulting to asteere.
+    export DOCKER_REGISTRY=asteere
 fi
 
 if test "$DOCKER_USER" == ""

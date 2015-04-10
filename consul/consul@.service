@@ -1,0 +1,34 @@
+[Unit]
+Description=consul docker service 
+
+Requires=docker.service
+
+After=docker.service
+
+[Service]
+# From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
+# Change killmode from "control-group" to "none" to let Docker remove
+# work correctly.
+KillMode=none
+
+# Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
+EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
+
+# Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
+TimeoutStartSec=0
+
+# TODO: When things become stable "enough" don't remove the image every time
+ExecStartPre=-/usr/bin/docker rm -f ${consulDockerTag}
+ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}
+
+# TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
+ExecStart=/usr/bin/docker run --name=${consulDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" -p ${COREOS_PUBLIC_IPV4}:${consulGuestOSPort}:${consulContainerPort} -p ${consulHttpPort}:${consulHttpPort} -p ${consulDnsPort}:${consulDnsPort}/udp -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${consulService}:/opt/${consulService} -v /home/core/share/${nginxService}:/opt/${nginxService} -h %h ${consulDockerRegistry}/${consulService} ${consulService} agent -server -bootstrap -ui-dir /home/core/share/consul/ui -config-dir /home/core/share/consul/consul.d -retry-join 172.17.8.101 -retry-join 172.17.8.105
+
+ExecStopPost=-/usr/bin/docker rm -f ${consulDockerTag}
+ExecStopPost=-/usr/bin/docker ps -a
+
+[X-Fleet]
+# Install consul server on all devices for now.
+# TODO: Only start the server on 3-5 machines in the cluster, the remaining start as agents

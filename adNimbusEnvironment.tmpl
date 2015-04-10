@@ -3,18 +3,28 @@ DOCKER_REGISTRY=REPLACE_ME
 # etcd
 etcdPort=4001
 
+# Use port numbers so the different types of services have their own cluster of numbers
 # confd 
 confdService=confd
 confdDockerTag=confd
-confdGuestOSPort=49180
-confdContainerPort=8090
+confdGuestOSPort=49190
+confdContainerPort=9090
+
+# consul 
+consulService=consul
+consulDockerRegistry=progrium
+# consulDockerTag=consul - progrium/docker doesn't have a tag
+consulGuestOSPort=49180
+consulContainerPort=9080
+consulHttpPort=8500
+consulDnsPort=8600
 
 # netLocation
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation
 netLocationGuestOSPort=49170
-netLocationContainerPort=8080
+netLocationContainerPort=9070
 minNetLocationServices=1
 maxNetLocationServices=4
 
@@ -22,6 +32,6 @@ maxNetLocationServices=4
 nginxService=nginx
 nginxDockerTag=nginx
 nginxGuestOSPort=49160
-nginxContainerPort=80
+nginxContainerPort=8060
 nginxIpAddress=172.17.8.101
 

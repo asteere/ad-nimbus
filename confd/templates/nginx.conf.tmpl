@@ -9,49 +9,53 @@ error_log /opt/nginx/nginx_error.log debug;
 
 events {
     # TODO: should we be using 1024 as 4096 might be overkill
-    worker_connections   4096; # default is 1024
+    worker_connections 4096; # default is 1024
 }
 
 http {
     log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
 
-    upstream raptor {
-      #least_conn;
+    # Quick solution for the 502 Gateway errors seen during initial JMeter testing
+    # From: http://www.nginxtips.com/502-bad-gateway-using-nginx/
+    fastcgi_buffers 8 16k;
+    fastcgi_buffer_size 32k;
+    fastcgi_connect_timeout 300;
+    fastcgi_send_timeout 300;
+    fastcgi_read_timeout 300;
 
-      {{range getvs "/raptor/netlocation/*"}}
-          server {{.}};
-      {{end}}
+    upstream raptor {
+        #least_conn;
+
+        # Confd instructions to create a list of netlocation servers for nginx
+        {{range getvs "/raptor/netlocation/*"}}
+        server {{.}};
+        {{end}}
     }
 
     server {
-      access_log /opt/nginx/nginx_access.log upstreamlog;
+        access_log /opt/nginx/nginx_access.log upstreamlog;
 
-      # ports nginx server is listen to
-      listen 80;
-      listen 443;
+        # ports nginx server is listen to
+        listen 80;
 
-      server_name raptor.com www.raptor.com;
+        server_name raptor.com www.raptor.com;
 
-      location / {
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $http_host;
-        proxy_set_header X-NginX-Proxy true;
+        location / {
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-NginX-Proxy true;
 
-        proxy_redirect off;
+            proxy_redirect off;
 
-        # Handle Web Socket connections
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+            # Handle Web Socket connections
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
 
-        # upstream proxy
-        proxy_pass http://raptor;
-
-        # ...
-
-      }
-
+            # upstream proxy
+            proxy_pass http://raptor;
+        }
     }
 }
 
