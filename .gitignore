@@ -40,4 +40,5 @@ nginx/nginx_error.log
 # Not sure who is creating these
 monitor/.nfs*
 
-
+# TODO: Is there a better place to write the consul data for consistency over reboots?
+consul/data/*

@@ -1,6 +1,11 @@
 #! /bin/bash
 
 # For foolish consistency use lowercase for function names
+
+function cdad() {
+    cd "$AD_NIMBUS_DIR"
+}
+
 function checknetlocation() {
     # Output the timestamp for comparison with other logs
     date
@@ -19,13 +24,19 @@ function sourceadnimbusenvironment() {
 
     # TODO: does this break anything if we have these variables defined
     #. /etc/environment
-    . adNimbusEnvironment
+    . "$AD_NIMBUS_DIR"/adNimbusEnvironment
 
     set +a
 }
 
+function updateadnimbusenvironment() {
+    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$AD_NIMBUS_DIR"/adNimbusEnvironment.tmpl > "$AD_NIMBUS_DIR"/adNimbusEnvironment; 
+
+    sourceadnimbusenvironment
+}
+
 function createtar() {
-    cd "$VAGRANT_CWD"/..
+    cd "$AD_NIMBUS_DIR"/..
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
