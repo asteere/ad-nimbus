@@ -15,6 +15,12 @@ alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 # Foolish consistency sake, functions are lower case
+function dockerbash() {
+    cdad
+    echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
+    docker run -v /home/core/share:/opt/share -it asteere/devutils:devutils /bin/bash 
+}
+
 function fstartnetlocation() {
     numNetLocationInstances=1
     fstartservice netlocation $numNetLocationInstances
@@ -45,38 +51,41 @@ function fstartconsul() {
     fstartservice consul 1
 }
 
-# TODO: If needed, expand this to handle a second argument which indicates the number of services to start
-function fstartsvc() {
-    svc=$1
-    svcName=$1@1.service
-    fdestroy $svcName
-    fstartservice $svc 1
-    fjournal -f $svcName
-}
-
 #TODO: Remove once the cutover to consul health-checks and handling is complete
 #function fstartmon() {
 #    fstartservice monitor 1
 #}
 
+function frestartservice() {
+    svc=$1
+    svcName=$1@1.service
+    fdestroy $svcName
+    fstartservice $svc $numServices
+    fjournal -f $svcName
+}
+
 function fstartservice() {
     service=$1
-    numServers=$2
+    numServices=$2
+    if test "$2" == ""
+    then
+        numServices=1
+    fi
 
     cd $AD_NIMBUS_DIR/$service
 
-    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers 'service(s)'
+    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServices 'service(s)'
 
-    case $numServers in
+    case $numServices in
     0)
-	fleetctl start ${service}.service
+        fleetctl start ${service}.service
 	;;
 
     1)
-	fleetctl start ${service}@1.service
+        fleetctl start ${service}@1.service
 	;;
     *)
-        serviceRange='netlocation@{1..'$numServers'}.service'
+        serviceRange='${service}@{1..'$numServices'}.service'
         `eval fleetctl start $serviceRange`
 	;;
     esac
@@ -204,9 +213,9 @@ then
     cdad
 fi
 
-if test -x "$AD_NIMBUS_DIR/bin/jq"
+if test -x "$AD_NIMBUS_DIR/devutils/jq"
 then
-    alias jq='$AD_NIMBUS_DIR/bin/jq .'
+    alias jq='$AD_NIMBUS_DIR/devutils/jq .'
 fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
