@@ -40,7 +40,7 @@ function createtar() {
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude '.vagrant' --exclude '.git' --exclude src --exclude=.vagrant.d $daProject
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' --exclude '.git' --exclude src --exclude=.vagrant.d --exclude nginx/.nginx.conf* $daProject
 
     ls -l $gzFile
 
