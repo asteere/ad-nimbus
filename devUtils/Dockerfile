@@ -13,6 +13,8 @@ RUN yum -y install nc
 # Install dig
 RUN yum install bind-utils
 
+RUN yum install jq
+
 # Make the folder accessible by ssh container
 VOLUME /usr/share
 
