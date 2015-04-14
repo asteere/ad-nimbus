@@ -25,8 +25,6 @@ ExecStartPre=/usr/bin/docker pull ${consulDockerRegistry}/${consulService}:${con
 
 # TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
 # TODO: How do we get additional servers to join the consul cluster 
-#ExecStart=/usr/bin/docker run --name=${consulDockerTag} --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" --hostname=%H -p ${COREOS_PUBLIC_IPV4}:${consulGuestOSPort}:${consulContainerPort} -p ${consulHttpPort}:${consulHttpPort} -p ${consulDnsPort}:${consulDnsPort}/udp -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${consulService}:${consulDir} -v /home/core/share/${nginxService}:${nginxDir} ${consulDockerRegistry}/${consulService}:${consulDockerTag} ${consulDir}/${consulService} agent -server -bootstrap-expect=1 -ui-dir ${consulDir}/ui -config-dir ${consulDir}/consul.d -node %H -data-dir ${consulDir}/data
-
 ExecStart=./consul/startConsul.s 
 
 ExecStopPost=-/usr/bin/docker rm -f ${consulDockerTag}

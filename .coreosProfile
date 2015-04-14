@@ -215,7 +215,14 @@ fi
 
 if test -x "$AD_NIMBUS_DIR/devutils/jq"
 then
-    alias jq='$AD_NIMBUS_DIR/devutils/jq .'
+    function jq() {
+        if test "$1" == ""
+        then
+            $AD_NIMBUS_DIR/devutils/jq .
+        else
+            $AD_NIMBUS_DIR/devutils/jq $*
+        fi
+    }
 fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
