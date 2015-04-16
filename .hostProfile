@@ -109,7 +109,7 @@ function getvminfo() {
 function vdestroy() {
     if test "$1" = ""
     then
-        vboxes=`v status | grep virtualbox | awk '{print $1}'`
+        vboxes=`v status | grep -e docker -e virtualbox | awk '{print $1}'`
     else
         vboxes=$1
     fi
@@ -118,13 +118,19 @@ function vdestroy() {
     do 
         v destroy --force $i
 
-        machineDir=".vagrant/machines/$i"
+        machineDir="$VAGRANT_DOTFILE_PATH/machines/$i"
         if test -d "$machineDir"
         then
             rm -r "$machineDir"
         fi
 
     done
+
+    # Handle use case where a user destroyed a vm individually and then wanted to destroy all of the vms
+    if test "$1" = ""
+    then
+        rm -r "$VAGRANT_DOTFILE_PATH"/machines/*
+    fi
 
     vms=`getlistofvms | grep -v boot2docker`
     if test ! "$1" == ""
@@ -148,7 +154,10 @@ function vdestroy() {
     #vagrant status
 
     # TODO: Are these tmp files still getting created?
-    (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
+    if test -d "$AD_NIMBUS_DIR/nginx"
+    then
+        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
+    fi
 }
 
 function setupdocker() {
@@ -235,6 +244,7 @@ fi
 # User's .profile or .bash_profile set up correctly, time to get to work
 
 export VAGRANT_HOME="$AD_NIMBUS_DIR/.vagrant.d"
+export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
 
 # Pull in the common aliases, functions, etc.
 . "$AD_NIMBUS_DIR"/.sharedProfile
@@ -249,9 +259,9 @@ updateadnimbusenvironment
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key
-if test -f ~/.vagrant.d/insecure_private_key
+if test -f "$VAGRANT_HOME"/insecure_private_key
 then
-    cp ~/.vagrant.d/insecure_private_key .
+    cp "$VAGRANT_HOME"/insecure_private_key .
 fi
 
 
