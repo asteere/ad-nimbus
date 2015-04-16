@@ -48,7 +48,7 @@ function fstartconfd() {
 }
 
 function fstartconsul() {
-    fstartservice consul 1
+    fstartservice consul $numInstances
 }
 
 #TODO: Remove once the cutover to consul health-checks and handling is complete
@@ -58,10 +58,22 @@ function fstartconsul() {
 
 function frestartservice() {
     svc=$1
-    svcName=$1@1.service
-    fdestroy $svcName
+    svcInstances=`flu -fields=unit | grep $svc`
+
+    fdestroy $svcInstances
+
     fstartservice $svc $numServices
-    fjournal -f $svcName
+
+    if test "$2" == ""
+    then
+        numInstances=`echo $svcInstances | wc -w`
+    else
+        numInstances=$2
+    fi
+    for i in $svcInstances
+    do
+        fjournal -f $i
+    done
 }
 
 function fstartservice() {
@@ -168,13 +180,11 @@ function fdestroy() {
     then
         svcs=$(fleetctl list-unit-files | awk '{print $1}')
     else
-        svcs=$1
+        svcs=$*
     fi
 
-    for i in $svcs
-    do
-        fleetctl destroy $i
-    done
+    fleetctl destroy $svcs
+
     fleetctl list-unit-files
 }
 

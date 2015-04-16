@@ -25,11 +25,11 @@ ExecStartPre=/usr/bin/docker pull ${consulDockerRegistry}/${consulService}:${con
 
 # TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
 # TODO: How do we get additional servers to join the consul cluster 
-ExecStart=./consul/startConsul.s 
+ExecStart=/home/core/share/consul/startConsul.sh %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${consulDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
 
 [X-Fleet]
 # Install consul server on all devices for now.
-# TODO: Only start the server on 3-5 machines in the cluster, the remaining start as agents
+Conflicts=${consulService}@*.service

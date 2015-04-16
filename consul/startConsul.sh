@@ -3,7 +3,7 @@
 set -e
 
 . /etc/environment
-. ~/share/adNimbusEnvironment
+. /home/core/share/adNimbusEnvironment
 
 set +e
 
@@ -50,27 +50,29 @@ nodeArg="-node $hostname"
 # TODO: Do all the consul servers and agents needs the UI or only some portion
 uiDirArg="-ui-dir ${consulDir}/ui"
 
-dataDirArg="-data-dir ${consulDir}/data"
+# TODO: do we want to always remove all the data. Probably only when we start the cluster the first time
+consulDataDir=/tmp/data
+rm -rf ${consulDataDir}
+dataDirArg="-data-dir ${consulDataDir}"
+
 configDirArg="-config-dir ${consulDir}/consul.d"
 
-numInstances=`fleetctl list-unit-files -fields=unit | grep -v UNIT | wc -l`
-echo Number of currently running consul agents$numInstances
-case "$numInstances" in
-0)
-    # start the first server
+instance=$1
+echo Starting instance $instance
+case "$instance" in
+1)
+    echo start the first server
 
     bootstrapArg="-bootstrap"
     unset advertiseArg
     unset joinArg    
-
-    # TODO: do we want to always remove all the data. Probably only when we start the cluster the first time
-    rm -rf ${consulDir}/data
     
 ;;
-1|2)
-    # start additional servers
+2|3)
+    echo start additional servers
 ;;
 *)
+    echo start agent
     unset serverArg
 ;;
 esac
