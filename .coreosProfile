@@ -58,21 +58,24 @@ function fstartconsul() {
 
 function frestartservice() {
     svc=$1
+    numInstances=$2
     svcInstances=`flu -fields=unit | grep $svc`
 
     fdestroy $svcInstances
 
-    fstartservice $svc $numServices
-
     if test "$2" == ""
     then
         numInstances=`echo $svcInstances | wc -w`
-    else
-        numInstances=$2
     fi
+
+    fstartservice $svc $numInstances
+
+    svcInstances=`flu -fields=unit | grep $svc`
     for i in $svcInstances
     do
-        fjournal -f $i
+        fjournal -lines=100 $i
+        echo
+        echo
     done
 }
 
@@ -117,8 +120,10 @@ function fstartall() {
     rm -f $AD_NIMBUS_DIR/nginx/nginx.conf
 
     fstartconsul
-    fstartconfd
+
     fstartnetlocation
+
+    fstartconfd
     sleep 5
 
     # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
@@ -137,6 +142,9 @@ function fstatusall() {
         echo No ad-nimbus services running
         return
     fi
+
+    flu
+    echo
 
     echo Fetching status on $runningServices
     while true

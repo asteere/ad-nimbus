@@ -26,11 +26,11 @@ numServers=2
 
 # Get number instances of consul running
 # TODO: Start the right number of consul agents and servers based on cluster size
-dataCenterArg="-dc superior-dc"
+dataCenterArg="-dc superiorCoDataCenter"
 
 serverArg=-server
 
-advertiseArg="-advertise=$COREOS_PUBLIC_IPV4"
+#advertiseArg="-advertise=$COREOS_PUBLIC_IPV4"
 bindArg="-bind=$COREOS_PUBLIC_IPV4"
 clientArg="-client=$COREOS_PUBLIC_IPV4"
 

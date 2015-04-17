@@ -2,10 +2,10 @@
 Description=confd docker service 
 
 Requires=docker.service
-Requires=consul@*.service
+Requires=consul.service
 
 After=docker.service
-After=consul@*.service
+After=consul.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
