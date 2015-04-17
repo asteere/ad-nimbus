@@ -107,6 +107,10 @@ function fstartservice() {
 }
 
 function fstartall() {
+    fdestroy
+
+    removeNginxConfTempFiles
+
     drmf
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
@@ -122,7 +126,7 @@ function fstartall() {
     sleep 3
     #fstartmon
     fluf
-
+    echo
     flu
 }
 
@@ -135,16 +139,20 @@ function fstatusall() {
     fi
 
     echo Fetching status on $runningServices
-    for service in $runningServices
-    do 
-        echo $service 
-        f status $service 
-        echo
-        echo 
-        echo Hit enter for next service.
-        read a 
-        echo; 
-        echo '==============' 
+    while true
+    do
+        echo '+++++++++++++++ Next round of services +++++++++' 
+        for service in $runningServices
+        do 
+            echo $service 
+            f status $service 
+            echo
+            echo 
+            echo Hit enter for next service.
+            read a 
+            echo; 
+            echo '==============' 
+        done
     done
 }
 
@@ -251,3 +259,6 @@ fi
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
 export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
 
+set -a 
+. /etc/environment
+set +a

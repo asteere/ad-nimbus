@@ -92,7 +92,7 @@ function buildcontainer() {
 }
 
 function getlistofvms() {
-    vbm list vms | awk '{print $1}' | sed 's/"//g'
+    VBoxManage list vms | awk '{print $1}' | sed 's/"//g'
 }
 
 function getvminfo() {
@@ -102,7 +102,7 @@ function getvminfo() {
         echo '********************************************************'
         echo
         echo VM: $vm
-        vbm showvminfo $vm
+        VBoxManage showvminfo $vm
     done 
 }
 
@@ -123,13 +123,12 @@ function vdestroy() {
         then
             rm -r "$machineDir"
         fi
-
     done
 
     # Handle use case where a user destroyed a vm individually and then wanted to destroy all of the vms
     if test "$1" = ""
     then
-        rm -r "$VAGRANT_DOTFILE_PATH"/machines/*
+        rm -rf "$VAGRANT_DOTFILE_PATH"/machines/*
     fi
 
     vms=`getlistofvms | grep -v boot2docker`
@@ -137,22 +136,28 @@ function vdestroy() {
     then
         vms=`echo $vms | grep $1`
     fi
+
     for vm in $vms
     do 
-        vbm controlvm $vm poweroff 
-        vbm unregistervm --delete $vm
+        VBoxManage controlvm $vm poweroff 
+        VBoxManage unregistervm --delete $vm
     done
 
+    echo
     echo Remaining vms
     getlistofvms
 
     # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
-    echo vgs
+    echo
+    echo Vagrant global-status '--prune'
     vgs --prune
 
-    echo vagrant status
+    # TODO: For some reason, vagrant status reports that the core-0* machines are not created vs reporting nothing
+    #echo
+    #echo vagrant status
     #vagrant status
 
+    removeNginxConfTempFiles
     # TODO: Are these tmp files still getting created?
     if test -d "$AD_NIMBUS_DIR/nginx"
     then

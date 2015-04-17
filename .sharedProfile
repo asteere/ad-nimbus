@@ -23,8 +23,15 @@ function sourceadnimbusenvironment() {
     set -a
 
     # TODO: does this break anything if we have these variables defined
-    #. /etc/environment
-    . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    if test -f /etc/environment
+    then
+        . /etc/environment
+    fi
+
+    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    then
+        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    fi
 
     set +a
 }
@@ -45,6 +52,16 @@ function createtar() {
     ls -l $gzFile
 
     cd -
+}
+
+function removeNginxConfTempFiles() {
+    echo Removing confd created '.nginx.conf*' temp files
+
+    # TODO: Are these tmp files still getting created?
+    if test -d "$AD_NIMBUS_DIR/nginx"
+    then
+        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
+    fi
 }
 
 sourceadnimbusenvironment
