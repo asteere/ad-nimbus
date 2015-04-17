@@ -14,9 +14,9 @@ export GOMAXPROCS=8
 # Get number of coreos instances. This works as long as all machines are running etcd ?servers?
 # 
 #numServers=`etcdctl ls -recursive _etcd/machines | wc -l`
-curlOutput=`curl http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value'`
+curlOutput=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value'`
 
-clusterPrivateIpAddrs=`curl http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value' | sed -e 's/.*%2F//' -e 's/%3.*//'`
+clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value' | sed -e 's/.*%2F//' -e 's/%3.*//'`
 numServers=`echo $clusterPrivateIpAddrs | wc -w`
 
 echo etcd reported $numServers servers $clusterPrivateIpAddrs
@@ -96,7 +96,8 @@ dockerImage="${consulDockerRegistry}/${consulService}:${consulDockerTag}"
 #    --publish ${COREOS_PUBLIC_IPV4}:53:53/udp \
 #    --env "HOST_IP=${COREOS_PUBLIC_IPV4}" \
 
-/usr/bin/docker rm -f ${consulDockerTag} > /dev/null 2>&1
+# Uncomment when running from the command line
+#/usr/bin/docker rm -f ${consulDockerTag} > /dev/null 2>&1
 
 set -x
 /usr/bin/docker run --name=${consulDockerTag} \

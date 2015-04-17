@@ -28,7 +28,7 @@ http {
 
         # Confd instructions to create a list of netlocation servers for nginx
         {{range getvs "/raptor/netlocation/*"}}
-        server {{.}};
+            server {{.}};
         {{end}}
     }
 

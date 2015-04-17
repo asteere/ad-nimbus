@@ -44,7 +44,7 @@ function fstartnginx() {
 }
 
 function fstartconfd() {
-    fstartservice confd $numInstances
+    fstartservice confd 1
 }
 
 function fstartconsul() {
@@ -98,7 +98,7 @@ function fstartservice() {
 	;;
     *)
         serviceRange='${service}@{1..'$numServices'}.service'
-        `eval fleetctl start $serviceRange`
+        fleetctl start `eval echo $serviceRange`
 	;;
     esac
 
@@ -193,7 +193,8 @@ function drmf() {
 
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
-    for i in {1..5}
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
         dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \

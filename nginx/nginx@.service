@@ -9,7 +9,8 @@ After=docker.service
 After=etcd.service
 After=confd@*.service
 
-# See ConditionHost note in confd Unit section
+# To reduce edit mistakes force nginx and confd to run on *.105 
+# TODO: ConditionHost=core-05
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -40,6 +41,10 @@ ExecStopPost=-/usr/bin/docker ps -a
 [X-Fleet]
 Conflicts=${netLocationService}@*.service
 Conflicts=${nginxService}@*.service
+
+# nginx and confd must run on the same machine due to limitations of signaling between docker containers. 
+# There are more complicated solutions but may not be needed if we go to consul and consul-template
+# Postmaster, JMeter, etc. have the nginx IP address hard coded. 
 
 # TODO: This should be ${confdService}@*.service
 # Doesn't work: MachineOf=${confdService}@1.service
