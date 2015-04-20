@@ -3,11 +3,11 @@ Description=Network geo-location service %m %H:%i
 
 Requires=docker.service
 Requires=etcd.service
-Requires=consul@1.service
+#Requires=consul@1.service
 
 After=docker.service
 After=etcd.service
-After=consul@1.service
+#After=consul@1.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -26,11 +26,11 @@ ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker ps -a
 
-ExecStartPre=/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOSPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
+ExecStartPre=/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
 ExecStartPre=/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
 
 # From: https://github.com/coreos/fleet/issues/612
-ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} --rm=true -p ${netLocationGuestOSPort}:${netLocationContainerPort} -v /home/core/share/${netLocationService}/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
+ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} --rm=true -p ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort}:${netLocationContainerPort} -v /home/core/share/${netLocationService}/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
 

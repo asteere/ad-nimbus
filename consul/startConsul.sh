@@ -35,15 +35,16 @@ bindArg="-bind=$COREOS_PUBLIC_IPV4"
 clientArg="-client=$COREOS_PUBLIC_IPV4"
 
 # TODO: figure out how to get the IP address of the first consul so everybody can join it
-joinArg=""
+retryJoinArg=""
 for i in $clusterPrivateIpAddrs
 do
     if test ! "$i" = "$COREOS_PUBLIC_IPV4"
     then
-        joinArg="$joinArg -join=$i"
+        retryJoinArg="$retryJoinArg --retry-join=$i"
     fi
 done
-echo $joinArg
+retryJoinArg="$retryJoinArg --retry-interval=10s"
+echo $retryJoinArg
 
 nodeArg="-node $hostname"
 
@@ -65,7 +66,7 @@ case "$instance" in
 
     bootstrapArg="-bootstrap"
     unset advertiseArg
-    unset joinArg    
+    unset retryJoinArg    
     
 ;;
 2|3)
@@ -108,7 +109,7 @@ set -x
     --volume /home/core/share/${nginxService}:${nginxDir} \
     ${dockerImage} \
     ${consulDir}/${consulService} \
-    agent $serverArg $bootstrapArg $advertiseArg $bindArg $clientArg $joinArg \
+    agent $serverArg $bootstrapArg $advertiseArg $bindArg $clientArg $retryJoinArg \
     $dataCenterArg \
     $uiDirArg $configDirArg \
     $dataDirArg \

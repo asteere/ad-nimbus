@@ -15,6 +15,11 @@ alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 # Foolish consistency sake, functions are lower case
+function checkconsulmembers() {
+    cdad
+    consul/consul members -rpc-addr=172.17.8.101:8400
+}
+
 function dockerbash() {
     cdad
     echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
@@ -23,7 +28,7 @@ function dockerbash() {
 
 function fstartnetlocation() {
     numNetLocationInstances=1
-    fstartservice netlocation $numNetLocationInstances
+    fstart netlocation $numNetLocationInstances
 }
 
 function etctree() { 
@@ -40,20 +45,20 @@ function fjournal() {
 }
 
 function fstartnginx() {
-    fstartservice nginx 1
+    fstart nginx 1
 }
 
 function fstartconfd() {
-    fstartservice confd 1
+    fstart confd 1
 }
 
 function fstartconsul() {
-    fstartservice consul $numInstances
+    fstart consul $numInstances
 }
 
 #TODO: Remove once the cutover to consul health-checks and handling is complete
 #function fstartmon() {
-#    fstartservice monitor 1
+#    fstart monitor 1
 #}
 
 function frestartservice() {
@@ -68,7 +73,7 @@ function frestartservice() {
         numInstances=`echo $svcInstances | wc -w`
     fi
 
-    fstartservice $svc $numInstances
+    fstart $svc $numInstances
 
     svcInstances=`flu -fields=unit | grep $svc`
     for i in $svcInstances
@@ -79,13 +84,17 @@ function frestartservice() {
     done
 }
 
-function fstartservice() {
+function fstart() {
     service=$1
     numServices=$2
-    if test "$2" == ""
-    then
+    case "$2" in
+    "")
         numServices=1
-    fi
+        ;;
+    next)
+        # get the number of services already running
+        ;;
+    esac
 
     cd $AD_NIMBUS_DIR/$service
 
@@ -135,7 +144,9 @@ function fstartall() {
     flu
 }
 
-function fstatusall() {
+function fstatus() {
+    arg1=$1
+
     runningServices=`fluf -fields=unit | grep -v UNIT`
     if test "$runningServices" = ""
     then
@@ -149,46 +160,26 @@ function fstatusall() {
     echo Fetching status on $runningServices
     while true
     do
-        echo '+++++++++++++++ Next round of services +++++++++' 
+        runningServices=`fluf -fields=unit | grep -v UNIT`
         for service in $runningServices
         do 
+            [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
+
             echo $service 
             f status $service 
             echo
-            echo 
             echo Hit enter for next service.
             read a 
+            case "$a" in 
+            q|Q|quit)
+                return
+                ;;
+            esac 
             echo; 
             echo '==============' 
         done
+        echo '+++++++++++++++ Next round of services +++++++++' 
     done
-}
-
-function fstatusnetlocationservices() {
-    while true 
-    do 
-        runningServices=`fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}'`
-        if test "$runningServices" = ""
-        then
-            echo No ad-nimbus netlocation services running
-            return
-        fi
-
-        echo '============================='; 
-        for service in $runningServices
-        do 
-            echo $service
-            f journal -lines=5 $service
-            echo
-            echo
-            echo Hit enter for next service.
-            read a
-        done
-    done
-}
-
-function fstatus() {
-    f status $1
 }
 
 function fdestroy() {

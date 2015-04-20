@@ -99,6 +99,9 @@ Vagrant.configure("2") do |config|
                 config.vm.provider :virtualbox do |vb, override|
                     vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
                     vb.customize ["modifyvm", :id, "--uartmode1", serialFile]
+                    # Don't let the clocks vary by more than 10 seconds
+                    # From: http://stackoverflow.com/questions/19490652/how-to-sync-time-on-host-wake-up-within-virtualbox
+                    vb.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 10000 ]
                 end
             end
 
@@ -117,6 +120,7 @@ Vagrant.configure("2") do |config|
             # TODO: Figure out how to get these numbers of adNimbusEnvironment
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
+            config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             # TODO: For load testing purposes, allow the net location servers to be individually queried
             config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true

@@ -10,12 +10,17 @@ function checknetlocation() {
     # Output the timestamp for comparison with other logs
     date
 
+    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    then
+        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    fi
+
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
     echo curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
-    curl -X GET $headers "http://$nginxIpAddress:$nginxHostPort?ipAddress=198.243.23.131"
+    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
 function sourceadnimbusenvironment() {
