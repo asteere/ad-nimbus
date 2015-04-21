@@ -204,7 +204,7 @@ function fstartall() {
 function fstatus() {
     arg1=$1
 
-    runningServices=`fluf -fields=unit | grep -v UNIT`
+    runningServices=`flu -fields=unit -no-legend`
     if test "$runningServices" = ""
     then
         echo No ad-nimbus services running
@@ -217,7 +217,7 @@ function fstatus() {
     echo Fetching status on $runningServices
     while true
     do
-        runningServices=`fluf -fields=unit | grep -v UNIT`
+        runningServices=`flu -fields=unit -no-legend`
         for service in $runningServices
         do 
             [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
@@ -243,7 +243,9 @@ function fdestroy() {
     if test "$1" = ""
     then
         svcs=$(fleetctl list-unit-files | awk '{print $1}')
+        destroyAll=true
     else
+        destroyAll=false
         svcs=$*
     fi
 
@@ -251,8 +253,16 @@ function fdestroy() {
 
     fluf
     echo
-    echo Sleep for 2 seconds to allow fleetctl to catch up, if the service is still listed, run flu a couple of times.
-    sleep 2
+
+    if test $destroyAll == true
+    then
+        while test `flu -no-legend | wc -l` != 0
+        do
+            echo Waiting for services to exit
+            sleep 1
+        done
+    fi
+
     flu
 }
 
