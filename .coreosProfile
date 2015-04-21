@@ -9,7 +9,7 @@ alias di='docker images'
 
 alias f='fleetctl --strict-host-key-checking=false'
 alias flm='fleetctl list-machines -l'
-alias flu='fleetctl list-units'
+alias flu='fleetctl list-units -fields=unit,load,active,sub,machine,hash'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
@@ -17,7 +17,16 @@ alias ssh='ssh -oStrictHostKeyChecking=no'
 # Foolish consistency sake, functions are lower case
 function checkconsulmembers() {
     cdad
-    consul/consul members -rpc-addr=172.17.8.101:8400
+    instanceRange='{1..'$numInstances'}'
+    for i in `eval echo $instanceRange`
+    do
+        echo "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        if test "$?" == 0
+        then
+            break
+        fi
+    done
 }
 
 function dockerbash() {
@@ -79,7 +88,7 @@ function frestartservice() {
 function fstart() {
     service=$1
     numServices=$2
-    case "$2" in
+    case "$numServices" in
     "")
         numServices=1
         ;;
@@ -88,14 +97,27 @@ function fstart() {
         ;;
     esac
 
-    cd $AD_NIMBUS_DIR/$service
+    serviceDir=`echo $service | sed 's/@.*//'`
+    cd "$AD_NIMBUS_DIR/$serviceDir"
 
-    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServices 'service(s)'
+    if test "$serviceDir" != "$service"
+    then
+        numServices="startOnlyThisService"
+    else
+        echo Be patient, this can take a while before you get the first service \"$service\" output for a total of $numServices 'service(s)'
+    fi
+
 
     # Fleetctl folks want a destroy, submit, start cycle if you change the systemd service file
     # From: https://github.com/coreos/fleet/issues/914
     case $numServices in
+    "startOnlyThisService")
+        fleetctl submit ${service}
+        fleetctl start ${service}
+	;;
+        
     0)
+        # Start a global service
         fleetctl submit ${service}.service
         fleetctl start ${service}.service
 	;;
@@ -104,6 +126,7 @@ function fstart() {
         fleetctl submit ${service}@1.service
         fleetctl start ${service}@1.service
 	;;
+
     *)
         serviceRange='${service}@{1..'$numServices'}.service'
         fleetctl submit `eval echo $serviceRange`
@@ -113,12 +136,10 @@ function fstart() {
 
     cd - > /dev/null
 
-    if test "$dontStatusService" == true
+    if test "$dontStatusService" == "" -o "$dontStatusService" == "false"
     then
-        return
+        fstatus $service
     fi
-
-    fstatus $service
 }
 
 function fstartall() {
@@ -129,36 +150,51 @@ function fstartall() {
     drmf
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    rm -f $AD_NIMBUS_DIR/nginx/nginx.conf
+    (cd $AD_NIMBUS_DIR/nginx; rm -f nginx.conf nginx.error.log nginx.access.log)
 
     export dontStatusService=true
 
     fstartconsul
 
     # TODO: This should be in a service file or start*.sh
-    for attempts in {1..30}
+    while true 
     do
-        numConsulSvcs=`checkconsulmembers | wc -l`
+        numConsulSvcs=`checkconsulmembers | grep server | wc -l`
         if test "$numConsulSvcs" -ge $numInstances
         then
+            echo Consul $numConsulSvcs have started on $numInstances servers.
             break
         fi
         echo Currently only $numConsulSvcs have started. Waiting for $numInstances.
         sleep 10
     done
 
+    if test "$numConsulSvcs" -lt $numInstances
+    then
+        echo Not all consul services started, exiting
+        return
+    fi
+
     fstartnetlocation
 
     fstartconfd
+
     sleep 5
 
     # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
+    nginxConfFile="$AD_NIMBUS_DIR/nginx/nginx.conf"
+    while test ! -f nginx/nginx.conf
+    do 
+        echo Waiting for nginxConfFile
+        sleep 10
+    done
+    if test ! -f nginx/nginx.conf
+    then
+        echo nginx service never started, exiting
+        return
+    fi
+
     fstartnginx
-    sleep 3
-    #fstartmon
-    fluf
-    echo
-    flu
 
     unset dontStatusService
 
@@ -229,6 +265,7 @@ function drmf() {
     for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
+        echo Checking for docker images on $ipAddr
         dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
             grep -v -e 'list of known hosts' -e NAME | \
             awk '{print $NF}'`

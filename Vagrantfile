@@ -12,14 +12,7 @@ end
 CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "user-data")
 CONFIG = File.join(File.dirname(__FILE__), "config.rb")
 
-# Defaults for config options defined in CONFIG
-#$num_instances = 1
-#$instance_name_prefix = "core"
-#$update_channel = "stable"
-#$enable_serial_logging = false
-#$vm_gui = false
-#$vm_memory = 1024
-#$vm_cpus = 1
+# Defaults for config options defined in CONFIG are in config.rb
 
 # Attempt to apply the deprecated environment variable NUM_INSTANCES to
 # $num_instances while allowing config.rb to override it
@@ -50,7 +43,7 @@ Vagrant.configure("2") do |config|
     config.ssh.forward_agent = true;
 
     config.vm.box = "coreos-%s" % $update_channel
-    config.vm.box_version = ">= 522.6.0"
+    #config.vm.box_version = ">= %d" % $minimumRelease
     config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
 
     ["vmware_fusion", "vmware_workstation"].each do |vmware|
