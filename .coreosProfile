@@ -113,23 +113,27 @@ function fstart() {
     case $numServices in
     "startOnlyThisService")
         fleetctl submit ${service}
+        sleep 2
         fleetctl start ${service}
 	;;
         
     0)
         # Start a global service
         fleetctl submit ${service}.service
+        sleep 2
         fleetctl start ${service}.service
 	;;
 
     1)
         fleetctl submit ${service}@1.service
+        sleep 2
         fleetctl start ${service}@1.service
 	;;
 
     *)
         serviceRange='${service}@{1..'$numServices'}.service'
         fleetctl submit `eval echo $serviceRange`
+        sleep 2
         fleetctl start `eval echo $serviceRange`
 	;;
     esac
@@ -223,7 +227,26 @@ function fstatus() {
             [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
 
             echo $service 
-            f status $service 
+
+            # Begin workaround. Remove when fleetctl bug is fixed
+            # There is a problem where fleetctl status says the service is
+            #   Loaded: not-found (Reason: No such file or directory)
+            #   Active: inactive (dead)
+            # User fleetctl journal instead
+
+            f status $service 2>&1 > /tmp/status.out
+            grep 'Loaded' /tmp/status.out | grep 'not-found' 2>&1 > /dev/null
+            if test $? == 1
+            then
+                cat /tmp/status.out
+                rm /tmp/status.out
+            else
+                echo Potential bug: $service is listed as inactive with a loaded status of not-found. Using fjournal.
+                echo
+                fjournal -lines=20 $service
+            fi
+            # End of workaround
+
             echo
             echo Hit enter for next service.
             read a 
@@ -259,7 +282,8 @@ function fdestroy() {
         while test `flu -no-legend | wc -l` != 0
         do
             echo Waiting for services to exit
-            sleep 1
+            flu
+            sleep 2
         done
     fi
 
