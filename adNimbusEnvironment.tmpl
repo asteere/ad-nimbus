@@ -8,15 +8,13 @@ etcdPort=4001
 confdService=confd
 confdDockerTag=confd
 confdGuestOsPort=49190
-confdContainerPort=9090
+confdContainerPort=80
 confdDir=/opt/consul
 
 # consul 
 consulService=consul
 consulDockerRegistry=asteere
 consulDockerTag=consul
-consulGuestOsPort=49180
-consulContainerPort=9080
 consulHttpPort=8500
 consulDnsPort=8600
 consulDir=/opt/consul
@@ -25,8 +23,8 @@ consulDir=/opt/consul
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation
-netLocationGuestOsPort=49170
-netLocationContainerPort=9070
+netLocationGuestOsPort=49180
+netLocationContainerPort=8080
 netLocationDir=/opt/netlocation
 minNetLocationServices=1
 maxNetLocationServices=4
@@ -35,7 +33,7 @@ maxNetLocationServices=4
 nginxService=nginx
 nginxDockerTag=nginx
 nginxGuestOsPort=49160
-nginxContainerPort=8060
+nginxContainerPort=80
 nginxIpAddress=172.17.8.101
 nginxDir=/opt/nginx
 

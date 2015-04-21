@@ -74,14 +74,6 @@ function frestartservice() {
     fi
 
     fstart $svc $numInstances
-
-    svcInstances=`flu -fields=unit | grep $svc`
-    for i in $svcInstances
-    do
-        fjournal -lines=100 $i
-        echo
-        echo
-    done
 }
 
 function fstart() {
@@ -100,22 +92,33 @@ function fstart() {
 
     echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServices 'service(s)'
 
+    # Fleetctl folks want a destroy, submit, start cycle if you change the systemd service file
+    # From: https://github.com/coreos/fleet/issues/914
     case $numServices in
     0)
+        fleetctl submit ${service}.service
         fleetctl start ${service}.service
 	;;
 
     1)
+        fleetctl submit ${service}@1.service
         fleetctl start ${service}@1.service
 	;;
     *)
         serviceRange='${service}@{1..'$numServices'}.service'
+        fleetctl submit `eval echo $serviceRange`
         fleetctl start `eval echo $serviceRange`
 	;;
     esac
 
     cd - > /dev/null
 
+    if test "$dontStatusService" == true
+    then
+        return
+    fi
+
+    fstatus $service
 }
 
 function fstartall() {
@@ -128,7 +131,21 @@ function fstartall() {
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
     rm -f $AD_NIMBUS_DIR/nginx/nginx.conf
 
+    export dontStatusService=true
+
     fstartconsul
+
+    # TODO: This should be in a service file or start*.sh
+    for attempts in {1..30}
+    do
+        numConsulSvcs=`checkconsulmembers | wc -l`
+        if test "$numConsulSvcs" -ge $numInstances
+        then
+            break
+        fi
+        echo Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        sleep 10
+    done
 
     fstartnetlocation
 
@@ -142,6 +159,10 @@ function fstartall() {
     fluf
     echo
     flu
+
+    unset dontStatusService
+
+    fstatus
 }
 
 function fstatus() {
@@ -192,7 +213,11 @@ function fdestroy() {
 
     fleetctl destroy $svcs
 
-    fleetctl list-unit-files
+    fluf
+    echo
+    echo Sleep for 2 seconds to allow fleetctl to catch up, if the service is still listed, run flu a couple of times.
+    sleep 2
+    flu
 }
 
 function drmf() {

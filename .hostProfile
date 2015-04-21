@@ -7,12 +7,6 @@ alias v=vagrant
 alias vs='vagrant status'
 alias vstatus='vagrant status'
 alias vgs='vagrant global-status'
-alias vup='vagrant up 2>&1 | tee /tmp/vup.log'
-alias vsh1='vagrant ssh core-01'
-alias vsh2='vagrant ssh core-02'
-alias vsh3='vagrant ssh core-03'
-alias vsh4='vagrant ssh core-04'
-alias vsh5='vagrant ssh core-05'
 
 alias b2d=boot2docker
 
@@ -22,6 +16,12 @@ alias di='rundocker images'
 alias d='rundocker'
 
 # For foolish consistency use lowercase for function names
+function vup() {
+    cdad
+    echo Creating cluster from Vagrantfile in folder `pwd`
+    vagrant up 2>&1 | tee /tmp/vup.lo
+}
+
 function vsh() {
     vagrant ssh core-0$1
 }

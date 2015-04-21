@@ -26,11 +26,11 @@ ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker ps -a
 
-ExecStartPre=/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
-ExecStartPre=/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
+ExecStartPre=-/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
+ExecStartPre=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
 
 # From: https://github.com/coreos/fleet/issues/612
-ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} --rm=true -p ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort}:${netLocationContainerPort} -v /home/core/share/${netLocationService}/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/runNpm.sh
+ExecStart=/usr/bin/docker run --name=${netLocationDockerTag} --rm=true -p ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort}:${netLocationContainerPort} -v /home/core/share/${netLocationService}/src:/src ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} /src/startNpm.sh
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
 
