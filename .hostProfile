@@ -7,12 +7,6 @@ alias v=vagrant
 alias vs='vagrant status'
 alias vstatus='vagrant status'
 alias vgs='vagrant global-status'
-alias vup='vagrant up 2>&1 | tee /tmp/vup.log'
-alias vsh1='vagrant ssh core-01'
-alias vsh2='vagrant ssh core-02'
-alias vsh3='vagrant ssh core-03'
-alias vsh4='vagrant ssh core-04'
-alias vsh5='vagrant ssh core-05'
 
 alias b2d=boot2docker
 
@@ -22,6 +16,12 @@ alias di='rundocker images'
 alias d='rundocker'
 
 # For foolish consistency use lowercase for function names
+function vup() {
+    cdad
+    echo Creating cluster from Vagrantfile in folder `pwd`
+    vagrant up 2>&1 | tee /tmp/vup.lo
+}
+
 function vsh() {
     vagrant ssh core-0$1
 }
@@ -92,7 +92,7 @@ function buildcontainer() {
 }
 
 function getlistofvms() {
-    vbm list vms | awk '{print $1}' | sed 's/"//g'
+    VBoxManage list vms | awk '{print $1}' | sed 's/"//g'
 }
 
 function getvminfo() {
@@ -102,14 +102,14 @@ function getvminfo() {
         echo '********************************************************'
         echo
         echo VM: $vm
-        vbm showvminfo $vm
+        VBoxManage showvminfo $vm
     done 
 }
 
 function vdestroy() {
     if test "$1" = ""
     then
-        vboxes=`v status | grep virtualbox | awk '{print $1}'`
+        vboxes=`v status | grep -e docker -e virtualbox | awk '{print $1}'`
     else
         vboxes=$1
     fi
@@ -118,37 +118,51 @@ function vdestroy() {
     do 
         v destroy --force $i
 
-        machineDir=".vagrant/machines/$i"
+        machineDir="$VAGRANT_DOTFILE_PATH/machines/$i"
         if test -d "$machineDir"
         then
             rm -r "$machineDir"
         fi
-
     done
+
+    # Handle use case where a user destroyed a vm individually and then wanted to destroy all of the vms
+    if test "$1" = ""
+    then
+        rm -rf "$VAGRANT_DOTFILE_PATH"/machines/*
+    fi
 
     vms=`getlistofvms | grep -v boot2docker`
     if test ! "$1" == ""
     then
         vms=`echo $vms | grep $1`
     fi
+
     for vm in $vms
     do 
-        vbm controlvm $vm poweroff 
-        vbm unregistervm --delete $vm
+        VBoxManage controlvm $vm poweroff 
+        VBoxManage unregistervm --delete $vm
     done
 
+    echo
     echo Remaining vms
     getlistofvms
 
     # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
-    echo vgs
+    echo
+    echo Vagrant global-status '--prune'
     vgs --prune
 
-    echo vagrant status
+    # TODO: For some reason, vagrant status reports that the core-0* machines are not created vs reporting nothing
+    #echo
+    #echo vagrant status
     #vagrant status
 
+    removeNginxConfTempFiles
     # TODO: Are these tmp files still getting created?
-    (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
+    if test -d "$AD_NIMBUS_DIR/nginx"
+    then
+        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
+    fi
 }
 
 function setupdocker() {
@@ -235,6 +249,7 @@ fi
 # User's .profile or .bash_profile set up correctly, time to get to work
 
 export VAGRANT_HOME="$AD_NIMBUS_DIR/.vagrant.d"
+export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
 
 # Pull in the common aliases, functions, etc.
 . "$AD_NIMBUS_DIR"/.sharedProfile
@@ -249,9 +264,9 @@ updateadnimbusenvironment
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key
-if test -f ~/.vagrant.d/insecure_private_key
+if test -f "$VAGRANT_HOME"/insecure_private_key
 then
-    cp ~/.vagrant.d/insecure_private_key .
+    cp "$VAGRANT_HOME"/insecure_private_key .
 fi
 
 

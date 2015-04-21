@@ -9,15 +9,35 @@ alias di='docker images'
 
 alias f='fleetctl --strict-host-key-checking=false'
 alias flm='fleetctl list-machines -l'
-alias flu='fleetctl list-units'
+alias flu='fleetctl list-units -fields=unit,load,active,sub,machine,hash'
 alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
 # Foolish consistency sake, functions are lower case
+function checkconsulmembers() {
+    cdad
+    instanceRange='{1..'$numInstances'}'
+    for i in `eval echo $instanceRange`
+    do
+        echo "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        if test "$?" == 0
+        then
+            break
+        fi
+    done
+}
+
+function dockerbash() {
+    cdad
+    echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
+    docker run -v /home/core/share:/opt/share -it asteere/devutils:devutils /bin/bash 
+}
+
 function fstartnetlocation() {
     numNetLocationInstances=1
-    fstartservice netlocation $numNetLocationInstances
+    fstart netlocation $numNetLocationInstances
 }
 
 function etctree() { 
@@ -34,139 +54,240 @@ function fjournal() {
 }
 
 function fstartnginx() {
-    fstartservice nginx 1
+    fstart nginx 1
 }
 
 function fstartconfd() {
-    fstartservice confd $numInstances
+    fstart confd 1
 }
 
 function fstartconsul() {
-    fstartservice consul 1
-}
-
-# TODO: If needed, expand this to handle a second argument which indicates the number of services to start
-function fstartsvc() {
-    svc=$1
-    svcName=$1@1.service
-    fdestroy $svcName
-    fstartservice $svc 1
-    fjournal -f $svcName
+    fstart consul $numInstances
 }
 
 #TODO: Remove once the cutover to consul health-checks and handling is complete
 #function fstartmon() {
-#    fstartservice monitor 1
+#    fstart monitor 1
 #}
 
-function fstartservice() {
+function frestartservice() {
+    svc=$1
+    numInstances=$2
+    svcInstances=`flu -fields=unit | grep $svc`
+
+    fdestroy $svcInstances
+
+    if test "$2" == ""
+    then
+        numInstances=`echo $svcInstances | wc -w`
+    fi
+
+    fstart $svc $numInstances
+}
+
+function fstart() {
     service=$1
-    numServers=$2
+    numServices=$2
+    case "$numServices" in
+    "")
+        numServices=1
+        ;;
+    next)
+        # get the number of services already running
+        ;;
+    esac
 
-    cd $AD_NIMBUS_DIR/$service
+    serviceDir=`echo $service | sed 's/@.*//'`
+    cd "$AD_NIMBUS_DIR/$serviceDir"
 
-    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers 'service(s)'
+    if test "$serviceDir" != "$service"
+    then
+        numServices="startOnlyThisService"
+    else
+        echo Be patient, this can take a while before you get the first service \"$service\" output for a total of $numServices 'service(s)'
+    fi
 
-    case $numServers in
+
+    # Fleetctl folks want a destroy, submit, start cycle if you change the systemd service file
+    # From: https://github.com/coreos/fleet/issues/914
+    case $numServices in
+    "startOnlyThisService")
+        fleetctl submit ${service}
+        sleep 2
+        fleetctl start ${service}
+	;;
+        
     0)
-	fleetctl start ${service}.service
+        # Start a global service
+        fleetctl submit ${service}.service
+        sleep 2
+        fleetctl start ${service}.service
 	;;
 
     1)
-	fleetctl start ${service}@1.service
+        fleetctl submit ${service}@1.service
+        sleep 2
+        fleetctl start ${service}@1.service
 	;;
+
     *)
-        serviceRange='netlocation@{1..'$numServers'}.service'
-        `eval fleetctl start $serviceRange`
+        serviceRange='${service}@{1..'$numServices'}.service'
+        fleetctl submit `eval echo $serviceRange`
+        sleep 2
+        fleetctl start `eval echo $serviceRange`
 	;;
     esac
 
     cd - > /dev/null
 
+    if test "$dontStatusService" == "" -o "$dontStatusService" == "false"
+    then
+        fstatus $service
+    fi
 }
 
 function fstartall() {
+    fdestroy
+
+    removeNginxConfTempFiles
+
     drmf
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    rm -f $AD_NIMBUS_DIR/nginx/nginx.conf
+    (cd $AD_NIMBUS_DIR/nginx; rm -f nginx.conf nginx.error.log nginx.access.log)
+
+    export dontStatusService=true
 
     fstartconsul
-    fstartconfd
+
+    # TODO: This should be in a service file or start*.sh
+    while true 
+    do
+        numConsulSvcs=`checkconsulmembers | grep server | wc -l`
+        if test "$numConsulSvcs" -ge $numInstances
+        then
+            echo Consul $numConsulSvcs have started on $numInstances servers.
+            break
+        fi
+        echo Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        sleep 10
+    done
+
+    if test "$numConsulSvcs" -lt $numInstances
+    then
+        echo Not all consul services started, exiting
+        return
+    fi
+
     fstartnetlocation
+
+    fstartconfd
+
     sleep 5
 
     # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
-    fstartnginx
-    sleep 3
-    #fstartmon
-    fluf
+    nginxConfFile="$AD_NIMBUS_DIR/nginx/nginx.conf"
+    while test ! -f nginx/nginx.conf
+    do 
+        echo Waiting for nginxConfFile
+        sleep 10
+    done
+    if test ! -f nginx/nginx.conf
+    then
+        echo nginx service never started, exiting
+        return
+    fi
 
-    flu
+    fstartnginx
+
+    unset dontStatusService
+
+    fstatus
 }
 
-function fstatusall() {
-    runningServices=`fluf -fields=unit | grep -v UNIT`
+function fstatus() {
+    arg1=$1
+
+    runningServices=`flu -fields=unit -no-legend`
     if test "$runningServices" = ""
     then
         echo No ad-nimbus services running
         return
     fi
 
+    flu
+    echo
+
     echo Fetching status on $runningServices
-    for service in $runningServices
-    do 
-        echo $service 
-        f status $service 
-        echo
-        echo 
-        echo Hit enter for next service.
-        read a 
-        echo; 
-        echo '==============' 
-    done
-}
-
-function fstatusnetlocationservices() {
-    while true 
-    do 
-        runningServices=`fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}'`
-        if test "$runningServices" = ""
-        then
-            echo No ad-nimbus netlocation services running
-            return
-        fi
-
-        echo '============================='; 
+    while true
+    do
+        runningServices=`flu -fields=unit -no-legend`
         for service in $runningServices
         do 
-            echo $service
-            f journal -lines=5 $service
-            echo
+            [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
+
+            echo $service 
+
+            # Begin workaround. Remove when fleetctl bug is fixed
+            # There is a problem where fleetctl status says the service is
+            #   Loaded: not-found (Reason: No such file or directory)
+            #   Active: inactive (dead)
+            # User fleetctl journal instead
+
+            f status $service 2>&1 > /tmp/status.out
+            grep 'Loaded' /tmp/status.out | grep 'not-found' 2>&1 > /dev/null
+            if test $? == 1
+            then
+                cat /tmp/status.out
+                rm /tmp/status.out
+            else
+                echo Potential bug: $service is listed as inactive with a loaded status of not-found. Using fjournal.
+                echo
+                fjournal -lines=20 $service
+            fi
+            # End of workaround
+
             echo
             echo Hit enter for next service.
-            read a
+            read a 
+            case "$a" in 
+            q|Q|quit)
+                return
+                ;;
+            esac 
+            echo; 
+            echo '==============' 
         done
+        echo '+++++++++++++++ Next round of services +++++++++' 
     done
-}
-
-function fstatus() {
-    f status $1
 }
 
 function fdestroy() {
     if test "$1" = ""
     then
         svcs=$(fleetctl list-unit-files | awk '{print $1}')
+        destroyAll=true
     else
-        svcs=$1
+        destroyAll=false
+        svcs=$*
     fi
 
-    for i in $svcs
-    do
-        fleetctl destroy $i
-    done
-    fleetctl list-unit-files
+    fleetctl destroy $svcs
+
+    fluf
+    echo
+
+    if test $destroyAll == true
+    then
+        while test `flu -no-legend | wc -l` != 0
+        do
+            echo Waiting for services to exit
+            flu
+            sleep 2
+        done
+    fi
+
+    flu
 }
 
 function drmf() {
@@ -174,9 +295,11 @@ function drmf() {
 
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
-    for i in {1..5}
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
+        echo Checking for docker images on $ipAddr
         dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
             grep -v -e 'list of known hosts' -e NAME | \
             awk '{print $NF}'`
@@ -204,9 +327,16 @@ then
     cdad
 fi
 
-if test -x "$AD_NIMBUS_DIR/bin/jq"
+if test -x "$AD_NIMBUS_DIR/devutils/jq"
 then
-    alias jq='$AD_NIMBUS_DIR/bin/jq .'
+    function jq() {
+        if test "$1" == ""
+        then
+            $AD_NIMBUS_DIR/devutils/jq .
+        else
+            $AD_NIMBUS_DIR/devutils/jq $*
+        fi
+    }
 fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
@@ -224,3 +354,6 @@ fi
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
 export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
 
+set -a 
+. /etc/environment
+set +a

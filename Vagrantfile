@@ -12,14 +12,7 @@ end
 CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "user-data")
 CONFIG = File.join(File.dirname(__FILE__), "config.rb")
 
-# Defaults for config options defined in CONFIG
-#$num_instances = 1
-#$instance_name_prefix = "core"
-#$update_channel = "stable"
-#$enable_serial_logging = false
-#$vm_gui = false
-#$vm_memory = 1024
-#$vm_cpus = 1
+# Defaults for config options defined in CONFIG are in config.rb
 
 # Attempt to apply the deprecated environment variable NUM_INSTANCES to
 # $num_instances while allowing config.rb to override it
@@ -50,7 +43,7 @@ Vagrant.configure("2") do |config|
     config.ssh.forward_agent = true;
 
     config.vm.box = "coreos-%s" % $update_channel
-    config.vm.box_version = ">= 522.6.0"
+    #config.vm.box_version = ">= %d" % $minimumRelease
     config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
 
     ["vmware_fusion", "vmware_workstation"].each do |vmware|
@@ -99,6 +92,9 @@ Vagrant.configure("2") do |config|
                 config.vm.provider :virtualbox do |vb, override|
                     vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
                     vb.customize ["modifyvm", :id, "--uartmode1", serialFile]
+                    # Don't let the clocks vary by more than 10 seconds
+                    # From: http://stackoverflow.com/questions/19490652/how-to-sync-time-on-host-wake-up-within-virtualbox
+                    vb.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 10000 ]
                 end
             end
 
@@ -117,6 +113,7 @@ Vagrant.configure("2") do |config|
             # TODO: Figure out how to get these numbers of adNimbusEnvironment
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
+            config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             # TODO: For load testing purposes, allow the net location servers to be individually queried
             config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
@@ -147,9 +144,6 @@ Vagrant.configure("2") do |config|
                 config.vm.provision :file, :source => "#{CLOUD_CONFIG_PATH}", :destination => "/tmp/vagrantfile-user-data"
                 config.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
             end
-
-            config.vm.provision :file, :source => ".bash_profile", :destination => "/tmp/.bash_profile"
-            config.vm.provision :shell, :inline => "mv /tmp/.bash_profile /home/core/", :privileged => true
         end
     end
 end

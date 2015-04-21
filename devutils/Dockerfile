@@ -11,7 +11,11 @@ MAINTAINER Andy Steere <andy.steere@troppussoftware.com>
 RUN yum -y install nc
 
 # Install dig
-RUN yum install bind-utils
+RUN yum -y install bind-utils
+
+RUN yum -y install conntrack
+
+# Any of the executables in devutils are available on /opt/share
 
 # Make the folder accessible by ssh container
 VOLUME /usr/share
