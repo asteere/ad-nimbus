@@ -2,6 +2,8 @@
 
 # Provide access to the variables that the services use
 
+export curlOptions='-s -L'
+
 function setup() {
     set -a
 
@@ -17,8 +19,6 @@ function setup() {
     set +a
 }
 
-export curlOptions='-s -L'
-
 function runCurl() {
     method=$1
     url=$2
@@ -31,27 +31,17 @@ function runCurlGet() {
 }
 
 function runCurlPut() {
+set -x
     url=$1
-    dataFileArg="-d $2"
-    curl $curlOptions $dataFileArg http://$consulIpAddr:$consulHttpPort"${url}"?pretty
-}
+    dataFileArg=""
+    if test "$2" != ""
+    then
+        headers='-H "Content-Type: application/json"'
+        dataFileArg="-d $2"
+    fi
 
-# Registers a new local check
-function registerNetLocationCheck() {
-    service=netlocation
-    instance=$1
-    id=""$service$instance"
-
-    checkJson='{
-        "ID": "'$id'",
-        "Name": "'$service'",
-        "Notes": "Network geo-location service",
-        "Script": "/usr/local/bin/check_mem.py",
-        "HTTP": "http://example.com",
-        "Interval": "10s",
-        "TTL": "15s"
-    }'
-    runCurlPut /v1/agent/check/register "$checkJson"
+    curl -v $curlOptions $headers $dataFileArg "http://$consulIpAddr:$consulHttpPort${url}?pretty"
+set +x
 }
 
 function registerService() {
@@ -61,12 +51,12 @@ function registerService() {
     runCurlPut /v1/agent/service/register "$serviceJson"
 }
 
-function registerAService() {
+function foo() {
     service=$1
     instance=$2
 
-    id=""$service$instance"
-    url="http://'$COREOS_PUBLIC_IPV4':'$netLocationGuestOsPort'ipAddress=198.243.23.131",
+    id="$service$instance"
+    url="http://$COREOS_PUBLIC_IPV4:$netLocationGuestOsPort?ipAddress=198.243.23.131"
 
     serviceJson='{
         "ID": "'$id'",
@@ -76,21 +66,36 @@ function registerAService() {
             "v1"
         ],
         "Address": "'$COREOS_PUBLIC_IPV4'",
-        "Port": '$netLocationGuestOsPort',
+        "Port": "'$netLocationGuestOsPort'",
         "Check": {
-            "id": "'$id'"
+            "id": "'$id'",
             "HTTP": "'$url'",
             "Interval": "10s",
         }
     }'
+}
 
-    registerService serviceJson
+function unregisterAService() {
+    serviceId=$1
+
+    runCurlPut /v1/agent/service/deregister/$serviceId
+}
+
+function registerTheService() {
+    service=$1
+    instance=$2
+    dataFile=$3
+
+    url="/v1/agent/service/register"
+
+    runCurlPut $url $dataFile $dataFile
 }
 
 function registerNetLocationService() {
     instance=$1
+    dataFile="@/home/core/share/netlocation/netlocationService.json"
 
-    registerAService netlocation $instance
+    registerTheService netlocation $instance $dataFile
 }
 
 # From: https://www.consul.io/docs/agent/http/health.html
@@ -163,38 +168,42 @@ function runChecks() {
 
     # Check that there is a raft leader
     echo
+    echo
     leader=`getConsulLeader`
     echo Leader: $leader
 
-    # check that there are peers
+    # Check that there are peers
     echo
     peers=`getConsulPeers`
     echo Peers: $peers
 
     # Lists nodes in a given DC. Should equal numInstances
     echo
-    nodes=`getConsulNodes`
-    echo Nodes: $nodes
+    echo Nodes: 
+    getConsulNodes
 
     # Lists the services provided by a node 
     echo
-    ipAddrForNodes=`getConsulNodes | awk '/Address/ {gsub("\"", "", $NF); print $NF}'`
-    for node in $ipAddrForNodes
+    echo
+    nodes=`getConsulNodes | awk '/Node/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}'`
+    for node in $nodes
     do
         servicesOnNode=`getANodesServices $node`
         if test "$servicesOnNode" == ""
         then
             echo Node $node is not running any services
         else
-            echo Node $node is running $servicesOnNode
+            echo Node $node is running:
+            getANodesServices $node
+            echo
         fi
     done
 
     echo 
-    echo List nodes in a given service
-    for i in nginx netlocation
+    echo List nodes running a given service
+    for svc in nginx netlocation
     do
-        echo `getNodesInService`
+        echo $svc: `getNodesInService $svc`
     done
 
     echo
@@ -231,4 +240,22 @@ then
 fi
 
 return 2>/dev/null || echo Usage: `basename $0` '[start|stop]' && exit 1
+
+# Registers a new local check
+function registerNetLocationCheck() {
+    service=netlocation
+    instance=$1
+    id="$service$instance"
+
+    checkJson='{
+        "ID": "'$id'",
+        "Name": "'$service'",
+        "Notes": "Network geo-location service",
+        "Script": "/usr/local/bin/check_mem.py",
+        "HTTP": "http://example.com",
+        "Interval": "10s",
+        "TTL": "15s"
+    }'
+    runCurlPut /v1/agent/check/register "$checkJson"
+}
 
