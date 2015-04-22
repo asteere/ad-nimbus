@@ -33,28 +33,22 @@ function runCurlPut() {
         dataFileArg="-d $2"
     fi
 
-    curl -v $curlOptions $headers $dataFileArg "http://$consulIpAddr:$consulHttpPort${url}?pretty"
+    curl $curlOptions $headers $dataFileArg "http://$consulIpAddr:$consulHttpPort${url}?pretty"
 }
 
 function registerService() {
-    dataFile=$1
+    service=$1
+    instance=$2
 
-    url="/v1/agent/service/register"
+    dataFile=`createServiceJsonFile $service $instance`
 
-    runCurlPut $url $dataFile
+    runCurlPut "/v1/agent/service/register" "@$dataFile"
 }
 
 function unregisterService() {
     serviceId=$1
 
     runCurlPut /v1/agent/service/deregister/$serviceId
-}
-
-function registerNetLocationServiceWorks() {
-    instance=$1
-    dataFile="@/home/core/share/netlocation/netlocationService.json"
-
-    registerService $dataFile
 }
 
 function createServiceJsonFile() {
@@ -86,14 +80,15 @@ function createServiceJsonFile() {
 }
 
 function registerNetLocationService() {
-set -x
     instance=$1
-    service=netlocation
-    dataFile=`createServiceJsonFile $service $instance`
 
-    # if curl -d sees a @ prefix it treats the argument as a file
-    registerService "@$dataFile"
-set +x
+    registerService netlocation $instance
+}
+
+function registerNginxService() {
+    instance=$1
+
+    registerService nginx $instance
 }
 
 # From: https://www.consul.io/docs/agent/http/health.html
@@ -214,7 +209,9 @@ function runChecks() {
         then
             echo No services are in $i state
         else
-            echo Services that are in $i state: $badNodes
+            echo Services that are in $i state: 
+            getStateOfService $i
+            echo
         fi
     done
 }
@@ -240,22 +237,4 @@ then
 fi
 
 return 2>/dev/null || echo Usage: `basename $0` '[start|stop]' && exit 1
-
-# Registers a new local check
-function registerNetLocationCheck() {
-    service=netlocation
-    instance=$1
-    id="$service$instance"
-
-    checkJson='{
-        "ID": "'$id'",
-        "Name": "'$service'",
-        "Notes": "Network geo-location service",
-        "Script": "/usr/local/bin/check_mem.py",
-        "HTTP": "http://example.com",
-        "Interval": "10s",
-        "TTL": "15s"
-    }'
-    runCurlPut /v1/agent/check/register "$checkJson"
-}
 
