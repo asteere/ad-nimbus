@@ -6,117 +6,127 @@ set -a
 . /home/core/share/adNimbusEnvironment
 set +a
 
-# TODO: BEGIN: Remove when we don't need the aliases and function to help development
-function etctree() { 
-    # TODO: get the key from adNimbusEnvironment, shouldn't be hardcoded
-    for key in `etcdctl ls -recursive /raptor/netlocation`
+export curlOptions='-s -L'
+
+function runCurlGet() {
+    url=$1
+    curl $curlOptions -X GET http://$consulIpAddr:$consulHttpPort"${url}"?pretty
+}
+
+function runCurlPut() {
+    url=$1
+    dataFile=$2
+    curl $curlOptions -d @$dataFile http://$consulIpAddr:$consulHttpPort"${url}"?pretty
+}
+
+function runCurl() {
+    method=$1
+    url=$2
+    curl $curlOptions -X $method ${url}?pretty
+}
+
+function addChecks() {
+    # Registers a new local check
+    runCurlPut /v1/agent/check/register 
+}
+
+function registerService() {
+    # Registers a new local service
+    runCurlPut /v1/agent/service/register 
+}
+
+# From: https://www.consul.io/docs/agent/http/health.html
+function getHealthOfNode() {
+    node=$1
+
+    # Returns the health info of a node
+    runCurlGet /v1/health/node/$node
+}
+
+function getChecksForService() {
+    service=$1
+
+    # Returns the checks of a service
+    runCurlGet /v1/health/checks/$service
+}
+
+function getNodesRunningService() {
+    service=$1
+
+    # Returns the nodes and health info of a service
+    runCurlGet /v1/health/service/$service
+}
+
+function getStateOfService() {
+    # Returns the checks in a given state: any, unknown, passing, warning, or critical
+    state=$1
+    runCurlGet /v1/health/state/$state
+}
+
+function getConsulLeader() {
+    runCurlGet /v1/status/leader
+}
+
+function getConsulPeers() {
+    runCurlGet /v1/status/peers
+}
+
+function getConsulNodes() {
+    runCurlGet /v1/catalog/nodes
+}
+
+function getANodesServices() {
+    node=$1
+
+    runCurlGet /v1/catalog/node/$node
+}
+
+function runChecks() {
+    while true
     do
-        echo -n $key=
-        etcdctl get $key
+        # Check that there is a raft leader
+        leader=`getConsulLeader`
+        echo Leader: $leader
+
+        # check that there are peers
+        peers=`getConsulPeers`
+        echo Peers: $peers
+
+        # Lists nodes in a given DC. Should equal numInstances
+        nodes=`getConsulNodes`
+        echo Nodes: $nodes
+
+        # Lists the services provided by a node 
+        ipAddrForNodes=`getConsulNodes | awk '/Address/ {gsub("\"", "", $NF); print $NF}'`
+        for node in $ipAddrForNodes
+        do
+            servicesOnNode=`getANodesServices $node`
+            if test "$servicesOnNode" == ""
+            then
+                echo Node $node is not running any services
+            else
+                echo Node $node is running $servicesOnNode
+            fi
+        done
+
+        for i in critical warning
+        do
+            badNodes=`getStateOfService $i | awk '/service/ {gsub("\"", "", $NF); print $NF}'`
+            if test "$badNodes" == ""
+            then
+                echo No services are in $i state
+            else
+                echo Services that are in $i state: $badNodes
+            fi
+        done
+
+        return
     done
 }
 
-# TODO: END: Remove ...
+export consulIpAddr=172.17.8.101
 
-function checkCpuUsage() {
-    host=$1
-
-    hostCpuAverage=`ssh -oStrictHostKeyChecking=no $host /home/core/share/monitor/calcHostCpuAverage.sh`
-    if [[ $hostCpuAverage == "" ]]
-    then
-        hostCpuAverage=0
-    fi
-    echo $host hostCpuAverage=$hostCpuAverage
-}
-
-function startStopServiceBasedOnCpuUsage() {
-    clusterAvgCpuUsage=$1
-    numInCluster=$2
-
-    numInstancesLaunched=`fleetctl list-unit-files -fields="unit,dstate,state" | grep -e netlocation | grep -e 'launched.*launched' | wc -l`
-
-    if test $numInstancesLaunched != $numInCluster
-    then
-        echo Error: fleetctl reports $numInstancesLaunched of $netLocationService launched. 
-        echo etcdctl reports $numInCluster IP addresses.
-        echo fleetctl:
-        fleetctl list-unit-files
-
-        echo etcdctl:
-        etctree
-
-        echo Attempt to continue, results may be confusing
-    fi
- 
-    if [[ "$hostCpuAverage" -gt 70 && "$numInstancesLaunched" -le "$maxNetLocationServices" ]] || \
-        [[ -f /home/core/share/addService ]]
-    then
-        nextInstance=$((numInCluster+1))
-        echo Start new service
-        (cd /home/core/share/$netLocationService; fleetctl start ${netLocationService}@${nextInstance}.service)
-        return
-    fi
-
-    if [[ "$hostCpuAverage" -lt 10 && "$numInstancesLaunched" -gt "$minNetLocationServices" ]] || \
-        [[ -f /home/core/share/removeService ]]
-    then
-        # TODO: kill the instance doing the least work
-        # TODO: Figure out the service number to shutdown
-        echo Shutting down $host
-        (cd /home/core/share/$netLocationService; fleetctl stop ${netLocationService}@${numInCluster}.service) 
-        return
-    fi
-}
-
-function setup() {
-
-    # TODO: remove once debug statement not needed
-    etctree
-
-    listOfCoreOs=`etctree 2> /dev/null | grep -e ".*=.*:" | sed '-e s/.*\/\(.*\)=\(.*\)/\1 \2/'`
-    listOfIpAddress=`echo $listOfCoreOs | sed -e 's/core-[0-9][0-9] //g' -e 's/:[0-9]*//g'`
-    listOfIpAddressAndPorts=`echo $listOfCoreOs | sed 's/core-[0-9][0-9] //g'`
-}
-
-function checkAllNetLocationCoreOs() {
-    setup
-
-    if [[ $listOfIpAddress == "" ]]
-    then
-        return
-    fi
-
-    sumCpuUsage=0
-    numInCluster=0
-    for ipAddr in $listOfIpAddress
-    do
-        checkCpuUsage $ipAddr
-        sumCpuUsage=$((sumCpuUsage + hostCpuAverage))
-        numInCluster=$((numInCluster + 1))
-    done
-
-    clusterAvgCpuUsage=$((sumCpuUsage / numInCluster))
-
-    startStopServiceBasedOnCpuUsage $clusterAvgCpuUsage $numInCluster
-}
-
-function checkResponseTime() {
-    curl -f ${1}; 
-}
-
-function setupSsh() {
-    # Setup fleetctl status
-    if test "$SSH_AUTH_SOCK" == ""
-    then
-        eval $(ssh-agent)
-    fi
-
-    ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
-    if test ! $? == 0
-    then
-        ssh-add /home/core/share/insecure_private_key
-    fi
-}
+return
 
 if test "$1" == "start"
 then
@@ -124,7 +134,6 @@ then
 
     while true; 
     do 
-        checkAllNetLocationCoreOs
         sleep 3 
     done
     exit 0

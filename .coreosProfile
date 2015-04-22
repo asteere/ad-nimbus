@@ -163,7 +163,7 @@ function fstartall() {
     # TODO: This should be in a service file or start*.sh
     while true 
     do
-        numConsulSvcs=`checkconsulmembers | grep server | wc -l`
+        numConsulSvcs=`checkconsulmembers | grep alive | wc -l`
         if test "$numConsulSvcs" -ge $numInstances
         then
             echo Consul $numConsulSvcs have started on $numInstances servers.
@@ -281,6 +281,7 @@ function fdestroy() {
     then
         while test `flu -no-legend | wc -l` != 0
         do
+            echo
             echo Waiting for services to exit
             flu
             sleep 2

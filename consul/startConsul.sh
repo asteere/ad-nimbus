@@ -1,5 +1,15 @@
 #! /bin/bash
 
+function sendSignal() {
+    echo Sending $1 to consul 
+    docker kill -s $1
+}
+
+trap 'sendSignal TERM' TERM
+trap 'sendSignal QUIT' QUIT 
+trap 'sendSignal HUP' HUP
+trap 'sendSignal USR1' USR1
+
 set -e
 
 . /etc/environment

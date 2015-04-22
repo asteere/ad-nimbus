@@ -1,27 +1,31 @@
 #! /bin/bash
 
-set -x 
-
-
 nginxDir=/opt/nginx
 nginxConfFile=$nginxDir/nginx.conf
 nginxPidFile=$nginxDir/nginx.pid
 
-trap "{echo Sending stop to nginx; nginx -s stop }" TERM
-trap "{echo Sending quit to nginx; nginx -s quit }" QUIT
-trap "{echo Sending reload to nginx; nginx -s reload }" HUP
-trap "{echo Sending reopen to nginx; nginx -s reopen }" USR1
+function sendSignal() {
+    echo Sending $1 to nginx
+    nginx -s $1 
 
-for attempts in {1..60}
+}
+
+trap 'sendSignal stop' TERM
+trap 'sendSignal quit' QUIT
+trap 'sendSignal reload' HUP
+trap 'sendSignal reopen' USR1
+
+while true
 do
+    echo $attempts
     if test -f "$nginxConfFile"
     then
         nginx -c "$nginxConfFile"
         break
     fi
 
-    echo Sleep 10 and see if confd has come up and created $nginxConfFile
-    ls -l $nginxConfFile
-    sleep 10
+    interval=5
+    echo Sleep $interval and see if confd has come up and created $nginxConfFile
+    sleep $interval
 done
 
