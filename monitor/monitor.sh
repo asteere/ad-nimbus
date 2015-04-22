@@ -19,6 +19,12 @@ function setup() {
 
 export curlOptions='-s -L'
 
+function runCurl() {
+    method=$1
+    url=$2
+    curl $curlOptions -X $method ${url}?pretty
+}
+
 function runCurlGet() {
     url=$1
     curl $curlOptions -X GET http://$consulIpAddr:$consulHttpPort"${url}"?pretty
@@ -26,24 +32,65 @@ function runCurlGet() {
 
 function runCurlPut() {
     url=$1
-    dataFile=$2
-    curl $curlOptions -d @$dataFile http://$consulIpAddr:$consulHttpPort"${url}"?pretty
+    dataFileArg="-d $2"
+    curl $curlOptions $dataFileArg http://$consulIpAddr:$consulHttpPort"${url}"?pretty
 }
 
-function runCurl() {
-    method=$1
-    url=$2
-    curl $curlOptions -X $method ${url}?pretty
-}
+# Registers a new local check
+function registerNetLocationCheck() {
+    service=netlocation
+    instance=$1
+    id=""$service$instance"
 
-function addChecks() {
-    # Registers a new local check
-    runCurlPut /v1/agent/check/register 
+    checkJson='{
+        "ID": "'$id'",
+        "Name": "'$service'",
+        "Notes": "Network geo-location service",
+        "Script": "/usr/local/bin/check_mem.py",
+        "HTTP": "http://example.com",
+        "Interval": "10s",
+        "TTL": "15s"
+    }'
+    runCurlPut /v1/agent/check/register "$checkJson"
 }
 
 function registerService() {
+    serviceJson=$1
+
     # Registers a new local service
-    runCurlPut /v1/agent/service/register 
+    runCurlPut /v1/agent/service/register "$serviceJson"
+}
+
+function registerAService() {
+    service=$1
+    instance=$2
+
+    id=""$service$instance"
+    url="http://'$COREOS_PUBLIC_IPV4':'$netLocationGuestOsPort'ipAddress=198.243.23.131",
+
+    serviceJson='{
+        "ID": "'$id'",
+        "Name": "'$service'",
+        "Tags": [
+            "'$service'",
+            "v1"
+        ],
+        "Address": "'$COREOS_PUBLIC_IPV4'",
+        "Port": '$netLocationGuestOsPort',
+        "Check": {
+            "id": "'$id'"
+            "HTTP": "'$url'",
+            "Interval": "10s",
+        }
+    }'
+
+    registerService serviceJson
+}
+
+function registerNetLocationService() {
+    instance=$1
+
+    registerAService netlocation $instance
 }
 
 # From: https://www.consul.io/docs/agent/http/health.html
@@ -92,20 +139,45 @@ function getANodesServices() {
     runCurlGet /v1/catalog/node/$node
 }
 
+function getDataCenters() {
+    runCurlGet /v1/catalog/datacenters
+}
+
+function getNodesInService() {
+    service=$1
+
+    runCurlGet /v1/catalog/service/$service
+}
+
+function getServicesInDataCenter() {
+    runCurlGet /v1/catalog/services
+}
+
 function runChecks() {
+    dataCenters=`getDataCenters`
+    echo Known datacenters: $dataCenters
+
+    echo
+    echo List Services running in datacenter
+    getServicesInDataCenter
+
     # Check that there is a raft leader
+    echo
     leader=`getConsulLeader`
     echo Leader: $leader
 
     # check that there are peers
+    echo
     peers=`getConsulPeers`
     echo Peers: $peers
 
     # Lists nodes in a given DC. Should equal numInstances
+    echo
     nodes=`getConsulNodes`
     echo Nodes: $nodes
 
     # Lists the services provided by a node 
+    echo
     ipAddrForNodes=`getConsulNodes | awk '/Address/ {gsub("\"", "", $NF); print $NF}'`
     for node in $ipAddrForNodes
     do
@@ -118,6 +190,14 @@ function runChecks() {
         fi
     done
 
+    echo 
+    echo List nodes in a given service
+    for i in nginx netlocation
+    do
+        echo `getNodesInService`
+    done
+
+    echo
     for i in critical warning
     do
         badNodes=`getStateOfService $i | awk '/service/ {gsub("\"", "", $NF); print $NF}'`

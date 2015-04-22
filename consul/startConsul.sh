@@ -36,7 +36,7 @@ numServers=2
 
 # Get number instances of consul running
 # TODO: Start the right number of consul agents and servers based on cluster size
-dataCenterArg="-dc superiorCoDataCenter"
+dataCenterArg="-dc superiorDataCenter"
 
 serverArg=-server
 
