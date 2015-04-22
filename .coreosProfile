@@ -65,10 +65,9 @@ function fstartconsul() {
     fstart consul $numInstances
 }
 
-#TODO: Remove once the cutover to consul health-checks and handling is complete
-#function fstartmon() {
-#    fstart monitor 1
-#}
+function fstartmonitor() {
+    fstart monitor 1
+}
 
 function frestartservice() {
     svc=$1
@@ -199,6 +198,8 @@ function fstartall() {
     fi
 
     fstartnginx
+
+    fstartmonitor
 
     unset dontStatusService
 
