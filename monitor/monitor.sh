@@ -82,45 +82,40 @@ function getANodesServices() {
 }
 
 function runChecks() {
-    while true
+    # Check that there is a raft leader
+    leader=`getConsulLeader`
+    echo Leader: $leader
+
+    # check that there are peers
+    peers=`getConsulPeers`
+    echo Peers: $peers
+
+    # Lists nodes in a given DC. Should equal numInstances
+    nodes=`getConsulNodes`
+    echo Nodes: $nodes
+
+    # Lists the services provided by a node 
+    ipAddrForNodes=`getConsulNodes | awk '/Address/ {gsub("\"", "", $NF); print $NF}'`
+    for node in $ipAddrForNodes
     do
-        # Check that there is a raft leader
-        leader=`getConsulLeader`
-        echo Leader: $leader
+        servicesOnNode=`getANodesServices $node`
+        if test "$servicesOnNode" == ""
+        then
+            echo Node $node is not running any services
+        else
+            echo Node $node is running $servicesOnNode
+        fi
+    done
 
-        # check that there are peers
-        peers=`getConsulPeers`
-        echo Peers: $peers
-
-        # Lists nodes in a given DC. Should equal numInstances
-        nodes=`getConsulNodes`
-        echo Nodes: $nodes
-
-        # Lists the services provided by a node 
-        ipAddrForNodes=`getConsulNodes | awk '/Address/ {gsub("\"", "", $NF); print $NF}'`
-        for node in $ipAddrForNodes
-        do
-            servicesOnNode=`getANodesServices $node`
-            if test "$servicesOnNode" == ""
-            then
-                echo Node $node is not running any services
-            else
-                echo Node $node is running $servicesOnNode
-            fi
-        done
-
-        for i in critical warning
-        do
-            badNodes=`getStateOfService $i | awk '/service/ {gsub("\"", "", $NF); print $NF}'`
-            if test "$badNodes" == ""
-            then
-                echo No services are in $i state
-            else
-                echo Services that are in $i state: $badNodes
-            fi
-        done
-
-        return
+    for i in critical warning
+    do
+        badNodes=`getStateOfService $i | awk '/service/ {gsub("\"", "", $NF); print $NF}'`
+        if test "$badNodes" == ""
+        then
+            echo No services are in $i state
+        else
+            echo Services that are in $i state: $badNodes
+        fi
     done
 }
 
@@ -130,10 +125,9 @@ return
 
 if test "$1" == "start"
 then
-    setupSsh
-
     while true; 
     do 
+        runChecks
         sleep 3 
     done
     exit 0

@@ -31,7 +31,18 @@ ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
 
-ExecStart=/usr/bin/docker run --name=${nginxDockerTag} --rm=true -v /var/run/docker.sock:/var/run/docker.sock -v /home/core/share/${nginxService}:${nginxDir} -p ${COREOS_PUBLIC_IPV4}:${nginxGuestOsPort}:${nginxContainerPort} ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} ${nginxService} -c ${nginxDir}/nginx.conf
+ExecStart=/usr/bin/docker run \
+    --name=${nginxDockerTag} \
+    --rm=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /home/core/share/${nginxService}:${nginxDir} \
+    -p ${COREOS_PUBLIC_IPV4}:${nginxGuestOsPort}:${nginxContainerPort} \
+    ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
+    ${nginxDir}/startNginx.sh
+
+# TODO: remove once we get signals passing through bash to nginx
+#    ${nginxService} \
+#    -c ${nginxDir}/nginx.conf
 
 # TODO: Figure out how to pass signals from bash to nginx to reload the configuration
 #${nginxDir}/startNginx.sh
