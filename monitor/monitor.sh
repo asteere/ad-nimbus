@@ -80,7 +80,15 @@ function createServiceJsonFile() {
 }
 
 function unregisterService() {
-    serviceId=$1
+    service=$1
+    instance=$2
+    if test "$1" == "" -o "$2" == ""
+    then 
+        echo Usage: unregisterService '[nginx | netlocation] fleetctl_instance'
+        return
+    fi
+
+    serviceId="$service$instance"
 
     runCurlPut /v1/agent/service/deregister/$serviceId
 }
@@ -161,6 +169,12 @@ function getServicesInDataCenter() {
     runCurlGet /v1/catalog/services
 }
 
+function getChecksForService() {
+    service=$1
+
+    runCurlGet  /v1/health/checks/$service
+}
+
 function runChecks() {
     dataCenters=`getDataCenters`
     echo Known datacenters: $dataCenters
@@ -208,6 +222,15 @@ function runChecks() {
     do
         echo $svc: 
         getNodesInService $svc
+        echo
+    done
+
+    echo
+    echo List checks for a given service
+    for svc in nginx netlocation
+    do
+        echo $svc
+        getChecksForService $svc
         echo
     done
 

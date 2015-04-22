@@ -216,6 +216,12 @@ function fstatus() {
         return
     fi
 
+    # TODO: Do we want to handle typos and check to see if the service request is running? 
+    # TODO: What about if it isn't running yet?
+    #[[ $arg1 != *$runningServices* ]] && \
+    #    echo Error: \"$arg1\" not a running service. && \
+    #    echo Please select from one of the following$runningServices && return
+
     flu
     echo
 
@@ -223,6 +229,7 @@ function fstatus() {
     while true
     do
         runningServices=`flu -fields=unit -no-legend`
+
         for service in $runningServices
         do 
             [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
