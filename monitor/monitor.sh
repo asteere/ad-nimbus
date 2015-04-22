@@ -19,19 +19,12 @@ function setup() {
     set +a
 }
 
-function runCurl() {
-    method=$1
-    url=$2
-    curl $curlOptions -X $method ${url}?pretty
-}
-
 function runCurlGet() {
     url=$1
     curl $curlOptions -X GET http://$consulIpAddr:$consulHttpPort"${url}"?pretty
 }
 
 function runCurlPut() {
-set -x
     url=$1
     dataFileArg=""
     if test "$2" != ""
@@ -41,24 +34,39 @@ set -x
     fi
 
     curl -v $curlOptions $headers $dataFileArg "http://$consulIpAddr:$consulHttpPort${url}?pretty"
-set +x
 }
 
 function registerService() {
-    serviceJson=$1
+    dataFile=$1
 
-    # Registers a new local service
-    runCurlPut /v1/agent/service/register "$serviceJson"
+    url="/v1/agent/service/register"
+
+    runCurlPut $url $dataFile
 }
 
-function foo() {
+function unregisterService() {
+    serviceId=$1
+
+    runCurlPut /v1/agent/service/deregister/$serviceId
+}
+
+function registerNetLocationServiceWorks() {
+    instance=$1
+    dataFile="@/home/core/share/netlocation/netlocationService.json"
+
+    registerService $dataFile
+}
+
+function createServiceJsonFile() {
     service=$1
     instance=$2
 
     id="$service$instance"
     url="http://$COREOS_PUBLIC_IPV4:$netLocationGuestOsPort?ipAddress=198.243.23.131"
 
-    serviceJson='{
+    jsonFile=/tmp/$service$instance.json
+
+    echo '{
         "ID": "'$id'",
         "Name": "'$service'",
         "Tags": [
@@ -66,36 +74,26 @@ function foo() {
             "v1"
         ],
         "Address": "'$COREOS_PUBLIC_IPV4'",
-        "Port": "'$netLocationGuestOsPort'",
+        "Port": '$netLocationGuestOsPort',
         "Check": {
             "id": "'$id'",
             "HTTP": "'$url'",
-            "Interval": "10s",
+            "Interval": "10s"
         }
-    }'
-}
+    }' > $jsonFile
 
-function unregisterAService() {
-    serviceId=$1
-
-    runCurlPut /v1/agent/service/deregister/$serviceId
-}
-
-function registerTheService() {
-    service=$1
-    instance=$2
-    dataFile=$3
-
-    url="/v1/agent/service/register"
-
-    runCurlPut $url $dataFile $dataFile
+    echo $jsonFile
 }
 
 function registerNetLocationService() {
+set -x
     instance=$1
-    dataFile="@/home/core/share/netlocation/netlocationService.json"
+    service=netlocation
+    dataFile=`createServiceJsonFile $service $instance`
 
-    registerTheService netlocation $instance $dataFile
+    # if curl -d sees a @ prefix it treats the argument as a file
+    registerService "@$dataFile"
+set +x
 }
 
 # From: https://www.consul.io/docs/agent/http/health.html
@@ -193,7 +191,7 @@ function runChecks() {
         then
             echo Node $node is not running any services
         else
-            echo Node $node is running:
+            echo Node $node is running the following services:
             getANodesServices $node
             echo
         fi
@@ -203,13 +201,15 @@ function runChecks() {
     echo List nodes running a given service
     for svc in nginx netlocation
     do
-        echo $svc: `getNodesInService $svc`
+        echo $svc: 
+        getNodesInService $svc
+        echo
     done
 
     echo
     for i in critical warning
     do
-        badNodes=`getStateOfService $i | awk '/service/ {gsub("\"", "", $NF); print $NF}'`
+        badNodes=`getStateOfService $i | awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}'`
         if test "$badNodes" == ""
         then
             echo No services are in $i state
