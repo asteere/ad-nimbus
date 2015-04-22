@@ -1,10 +1,21 @@
 #!/bin/bash 
 
 # Provide access to the variables that the services use
-set -a
-. /etc/environment
-. /home/core/share/adNimbusEnvironment
-set +a
+
+function setup() {
+    set -a
+
+    if test -f /etc/environment
+    then
+        . /etc/environment
+    fi
+    if test -f /home/core/share/adNimbusEnvironment
+    then
+        . /home/core/share/adNimbusEnvironment
+    fi
+
+    set +a
+}
 
 export curlOptions='-s -L'
 
@@ -121,7 +132,7 @@ function runChecks() {
 
 export consulIpAddr=172.17.8.101
 
-return
+setup
 
 if test "$1" == "start"
 then
@@ -139,6 +150,5 @@ then
     exit 0
 fi
 
-echo Usage: `basename $0` '[start|stop]'
-exit 1
+return 2>/dev/null || echo Usage: `basename $0` '[start|stop]' && exit 1
 
