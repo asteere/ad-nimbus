@@ -28,6 +28,7 @@ ExecStartPre=/usr/bin/docker ps -a
 
 ExecStartPre=-/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
 ExecStartPre=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
+ExecStartPre=/bin/bash -c "/home/core/share/monitor/monitor.sh registerNetLocationService %i ${COREOS_PUBLIC_IPV4}"
 
 # From: https://github.com/coreos/fleet/issues/612
 ExecStart=/usr/bin/docker run \
@@ -40,8 +41,9 @@ ExecStart=/usr/bin/docker run \
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
 
-ExecStopPost=-/usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
+ExecStopPost=/usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
 ExecStopPost=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
+ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterService ${netLocationService} %i"
 
 #Restart=always
 

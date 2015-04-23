@@ -269,5 +269,12 @@ then
     exit 0
 fi
 
+# TODO: Do we need to expand this beyond register*Service and unregisterService?
+if [[ $1 == *register*Service ]] 
+then
+    ${1} $2 $3
+    exit 0
+fi
+
 return 2>/dev/null || echo Usage: `basename $0` '[start|stop]' && exit 1
 
