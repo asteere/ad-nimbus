@@ -52,7 +52,7 @@ function createServiceId() {
     instance=$2
     serviceIpAddr=$3
 
-    echo "$service${instance}_$serviceIpAddr"
+    echo "$service@${instance}.service_$serviceIpAddr"
 }
 
 function createServiceJsonFile() {
@@ -200,6 +200,28 @@ function getChecksForService() {
     runCurlGet  /v1/health/checks/$service
 }
 
+function stopService() {
+    serviceId=$1
+    service=`echo $serviceId | sed 's/_.*//'`
+
+    echo Stopping $service
+    fleetctl stop $service
+}
+
+function startService() {
+    serviceId=$1
+    service=`echo $serviceId | sed -e 's/@.*//'`
+
+    instance=`fleetctl list-units -fields=unit | grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | tail -1`
+    instance=$((++instance))
+
+    cd /home/core/share/$service
+
+    fleetCtlUnit=$service@${instance}.service
+    echo Starting $fleetCtlUnit
+    fleetctl start $fleetCtlUnit
+}
+
 declare -A criticalFailures
 
 function handleCriticalHealthChecks() {
@@ -214,43 +236,51 @@ function handleCriticalHealthChecks() {
     #   If the previously failed service is in the list of currently failed servies, increment
     #   If the previously failed service is NOT in the list of currently failed servies, decrement
     previouslyFailedServices=${!criticalFailures[@]}
-    for service in $currentlyFailedServices
+    for svcIndex in $currentlyFailedServices
     do
-        echo service :$service:
-        count=${criticalFailures[$service]}
+        #echo Service :$svcIndex:
+        count=${criticalFailures[$svcIndex]}
         
         if [[ $count == "" ]] 
         then
-            echo Service $service not previously seen
-            criticalFailures[$service]=0
+            echo Service $svcIndex not previously seen
+            criticalFailures[$svcIndex]=0
         fi
     done
 
-    for service in "${!criticalFailures[@]}"
+    for svcIndex in "${!criticalFailures[@]}"
     do 
-        #echo $service:${criticalFailures[$service]}
-        count=${criticalFailures[$service]}
+        #echo $svcIndex:${criticalFailures[$svcIndex]}
+        count=${criticalFailures[$svcIndex]}
         
-        if [[ $currentlyFailedServices == *$service* ]] 
+        if [[ $currentlyFailedServices == *$svcIndex* ]] 
         then
-            echo Increment $service
-            criticalFailures[$service]=$((++count))
+            echo Increment $svcIndex
+            criticalFailures[$svcIndex]=$((++count))
+            if test ${criticalFailures[$svcIndex]} -gt $monitorRestartSvcThreshold
+            then
+                startService $svcIndex
+                # stopService $svcIndex
+                unset criticalFailures[$svcIndex]
+            fi
         else
             if [[ $count -le 1 ]] 
             then
-                echo Remove $service
-                unset criticalFailures[$service]
+                echo Remove $svcIndex criticality count
+                unset criticalFailures[$svcIndex]
             else
-                echo Decrement $service
-                criticalFailures[$service]=$((--count))
+                echo Decrement $svcIndex criticality count
+                criticalFailures[$svcIndex]=$((--count))
             fi
         fi
     done
+}
 
-    echo Updated criticalFailures
-    for service in "${!criticalFailures[@]}"
+function dumpCriticalFailures() {
+    echo Status on CriticalFailures:
+    for svcIndex in "${!criticalFailures[@]}"
     do
-        echo 'criticalFailures['$service']='${criticalFailures[$service]}
+        echo 'criticalFailures['$svcIndex']='${criticalFailures[$svcIndex]}
     done
 }
 
@@ -314,7 +344,7 @@ function runChecks() {
     done
 
     echo
-    for state in critical warning
+    for state in warning critical 
     do
         badNodes=`getStateOfService $state | awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}'`
         if test "$badNodes" == ""
@@ -331,18 +361,22 @@ function runChecks() {
             echo
         fi
     done
+
+    dumpCriticalFailures
 }
 
 export consulIpAddr=172.17.8.101
-
-setup
 
 if test "$1" == "start"
 then
     while true; 
     do 
+        # Run setup to allow dynamic changes of controlling variables
+        setup
+
         runChecks
-        sleep 3 
+
+        sleep $monitorRunChecksInterval 
     done
     exit 0
 fi
