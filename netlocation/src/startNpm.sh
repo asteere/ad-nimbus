@@ -4,4 +4,4 @@ set -x
 
 (cd /src; npm install)
 
-node /src/index.js
+node /src/index_consul.js $1

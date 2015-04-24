@@ -50,7 +50,7 @@ ExecStart=/usr/bin/docker run \
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
-ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterService ${nginxService} %i"
+ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}"
 
 #Restart=always
 

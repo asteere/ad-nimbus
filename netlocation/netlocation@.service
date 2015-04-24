@@ -37,13 +37,13 @@ ExecStart=/usr/bin/docker run \
     -p ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort}:${netLocationContainerPort} \
     -v /home/core/share/${netLocationService}/src:/src \
     ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
-    /src/startNpm.sh
+    /src/startNpm.sh ${COREOS_PUBLIC_IPV4}
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
 
 ExecStopPost=/usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
 ExecStopPost=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
-ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterService ${netLocationService} %i"
+ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNetLocationService %i ${COREOS_PUBLIC_IPV4}"
 
 #Restart=always
 

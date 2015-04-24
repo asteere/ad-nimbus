@@ -55,6 +55,9 @@ write_files:
     permissions: 0644
     owner: core
     content: |
-      #! /bin/bash
+      #!/bin/bash
 
-      . share/.coreosProfile
+      if test -f ~/share/.coreosProfile
+      then
+           . ~/share/.coreosProfile
+      fi

@@ -14,7 +14,7 @@ alias fluf='fleetctl list-unit-files'
 alias ftunnel='fleetctl --tunnel 10.10.10.10'
 alias ssh='ssh -oStrictHostKeyChecking=no'
 
-# Foolish consistency sake, functions are lower case
+# For the sake of foolish consistency and to make it easier to remember, functions are lower case
 function checkconsulmembers() {
     cdad
     instanceRange='{1..'$numInstances'}'
@@ -186,16 +186,16 @@ function fstartall() {
 
     # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
     nginxConfFile="$AD_NIMBUS_DIR/nginx/nginx.conf"
-    while test ! -f nginx/nginx.conf
+    while true
     do 
-        echo Waiting for nginxConfFile
-        sleep 10
+        if test ! -f "$nginxConfFile"
+        then
+            echo Waiting for $nginxConfFile
+            sleep 10
+        else
+            break
+        fi
     done
-    if test ! -f nginx/nginx.conf
-    then
-        echo nginx service never started, exiting
-        return
-    fi
 
     fstartnginx
 
@@ -204,6 +204,8 @@ function fstartall() {
     unset dontStatusService
 
     fstatus
+
+    flu
 }
 
 function fstatus() {
@@ -271,21 +273,31 @@ function fstatus() {
 }
 
 function fdestroy() {
-    if test "$1" = ""
+    fshutdown destroy $*
+}
+
+function fstop() {
+    fshutdown stop $*
+}
+
+function fshutdown() {
+    command=$1
+
+    if test "$2" = ""
     then
         svcs=$(fleetctl list-unit-files | awk '{print $1}')
-        destroyAll=true
+        shutdownAll=true
     else
-        destroyAll=false
+        shutdownAll=false
         svcs=$*
     fi
 
-    fleetctl destroy $svcs
+    fleetctl $command $svcs
 
     fluf
     echo
 
-    if test $destroyAll == true
+    if test $shutdownAll == true
     then
         while test `flu -no-legend | wc -l` != 0
         do
@@ -351,7 +363,8 @@ fi
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
 then
-    ssh-add insecure_private_key
+    # if this gets read in by .bashrc there can't be any output
+    ssh-add insecure_private_key > /dev/null 2>&1
 fi
 
 # Setup fleetctl status

@@ -47,13 +47,21 @@ function registerService() {
     runCurlPut "/v1/agent/service/register" "@$dataFile"
 }
 
+function createServiceId() {
+    service=$1
+    instance=$2
+    serviceIpAddr=$3
+
+    echo "$service${instance}_$serviceIpAddr"
+}
+
 function createServiceJsonFile() {
     service=$1
     instance=$2
     serviceIpAddr=$3
     port=$4
 
-    id="$service$instance"
+    serviceId="`createServiceId $service $instance $serviceIpAddr`"
 
     # Use canned IP address so that all the fields are returned
     url="http://$serviceIpAddr:$port?ipAddress=198.243.23.131"
@@ -61,7 +69,7 @@ function createServiceJsonFile() {
     jsonFile=/tmp/$service$instance.json
 
     echo '{
-        "ID": "'$id'",
+        "ID": "'$serviceId'",
         "Name": "'$service'",
         "Tags": [
             "'$service'",
@@ -70,27 +78,13 @@ function createServiceJsonFile() {
         "Address": "'$serviceIpAddr'",
         "Port": '$port',
         "Check": {
-            "id": "'$id'",
+            "id": "'$serviceId'",
             "HTTP": "'$url'",
             "Interval": "10s"
         }
     }' > $jsonFile
 
     echo $jsonFile
-}
-
-function unregisterService() {
-    service=$1
-    instance=$2
-    if test "$1" == "" -o "$2" == ""
-    then 
-        echo Usage: unregisterService '[nginx | netlocation] fleetctl_instance'
-        return
-    fi
-
-    serviceId="$service$instance"
-
-    runCurlPut /v1/agent/service/deregister/$serviceId
 }
 
 function registerNetLocationService() {
@@ -108,6 +102,37 @@ function registerNginxService() {
 
     registerService nginx $instance $serviceIpAddr $port
 }
+
+function unregisterService() {
+    service=$1
+    instance=$2
+    serviceIpAddr=$3
+
+    if test "$1" == "" -o "$2" == "" -o "$3" == ""
+    then 
+        echo Usage: unregisterService '[nginx | netlocation] fleetctl_instance ipAddrOfService'
+        return
+    fi
+
+    serviceId="`createServiceId $service $instance $serviceIpAddr`"
+
+    runCurlPut /v1/agent/service/deregister/$serviceId
+}
+
+function unregisterNetLocationService() {
+    instance=$1
+    serviceIpAddr=$2
+
+    unregisterService $netLocationService $instance $serviceIpAddr
+}
+
+function unregisterNginxService() {
+    instance=$1
+    serviceIpAddr=$2
+
+    unregisterService $nginxService $instance $serviceIpAddr
+}
+
 
 # From: https://www.consul.io/docs/agent/http/health.html
 function getHealthOfNode() {
@@ -175,6 +200,60 @@ function getChecksForService() {
     runCurlGet  /v1/health/checks/$service
 }
 
+declare -A criticalFailures
+
+function handleCriticalHealthChecks() {
+    currentlyFailedServices=`getStateOfService critical | \
+            # User ServiceID as consul requires that to be unique
+            awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}' | \
+            sort -u`
+
+    # Go through the list of currently failed services
+    #   If a service in the currently failed services is not in previously failed services, add it and set count to 0
+    # Go through the list of previously failed services
+    #   If the previously failed service is in the list of currently failed servies, increment
+    #   If the previously failed service is NOT in the list of currently failed servies, decrement
+    previouslyFailedServices=${!criticalFailures[@]}
+    for service in $currentlyFailedServices
+    do
+        echo service :$service:
+        count=${criticalFailures[$service]}
+        
+        if [[ $count == "" ]] 
+        then
+            echo Service $service not previously seen
+            criticalFailures[$service]=0
+        fi
+    done
+
+    for service in "${!criticalFailures[@]}"
+    do 
+        #echo $service:${criticalFailures[$service]}
+        count=${criticalFailures[$service]}
+        
+        if [[ $currentlyFailedServices == *$service* ]] 
+        then
+            echo Increment $service
+            criticalFailures[$service]=$((++count))
+        else
+            if [[ $count -le 1 ]] 
+            then
+                echo Remove $service
+                unset criticalFailures[$service]
+            else
+                echo Decrement $service
+                criticalFailures[$service]=$((--count))
+            fi
+        fi
+    done
+
+    echo Updated criticalFailures
+    for service in "${!criticalFailures[@]}"
+    do
+        echo 'criticalFailures['$service']='${criticalFailures[$service]}
+    done
+}
+
 function runChecks() {
     dataCenters=`getDataCenters`
     echo Known datacenters: $dataCenters
@@ -235,15 +314,20 @@ function runChecks() {
     done
 
     echo
-    for i in critical warning
+    for state in critical warning
     do
-        badNodes=`getStateOfService $i | awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}'`
+        badNodes=`getStateOfService $state | awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}'`
         if test "$badNodes" == ""
         then
-            echo No services are in $i state
+            echo No services are in $state state
         else
-            echo Services that are in $i state: 
-            getStateOfService $i
+            echo Services that are in $state state: 
+            getStateOfService $state
+            if [[ $state == "critical" ]]
+            then
+                echo
+                handleCriticalHealthChecks
+            fi
             echo
         fi
     done
@@ -266,11 +350,11 @@ fi
 if test "$1" == "stop"
 then
     pkill monitor.sh
-    exit 0
+    return 2>/dev/null || exit 0
 fi
 
 # TODO: Do we need to expand this beyond register*Service and unregisterService?
-if [[ $1 == *register*Service ]] 
+if [[ `type -t $1` == "function" ]]
 then
     ${1} $2 $3
     exit 0
