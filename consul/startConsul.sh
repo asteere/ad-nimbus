@@ -117,6 +117,7 @@ set -x
     --volume /var/run/docker.sock:/var/run/docker.sock \
     --volume /home/core/share/${consulService}:${consulDir} \
     --volume /home/core/share/${nginxService}:${nginxDir} \
+    --volume /home/core/share/${monitorService}:${monitorDir} \
     ${dockerImage} \
     ${consulDir}/${consulService} \
     agent $serverArg $bootstrapArg $advertiseArg $bindArg $clientArg $retryJoinArg \

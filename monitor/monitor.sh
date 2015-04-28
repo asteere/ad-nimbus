@@ -78,6 +78,8 @@ function createServiceJsonFile() {
         "Checks": [
             {
                 "Id": "'$serviceId'_http",
+                "Name": "HTTP Response Time",
+                "Notes": "'$serviceId'_http",
                 "Http": "'$url'",
                 "Interval": "10s",
                 "Timeout": "5s"
@@ -85,7 +87,8 @@ function createServiceJsonFile() {
             {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
-                "Script": "/home/core/share/monitor/checkCpu.sh '$serviceId'",
+                "Notes": "'${serviceId}'_cpu-util",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu.log",
                 "Interval": "10s"
             }
         ]
@@ -262,6 +265,8 @@ function handleCriticalHealthChecks() {
 
     for svcIndex in "${!criticalFailures[@]}"
     do 
+        serviceType=`echo $svcIndex | sed 's/@.*//'`
+
         #echo $svcIndex:${criticalFailures[$svcIndex]}
         count=${criticalFailures[$svcIndex]}
         
@@ -269,8 +274,8 @@ function handleCriticalHealthChecks() {
         then
             echo Increment $svcIndex
             criticalFailures[$svcIndex]=$((++count))
-            numNetLocationInstances=`fleetctl list-units -fields=unit | grep $service | wc -l`
-            if test ${criticalFailures[$svcIndex]} -gt "$netlocationHighWaterMark" -a \
+            numNetLocationInstances=`getNumberServices $serviceType`
+            if test "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" -a \
                 "$numNetLocationInstances" -lt "$maxNumInstances"
             then
                 startService $svcIndex
@@ -279,11 +284,11 @@ function handleCriticalHealthChecks() {
                 unset criticalFailures[$svcIndex]
             fi
         else
-            if [[ $count -le 1 ]] 
+            if [[ "$count" -le 1 ]] 
             then
                 echo Remove $svcIndex criticality count
                 unset criticalFailures[$svcIndex]
-                if test $numNetLocationInstances -gt $minNumInstances
+                if test "$numNetLocationInstances" -gt "$minNumInstances"
                 then
                     stopService $svcIndex
                 fi
@@ -294,16 +299,21 @@ function handleCriticalHealthChecks() {
         fi
 
         # Count the number of netlocation services that have failures.
-        if [[ $netLocationService == *$svcIndex* ]] 
+        if [[ "$netLocationService" == "$serviceType" ]] 
         then
             echo Increment number of net location service failures
-            dataCenterNetLocationFailures=$((dataCenterNetLocationFailures + criticalFailures[$svcIndex]))
+            dataCenterNetLocationFailures=$((dataCenterNetLocationFailures + 1))
         fi
     done
 
-    numNetLocationInstances=`fleetctl list-units -fields=unit | grep $service | wc -l`
-    echo Number of netlocation services: $numNetLocationInstances
-    echo Number of netlocation errors in datacenter: $dataCenterNetLocationFailures
+    serviceType=netlocation
+    numNetLocationInstances=`getNumberServices $serviceType`
+    echo Number of $serviceType services: $numNetLocationInstances
+    echo Number of $serviceType errors in datacenter: $dataCenterNetLocationFailures
+}
+
+function getNumberServices() {
+    fleetctl list-units -fields=unit | grep $1 | wc -l
 }
 
 function foo() {
@@ -337,7 +347,7 @@ function dumpCriticalFailures() {
     done
 }
 
-function runChecks() {
+function runOtherChecks() {
     dataCenters=`getDataCenters`
     echo Known datacenters: $dataCenters
 
@@ -395,6 +405,13 @@ function runChecks() {
         getChecksForService $svc
         echo
     done
+}
+
+function runChecks() {
+    if test "$runAll" == "true"
+    then
+        runOtherChecks
+    fi
 
     echo
     for state in warning critical 
@@ -418,23 +435,28 @@ function runChecks() {
     dumpCriticalFailures
 }
 
+# TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
 export consulIpAddr=172.17.8.101
 
-# TODO: use getopt
-while getopts ":d:" opt; do
-  case $opt in
+runAll=false
+
+while getopts "ad" opt; do
+  case "$opt" in
+    a)
+        runAll=true
+        ;;
     d)
       set -x;
-      shift 1;
       ;;
   esac
 done
+shift $((OPTIND-1))
 
 if test "$1" == "start"
 then
     while true; 
     do 
-        # Run setup to allow dynamic changes of controlling variables
+        # Run setup each time to allow dynamic changes of controlling variables
         setup
 
         runChecks
@@ -449,6 +471,8 @@ then
     pkill monitor.sh
     return 2>/dev/null || exit 0
 fi
+
+setup
 
 # TODO: Do we need to expand this beyond register*Service and unregisterService?
 if [[ `type -t $1` == "function" ]]
