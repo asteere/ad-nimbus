@@ -6,6 +6,7 @@ var geoReader = require('maxmind-db-reader');
 var fs = require('fs');
 var hostAddress = process.argv[2];
 console.log('NodeJs is running on ' + hostAddress); // 10.25.10.147
+var spawn = require('child_process').spawn;
 
 // Constants.
 var SERVICE = "netLocation";
@@ -55,8 +56,10 @@ app.get('/', function(request, response) {
                 // Append ISP data.
                 appendIsp(geoData, ispData);
             }
-                         
-            // TODO: Hack to cause the netlocation service to delay a response to cause the consul check to fail
+
+            // TODO: Hack to make this netlocation process consume lots of CPU
+                                     
+            // TODO: Remove hack to cause the netlocation service to delay a response to cause the consul check to fail
             var path = __dirname + "/netlocation_" + hostAddress + ".cfg";
             console.log("Attempting to read file: " + path);
             var delay = 0;

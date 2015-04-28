@@ -75,12 +75,20 @@ function createServiceJsonFile() {
         ],
         "Address": "'$serviceIpAddr'",
         "Port": '$port',
-        "Check": {
-            "Id": "'$serviceId'",
-            "Http": "'$url'",
-            "Interval": "10s",
-            "Timeout": "5s"
-        }
+        "Checks": [
+            {
+                "Id": "'$serviceId'_http",
+                "Http": "'$url'",
+                "Interval": "10s",
+                "Timeout": "5s"
+            },
+            {
+                "Id": "'${serviceId}'_cpu-util",
+                "Name": "CPU utilization",
+                "Script": "/home/core/share/monitor/checkCpu.sh '$serviceId'",
+                "Interval": "10s"
+            }
+        ]
     }' > $jsonFile
 
     echo $jsonFile
@@ -262,7 +270,7 @@ function handleCriticalHealthChecks() {
             echo Increment $svcIndex
             criticalFailures[$svcIndex]=$((++count))
             numNetLocationInstances=`fleetctl list-units -fields=unit | grep $service | wc -l`
-            if test ${criticalFailures[$svcIndex]} -gt "$httpCheckStartNewSvcThreshold" -a \
+            if test ${criticalFailures[$svcIndex]} -gt "$netlocationHighWaterMark" -a \
                 "$numNetLocationInstances" -lt "$maxNumInstances"
             then
                 startService $svcIndex
@@ -286,8 +294,6 @@ function handleCriticalHealthChecks() {
         fi
 
         # Count the number of netlocation services that have failures.
-        # If the count is greater than high water mark and less than high water mark, start another netlocation
-        # If the count is less than the low water mark and the num_instances is greater than minNumInstances, stop one
         if [[ $netLocationService == *$svcIndex* ]] 
         then
             echo Increment number of net location service failures
@@ -303,7 +309,9 @@ function handleCriticalHealthChecks() {
 function foo() {
     # Constants
     netLocationLowWaterMark=3
-    netLocationHighWaterMark=7
+
+    # If the count is greater than high water mark and less than high water mark, start another netlocation
+    # If the count is less than the low water mark and the num_instances is greater than minNumInstances, stop one
 
     if test $dataCenterNetLocationFailures -le $netLocationHighWaterMark -a $numNetLocationInstances -lt $maxNumInstances
     then
