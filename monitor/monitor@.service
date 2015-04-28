@@ -1,5 +1,5 @@
 [Unit]
-Description=Monitor all netlocation services across all clusters. Precursor to using Salt or Sensu.
+Description=Work with consul to monitor services across the clusters. Precursor to using Salt, Ngios, Ganglia and/or Sensu.
 
 [Service]
 # Allow access to environment variables.
@@ -12,8 +12,8 @@ ExecStart=/bin/bash -c "/home/core/share/monitor/monitor.sh start"
 
 ExecStop=/bin/bash -c "/home/core/share/monitor/monitor.sh stop"
 
-[X-Fleet]
+#[X-Fleet]
 # Don't want the monitoring software to be on a server that could lock up
-Conflicts=${netLocationService}@*.service
-Conflicts=${nginxService}@*.service
+#Conflicts=netlocation@*.service
+#Conflicts=nginx@*.service
 

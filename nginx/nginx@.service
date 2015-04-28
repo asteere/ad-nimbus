@@ -30,7 +30,9 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
-ExecStartPre=/bin/bash -c "/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}"
+
+# TODO: Add this back in once we have an nginx specific test
+# ExecStartPre=/bin/bash -c "/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}"
 
 ExecStart=/usr/bin/docker run \
     --name=${nginxDockerTag} \
@@ -50,13 +52,15 @@ ExecStart=/usr/bin/docker run \
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
-ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}"
+
+# TODO: See TODO above
+#ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}"
 
 #Restart=always
 
 [X-Fleet]
-Conflicts=${netLocationService}@*.service
-Conflicts=${nginxService}@*.service
+#Conflicts=netlocation@*.service
+#Conflicts=nginx@*.service
 
 # nginx and confd must run on the same machine due to limitations of signaling between docker containers. 
 # There are more complicated solutions but may not be needed if we go to consul and consul-template
@@ -64,4 +68,4 @@ Conflicts=${nginxService}@*.service
 
 # TODO: This should be ${confdService}@*.service
 # Doesn't work: MachineOf=${confdService}@1.service
-MachineOf=confd@1.service
+#MachineOf=confd@1.service

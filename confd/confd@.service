@@ -45,4 +45,4 @@ ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}
 ExecStopPost=-/usr/bin/docker ps -a
 
 [X-Fleet]
-#Conflicts=${netLocationService}@*.service
+#Conflicts=netlocation@*.service

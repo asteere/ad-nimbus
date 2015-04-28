@@ -7,15 +7,13 @@ export curlOptions='-s -L'
 function setup() {
     set -a
 
-    if test -f /etc/environment
-    then
-        . /etc/environment
-    fi
-    if test -f /home/core/share/adNimbusEnvironment
-    then
-        . /home/core/share/adNimbusEnvironment
-    fi
-
+    for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
+    do
+        if test -f "$envFile"
+        then
+            . "$envFile"
+        fi
+    done 
     set +a
 }
 
@@ -78,21 +76,25 @@ function createServiceJsonFile() {
         "Address": "'$serviceIpAddr'",
         "Port": '$port',
         "Check": {
-            "id": "'$serviceId'",
-            "HTTP": "'$url'",
-            "Interval": "10s"
+            "Id": "'$serviceId'",
+            "Http": "'$url'",
+            "Interval": "10s",
+            "Timeout": "5s"
         }
     }' > $jsonFile
 
     echo $jsonFile
+
+    #rm -f $jsonFile
 }
 
 function registerNetLocationService() {
     instance=$1
     serviceIpAddr=$2
     port=$netLocationGuestOsPort
-
+set -x
     registerService netlocation $instance $serviceIpAddr $port
+set +x
 }
 
 function registerNginxService() {
@@ -248,6 +250,8 @@ function handleCriticalHealthChecks() {
         fi
     done
 
+    dataCenterNetLocationFailures=0
+
     for svcIndex in "${!criticalFailures[@]}"
     do 
         #echo $svcIndex:${criticalFailures[$svcIndex]}
@@ -257,10 +261,13 @@ function handleCriticalHealthChecks() {
         then
             echo Increment $svcIndex
             criticalFailures[$svcIndex]=$((++count))
-            if test ${criticalFailures[$svcIndex]} -gt $monitorRestartSvcThreshold
+            numNetLocationInstances=`fleetctl list-units -fields=unit | grep $service | wc -l`
+            if test ${criticalFailures[$svcIndex]} -gt "$httpCheckStartNewSvcThreshold" -a \
+                "$numNetLocationInstances" -lt "$maxNumInstances"
             then
                 startService $svcIndex
-                # stopService $svcIndex
+
+                # Reset the counters to let it run awhile and see if the problem clears up
                 unset criticalFailures[$svcIndex]
             fi
         else
@@ -268,15 +275,53 @@ function handleCriticalHealthChecks() {
             then
                 echo Remove $svcIndex criticality count
                 unset criticalFailures[$svcIndex]
+                if test $numNetLocationInstances -gt $minNumInstances
+                then
+                    stopService $svcIndex
+                fi
             else
                 echo Decrement $svcIndex criticality count
                 criticalFailures[$svcIndex]=$((--count))
             fi
         fi
+
+        # Count the number of netlocation services that have failures.
+        # If the count is greater than high water mark and less than high water mark, start another netlocation
+        # If the count is less than the low water mark and the num_instances is greater than minNumInstances, stop one
+        if [[ $netLocationService == *$svcIndex* ]] 
+        then
+            echo Increment number of net location service failures
+            dataCenterNetLocationFailures=$((dataCenterNetLocationFailures + criticalFailures[$svcIndex]))
+        fi
     done
+
+    numNetLocationInstances=`fleetctl list-units -fields=unit | grep $service | wc -l`
+    echo Number of netlocation services: $numNetLocationInstances
+    echo Number of netlocation errors in datacenter: $dataCenterNetLocationFailures
+}
+
+function foo() {
+    # Constants
+    netLocationLowWaterMark=3
+    netLocationHighWaterMark=7
+
+    if test $dataCenterNetLocationFailures -le $netLocationHighWaterMark -a $numNetLocationInstances -lt $maxNumInstances
+    then
+        startService ${netLocationService}
+    fi
+
+    if test $dataCenterNetLocationFailures -le $netLocationLowWaterMark 
+    then
+        stopService ${netLocationService}
+    fi
 }
 
 function dumpCriticalFailures() {
+    if [[ "${!criticalFailures[@]}" == "" ]]
+    then
+        return
+    fi
+
     echo Status on CriticalFailures:
     for svcIndex in "${!criticalFailures[@]}"
     do
@@ -366,6 +411,16 @@ function runChecks() {
 }
 
 export consulIpAddr=172.17.8.101
+
+# TODO: use getopt
+while getopts ":d:" opt; do
+  case $opt in
+    d)
+      set -x;
+      shift 1;
+      ;;
+  esac
+done
 
 if test "$1" == "start"
 then
