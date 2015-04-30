@@ -111,28 +111,20 @@ function fstart() {
     # From: https://github.com/coreos/fleet/issues/914
     case $numServices in
     "startOnlyThisService")
-        fleetctl submit ${service}
-        sleep 2
         fleetctl start ${service}
 	;;
         
     0)
         # Start a global service
-        fleetctl submit ${service}.service
-        sleep 2
         fleetctl start ${service}.service
 	;;
 
     1)
-        fleetctl submit ${service}@1.service
-        sleep 2
         fleetctl start ${service}@1.service
 	;;
 
     *)
         serviceRange='${service}@{1..'$numServices'}.service'
-        fleetctl submit `eval echo $serviceRange`
-        sleep 2
         fleetctl start `eval echo $serviceRange`
 	;;
     esac
@@ -231,7 +223,6 @@ function fstatus() {
     while true
     do
         runningServices=`flu -fields=unit -no-legend`
-
         for service in $runningServices
         do 
             [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
@@ -265,9 +256,17 @@ function fstatus() {
                 return
                 ;;
             esac 
-            echo; 
+            echo
             echo '==============' 
         done
+
+        echo Hit enter for next round of services.
+        read a
+        case "$a" in 
+        q|Q|quit)
+            return
+            ;;
+        esac 
         echo '+++++++++++++++ Next round of services +++++++++' 
     done
 }

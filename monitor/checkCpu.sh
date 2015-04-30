@@ -27,9 +27,15 @@ then
     processName=node
 fi
 
-pCpu=`ps -eo pcpu,comm | grep "$processName" | grep -v -e docker -e grep | awk '{printf("%.0f\n", $1);}'`
+ipAddr=$(echo $serviceId | sed 's/.*_//')
+processInfo=`ps -eo pcpu,comm,args | grep "$processName" | grep $ipAddr | grep -v -e docker -e grep`
+echo Process information: $processInfo
+
+pCpu=$(echo $processInfo | awk '{printf("%.0f\n", $1);}')
+
 set +x
 
+# Enable the script to be run from coreos and docker
 if test ! -d ${monitorDir}
 then
     monitorDir=/home/core/share/monitor

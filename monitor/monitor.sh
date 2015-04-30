@@ -94,7 +94,7 @@ function createServiceJsonFile() {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
                 "Notes": "'${serviceId}'_cpu-util",
-                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 > '$monitorDir'/tmp/checkCpu.log",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu_'$instance_$serviceIpAddr'.log",
                 "Interval": "10s"
             }
         ]
@@ -277,7 +277,7 @@ function handleCriticalHealthChecks() {
         
         if [[ $currentlyFailedServices == *$svcIndex* ]] 
         then
-            echo Increment $svcIndex
+            echo Increment $svcIndex criticality count
             criticalFailures[$svcIndex]=$((++count))
             numNetLocationInstances=`getNumberServices $serviceType`
             if test "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" -a \
@@ -306,7 +306,7 @@ function handleCriticalHealthChecks() {
         # Count the number of netlocation services that have failures.
         if [[ "$netLocationService" == "$serviceType" ]] 
         then
-            echo Increment number of net location service failures
+            echo Increment number of $serviceType failures in cluster
             dataCenterNetLocationFailures=$((dataCenterNetLocationFailures + 1))
         fi
     done

@@ -2,13 +2,28 @@
 
 function sendSignal() {
     echo Sending $1 to consul 
-    docker kill -s $1
+    # TODO: Not sure the use cases where this is needed
+    # docker kill -s $1
+
+    if test "$instance" != ""
+    then
+        docker rm -f ${consulDockerTag}_$instance
+    fi
+
+    if test -f "$consulServerCfg"
+    then
+        rm -f "$consulServerCfg"
+    fi
 }
 
 trap 'sendSignal TERM' TERM
+trap 'sendSignal INT' INT 
 trap 'sendSignal QUIT' QUIT 
 trap 'sendSignal HUP' HUP
 trap 'sendSignal USR1' USR1
+
+instance=$1
+consulServerCfg=/home/core/share/consul/tmp/consulServer.cfg
 
 set -e
 
@@ -45,16 +60,33 @@ bindArg="-bind=$COREOS_PUBLIC_IPV4"
 clientArg="-client=$COREOS_PUBLIC_IPV4"
 
 # TODO: figure out how to get the IP address of the first consul so everybody can join it
+
+
+# Telling each consul that there are multiple agents to retry with creates pockets of consul servers.
+# TODO: This is probably my coding mistake, but due to time, hacking this in place.
 retryJoinArg=""
-for i in $clusterPrivateIpAddrs
-do
-    if test ! "$i" = "$COREOS_PUBLIC_IPV4"
-    then
-        retryJoinArg="$retryJoinArg --retry-join=$i"
-    fi
-done
-retryJoinArg="$retryJoinArg --retry-interval=10s"
-echo $retryJoinArg
+if test "$instance" = "1"
+then
+    echo $COREOS_PUBLIC_IPV4 > "$consulServerCfg"
+else
+    for ctr in {1..60}
+    do
+        if test -f "$consulServerCfg"
+        then
+            retryJoinArg="--retry-join=`cat $consulServerCfg`"
+            retryJoinArg="$retryJoinArg --retry-interval=10s"
+            echo $retryJoinArg
+            break
+        else
+            sleep 2
+            if test $ctr >= 60
+            then
+                echo Error: No $consulServerCfg file found with the consul server\'s IP address, exiting
+                exit 1 
+            fi
+        fi
+    done
+fi
 
 nodeArg="-node $hostname"
 
@@ -68,11 +100,9 @@ dataDirArg="-data-dir ${consulDataDir}"
 
 configDirArg="-config-dir ${consulDir}/consul.d"
 
-instance=$1
-echo Starting instance $instance
 case "$instance" in
 1)
-    echo start the first server
+    echo Start the first server, instance=$instance
 
     bootstrapArg="-bootstrap"
     unset advertiseArg
@@ -80,10 +110,10 @@ case "$instance" in
     
 ;;
 2|3)
-    echo start additional servers
+    echo start additional servers, instance=$instance
 ;;
 *)
-    echo start agent
+    echo start an agent, instance=$instance
     unset serverArg
 ;;
 esac

@@ -26,7 +26,7 @@ ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker ps -a
 
-ExecStartPre=-/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
+ExecStartPre=-/usr/bin/curl -v -s -X PUT -d ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort} http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H/%i 
 ExecStartPre=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
 ExecStartPre=/bin/bash -c "/home/core/share/monitor/monitor.sh registerNetLocationService %i ${COREOS_PUBLIC_IPV4}"
 
@@ -41,14 +41,14 @@ ExecStart=/usr/bin/docker run \
 
 ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
 
-ExecStopPost=/usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
+ExecStopPost=/usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H/%i 
 ExecStopPost=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
 ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNetLocationService %i ${COREOS_PUBLIC_IPV4}"
 
 #Restart=always
 
 [X-Fleet]
-MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
+#MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
 
 #Conflicts=monitor@1.service
 #Conflicts=nginx@1.service
