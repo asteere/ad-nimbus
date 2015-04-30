@@ -281,11 +281,11 @@ function handleCriticalHealthChecks() {
             criticalFailures[$svcIndex]=$((++count))
             numNetLocationInstances=`getNumberServices $serviceType`
             if test "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" -a \
-                "$numNetLocationInstances" -lt "$maxNumInstances"
+                "$numNetLocationInstances" -le "$maxNumInstances"
             then
                 startService $svcIndex
 
-                # Reset the counters to let it run awhile and see if the problem clears up
+                # Reset the counter to let the service run awhile and see if the problem clears up
                 unset criticalFailures[$svcIndex]
             fi
         else
@@ -321,7 +321,7 @@ function getNumberServices() {
     fleetctl list-units -fields=unit | grep $1 | wc -l
 }
 
-function foo() {
+function TBD() {
     # Constants
     netLocationLowWaterMark=3
 
@@ -352,24 +352,49 @@ function dumpCriticalFailures() {
     done
 }
 
-function runOtherChecks() {
-    dataCenters=`getDataCenters`
-    echo Known datacenters: $dataCenters
+function getEtcdNodes() {
+    curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
+        /home/core/share/devutils/jq '.node.nodes[].value' 
+}
 
-    echo
-    echo List Services running in datacenter
-    getServicesInDataCenter
+function runOtherChecks() {
+    numConsulNodes=`getConsulNodes | grep Node | wc -l`
+    numEtcdNodes=`getEtcdNodes | wc -l`
+    if test "$numConsulNodes" != "$numEtcdNodes"
+    then
+        echo Error: The number of consul nodes $numConsulNodes does not equals the number of etcd nodes $numEtcdNodes
+    else
+        echo The number of consul nodes $numConsulNodes equals the number of etcd nodes $numEtcdNodes
+    fi
 
     # Check that there is a raft leader
     echo
-    echo
     leader=`getConsulLeader`
-    echo Leader: $leader
+    if test "$leader" == "" -o "$leader" == "[]"
+    then
+        echo Error: consul cluster does not have a leader
+    else
+        echo Leader: $leader
+    fi
 
     # Check that there are peers
     echo
     peers=`getConsulPeers`
     echo Peers: $peers
+
+    echo
+    dataCenters=`getDataCenters`
+    if test "$dataCenters" == "" -o "$dataCenters" == "[]"
+    then
+        echo Error: no data centers have been defined
+    else
+        echo Known datacenters: $dataCenters
+    fi
+
+    echo
+    echo
+    echo List services running in datacenter
+    getServicesInDataCenter
 
     # Lists nodes in a given DC. Should equal numInstances
     echo

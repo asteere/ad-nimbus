@@ -48,7 +48,7 @@ ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNetLoca
 #Restart=always
 
 [X-Fleet]
-#MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
+MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
 
 #Conflicts=monitor@1.service
 #Conflicts=nginx@1.service
