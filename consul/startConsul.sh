@@ -22,15 +22,28 @@ trap 'sendSignal QUIT' QUIT
 trap 'sendSignal HUP' HUP
 trap 'sendSignal USR1' USR1
 
+if test "$1" == ""
+then
+    echo Usage: `basename $0` consulInstanceNumber
+    exit 1
+fi
+
 instance=$1
 consulServerCfg=/home/core/share/consul/tmp/consulServer.cfg
 
-set -e
+set -a
+    
+for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
+do  
+    if test ! -f "$envFile"
+    then
+        echo Error: Unable to find envFile $envFile
+        exit $exitCritical
+    fi
+    . "$envFile"
+done
 
-. /etc/environment
-. /home/core/share/adNimbusEnvironment
-
-set +e
+set +a
 
 hostname=`uname -n`
 
@@ -73,10 +86,14 @@ else
     do
         if test -f "$consulServerCfg"
         then
-            retryJoinArg="--retry-join=`cat $consulServerCfg`"
-            retryJoinArg="$retryJoinArg --retry-interval=10s"
-            echo $retryJoinArg
-            break
+            bootStrapIpAddr=`cat $consulServerCfg`
+            if test "$bootStrapIpAddr" != ""
+            then 
+                retryJoinArg="--retry-join=$bootStrapIpAddr"
+                retryJoinArg="$retryJoinArg --retry-interval=10s"
+                echo $retryJoinArg
+                break
+            fi
         else
             sleep 2
             if test $ctr >= 60

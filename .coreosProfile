@@ -182,7 +182,7 @@ function fstartall() {
     do 
         if test ! -f "$nginxConfFile"
         then
-            echo Waiting for $nginxConfFile
+            echo Waiting for $nginxConfFile. When this file is created it indicates netlocation, consul and confd are working.
             sleep 10
         else
             break

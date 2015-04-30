@@ -94,7 +94,7 @@ function createServiceJsonFile() {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
                 "Notes": "'${serviceId}'_cpu-util",
-                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu_'$instance_$serviceIpAddr'.log",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu_'${instance}_${serviceIpAddr}'.log",
                 "Interval": "10s"
             }
         ]
@@ -318,7 +318,7 @@ function handleCriticalHealthChecks() {
     serviceType=netlocation
     numNetLocationInstances=`getNumberServices $serviceType`
     echo Number of $serviceType services: $numNetLocationInstances
-    echo Number of $serviceType errors in datacenter: $dataCenterNetLocationFailures
+    echo Number of $serviceType critical errors in datacenter: $dataCenterNetLocationFailures
 }
 
 function getNumberServices() {
@@ -457,12 +457,13 @@ function runChecks() {
         else
             echo Services that are in $state state: 
             getStateOfService $state
-            if [[ $state == "critical" ]]
-            then
-                echo
-                handleCriticalHealthChecks
-            fi
             echo
+        fi
+
+        if [[ $state == "critical" ]]
+        then
+            echo
+            handleCriticalHealthChecks
         fi
     done
 
