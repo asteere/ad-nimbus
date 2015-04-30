@@ -45,3 +45,6 @@ monitor/.nfs*
 
 # TODO: Is there a better place to write the consul data for consistency over reboots?
 consul/data/*
+
+# Scribble area for monitor logs, demo config information, etc
+monitor/tmp

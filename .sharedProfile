@@ -69,6 +69,10 @@ function removeNginxConfTempFiles() {
     fi
 }
 
+function startPrivateRegistry() {
+    docker run -p 5000:5000 -d --rm=true --name=basic_registry registry:2.0
+}
+
 sourceadnimbusenvironment
 
 # Custom bash prompt via kirsle.net/wizards/ps1.html

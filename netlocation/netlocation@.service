@@ -22,7 +22,7 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}
+ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker ps -a
 
@@ -32,14 +32,14 @@ ExecStartPre=/bin/bash -c "/home/core/share/monitor/monitor.sh registerNetLocati
 
 # From: https://github.com/coreos/fleet/issues/612
 ExecStart=/usr/bin/docker run \
-    --name=${netLocationDockerTag} \
+    --name=${netLocationDockerTag}_%i \
     --rm=true \
     -p ${COREOS_PUBLIC_IPV4}:${netLocationGuestOsPort}:${netLocationContainerPort} \
     -v /home/core/share/${netLocationService}/src:/src \
     ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
     /src/startNpm.sh ${COREOS_PUBLIC_IPV4}
 
-ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}
+ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
 
 ExecStopPost=/usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${netLocationKey}/%H 
 ExecStopPost=-/usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
@@ -48,7 +48,7 @@ ExecStopPost=/bin/bash -c "/home/core/share/monitor/monitor.sh unregisterNetLoca
 #Restart=always
 
 [X-Fleet]
-#MachineMetadata=172.18.1.101=${COREOS_PUBLIC_IPV4}
+#MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
 
 #Conflicts=monitor@1.service
 #Conflicts=nginx@1.service

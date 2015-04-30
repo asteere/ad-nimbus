@@ -23,15 +23,21 @@ function runCurlGet() {
 }
 
 function runCurlPut() {
-    url=$1
-    dataFileArg=""
-    if test "$2" != ""
+    useIpAddr=$consulIpAddr
+    if test "$1" != ""
     then
-        headers='-H "Content-Type: application/json"'
-        dataFileArg="-d $2"
+        useIpAddr=$1
     fi
 
-    curl $curlOptions $headers $dataFileArg "http://$consulIpAddr:$consulHttpPort${url}?pretty"
+    url=$2
+    dataFileArg=""
+    if test "$3" != ""
+    then
+        headers='-H "Content-Type: application/json"'
+        dataFileArg="-d $3"
+    fi
+
+    curl $curlOptions $headers $dataFileArg "http://$useIpAddr:$consulHttpPort${url}?pretty"
 }
 
 function registerService() {
@@ -42,7 +48,7 @@ function registerService() {
 
     dataFile=`createServiceJsonFile $service $instance $serviceIpAddr $port`
 
-    runCurlPut "/v1/agent/service/register" "@$dataFile"
+    runCurlPut $serviceIpAddr "/v1/agent/service/register" "@$dataFile"
 }
 
 function createServiceId() {
@@ -88,7 +94,7 @@ function createServiceJsonFile() {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
                 "Notes": "'${serviceId}'_cpu-util",
-                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu.log",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 > '$monitorDir'/tmp/checkCpu.log",
                 "Interval": "10s"
             }
         ]
@@ -103,9 +109,8 @@ function registerNetLocationService() {
     instance=$1
     serviceIpAddr=$2
     port=$netLocationGuestOsPort
-set -x
+
     registerService netlocation $instance $serviceIpAddr $port
-set +x
 }
 
 function registerNginxService() {
@@ -129,7 +134,7 @@ function unregisterService() {
 
     serviceId="`createServiceId $service $instance $serviceIpAddr`"
 
-    runCurlPut /v1/agent/service/deregister/$serviceId
+    runCurlPut $serviceIpAddr /v1/agent/service/deregister/$serviceId
 }
 
 function unregisterNetLocationService() {

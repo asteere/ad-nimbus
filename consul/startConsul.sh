@@ -111,7 +111,7 @@ dockerImage="${consulDockerRegistry}/${consulService}:${consulDockerTag}"
 #/usr/bin/docker rm -f ${consulDockerTag} > /dev/null 2>&1
 
 set -x
-/usr/bin/docker run --name=${consulDockerTag} \
+/usr/bin/docker run --name=${consulDockerTag}_${instance} \
     --net=host \
     -P \
     --volume /var/run/docker.sock:/var/run/docker.sock \

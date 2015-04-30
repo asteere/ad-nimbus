@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# Constants that regulate the monitor service
+
+# How often (seconds) should monitor check the consul health-checks
+monitorRunChecksInterval=8
+
+netlocationHighWaterMark=5
+
+minNumInstances=1
+maxNumInstances=3
+
+percentCpuSuccess=10
+percentCpuWarning=20
+# Anything above percentCpuWarning is considered a critical issue
