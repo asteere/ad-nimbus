@@ -1,23 +1,30 @@
 #! /bin/sh
 
+function updateMonitorDir() {
+    # Enable the script to be run from coreos and docker
+    if test -d "/home/core/share/monitor"
+    then
+        monitorDir=/home/core/share/monitor
+    fi
+}
+
 function setup() {
     set -a
 
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment ${monitorDir}/monitorEnvironment
+    updateMonitorDir
+
+    for envFile in /etc/environment ${monitorDir}/monitorEnvironment
     do
         if test -f "$envFile"
         then
             . "$envFile"
         fi
     done
+
+    updateMonitorDir
+
     set +a
 }
-
-# Enable the script to be run from coreos and docker
-if test ! -d "/home/core/share/monitor"
-then
-    monitorDir=/home/core/share/monitor
-fi
 
 setup
 

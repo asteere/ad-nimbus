@@ -1,6 +1,8 @@
 #! /bin/bash
 
 # Constants that regulate the monitor service
+monitorService=monitor
+monitorDir=/opt/monitor
 
 # How often (seconds) should monitor check the consul health-checks
 monitorRunChecksInterval=8

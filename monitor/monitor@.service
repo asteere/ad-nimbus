@@ -5,6 +5,7 @@ Description=Work with consul to monitor services across the clusters. Precursor 
 # Allow access to environment variables.
 EnvironmentFile=/etc/environment
 EnvironmentFile=/home/core/share/adNimbusEnvironment
+EnvironmentFile=/home/core/share/monitor/monitorEnvironment
 
 User=core
 
