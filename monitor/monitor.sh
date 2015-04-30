@@ -242,17 +242,11 @@ function startService() {
 
 declare -A criticalFailures
 
-function handleCriticalHealthChecks() {
-    currentlyFailedServices=`getStateOfService critical | \
-            # User ServiceID as consul requires that to be unique
-            awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}' | \
-            sort -u`
+function addNewFailedService() {
+    currentlyFailedServices=$1
 
     # Go through the list of currently failed services
     #   If a service in the currently failed services is not in previously failed services, add it and set count to 0
-    # Go through the list of previously failed services
-    #   If the previously failed service is in the list of currently failed servies, increment
-    #   If the previously failed service is NOT in the list of currently failed servies, decrement
     previouslyFailedServices=${!criticalFailures[@]}
     for svcIndex in $currentlyFailedServices
     do
@@ -265,9 +259,17 @@ function handleCriticalHealthChecks() {
             criticalFailures[$svcIndex]=0
         fi
     done
+}
 
+function updateCriticalFailureList() {
+    currentlyFailedServices=$1
+
+    # TODO: handle different services
     dataCenterNetLocationFailures=0
 
+    # Go through the list of previously failed services
+    #   If the previously failed service is in the list of currently failed servies, increment
+    #   If the previously failed service is NOT in the list of currently failed servies, decrement
     for svcIndex in "${!criticalFailures[@]}"
     do 
         serviceType=`echo $svcIndex | sed 's/@.*//'`
@@ -279,10 +281,10 @@ function handleCriticalHealthChecks() {
         then
             echo Increment $svcIndex criticality count
             criticalFailures[$svcIndex]=$((++count))
-            numNetLocationInstances=`getNumberServices $serviceType`
-            echo "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" -a \
+            numNetLocationInstances=`getNumberLoadedActiveRunningServices $serviceType`
+            echo "${criticalFailures[$svcIndex]}" -gt "$criticalFailuresHighWaterMark" -a \
                 "$numNetLocationInstances" -lt "$maxNumInstances"
-            if test "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" 
+            if test "${criticalFailures[$svcIndex]}" -gt "$criticalFailuresHighWaterMark" 
             then
                 # Reset the counter to let the service run awhile and see if the problem has cleared or will clear up
                 unset criticalFailures[$svcIndex]
@@ -312,35 +314,66 @@ function handleCriticalHealthChecks() {
         then
             echo Increment number of $serviceType failures in cluster
             dataCenterNetLocationFailures=$((dataCenterNetLocationFailures + 1))
+            resetClock
         fi
     done
+}
+
+function handleCriticalHealthChecks() {
+set -x
+    currentlyFailedServices=`getStateOfService critical | \
+            # User ServiceID as consul requires that to be unique
+            awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}' | \
+            sort -u`
+
+    addNewFailedService "$currentlyFailedServices"
 
     serviceType=netlocation
-    numNetLocationInstances=`getNumberServices $serviceType`
+
+    updateCriticalFailureList "$currentlyFailedServices"
+
+    stopServicesIfErrorFree
+
+    numNetLocationInstances=`getNumberLoadedActiveRunningServices $serviceType`
     echo Number of $serviceType services: $numNetLocationInstances
     echo Number of $serviceType critical errors in datacenter: $dataCenterNetLocationFailures
+set +x
+}
+
+function resetClock() {
+    clockStart=0
+}
+
+function stopServicesIfErrorFree() {
+    # If the number of dataCenterNetLocationFailures == 0 and more than X amount of time has passed, stop another service   
+    if test "$dataCenterNetLocationFailures" == 0 
+    then
+        if test "$clockStart" == 0
+        then
+            clockStart=$(date +%s)
+        fi
+
+        currentTime=$(date +%s)
+        elapsedTime=$((currentTime - clockStart))
+
+        numRunningServices=`getNumberLoadedActiveRunningServices $serviceType`
+        if test "$elapsedTime" -gt "$errorFreePeriod" -a "$numRunningServices" -gt "$minNumInstances"
+        then
+            stopService $serviceType
+        fi
+    fi
+}
+
+function getNumberLoadedActiveRunningServices() {
+    serviceType=$1
+
+    fleetctl list-units -fields=unit,load,active,sub | grep $serviceType | grep 'loaded\sactive\srunning' | wc -l
 }
 
 function getNumberServices() {
-    fleetctl list-units -fields=unit | grep $1 | wc -l
-}
+    instance=$1
 
-function TBD() {
-    # Constants
-    netLocationLowWaterMark=3
-
-    # If the count is greater than high water mark and less than high water mark, start another netlocation
-    # If the count is less than the low water mark and the num_instances is greater than minNumInstances, stop one
-
-    if test $dataCenterNetLocationFailures -le $netLocationHighWaterMark -a $numNetLocationInstances -lt $maxNumInstances
-    then
-        startService ${netLocationService}
-    fi
-
-    if test $dataCenterNetLocationFailures -le $netLocationLowWaterMark 
-    then
-        stopService ${netLocationService}
-    fi
+    fleetctl list-units | grep $instance | wc -l
 }
 
 function dumpCriticalFailures() {
@@ -474,6 +507,8 @@ function runChecks() {
 export consulIpAddr=172.17.8.101
 
 runAll=false
+
+resetClock
 
 while getopts "ad" opt; do
   case "$opt" in

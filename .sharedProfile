@@ -70,7 +70,13 @@ function removeNginxConfTempFiles() {
 }
 
 function startPrivateRegistry() {
-    docker run -p 5000:5000 -d --rm=true --name=basic_registry registry:2.0
+    docker run \
+        -d \
+        -p 5000:5000 \
+        -v "$AD_NIMBUS_DIR"/registry:/registry \
+        --name=adnimbus_registry \
+        -e STORAGE_PATH=/registry
+        registry:2.0
 }
 
 sourceadnimbusenvironment

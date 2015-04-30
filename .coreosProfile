@@ -223,8 +223,11 @@ function fstatus() {
     while true
     do
         runningServices=`flu -fields=unit -no-legend`
+        ctr=`flu -fields=unit -no-legend | wc -l`
         for service in $runningServices
         do 
+            ctr=$((--ctr))
+
             [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
 
             echo $service 
@@ -248,8 +251,14 @@ function fstatus() {
             fi
             # End of workaround
 
+            if test "$ctr" -le 0
+            then
+                break
+            fi
+
             echo
-            echo Hit enter for next service.
+            echo '==============' 
+            echo Hit enter to continue, \'q\' for quit.
             read a 
             case "$a" in 
             q|Q|quit)
@@ -257,17 +266,17 @@ function fstatus() {
                 ;;
             esac 
             echo
-            echo '==============' 
         done
 
-        echo Hit enter for next round of services.
+        echo
+        echo '+++++++++++++++ Next round of services +++++++++' 
+        echo Hit enter to continue, \'q\' for quit.
         read a
         case "$a" in 
         q|Q|quit)
             return
             ;;
         esac 
-        echo '+++++++++++++++ Next round of services +++++++++' 
     done
 }
 

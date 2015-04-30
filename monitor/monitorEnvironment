@@ -7,7 +7,11 @@ monitorDir=/opt/monitor
 # How often (seconds) should monitor check the consul health-checks
 monitorRunChecksInterval=8
 
-netlocationHighWaterMark=5
+# How many netlocation failures before starting another service
+criticalFailuresHighWaterMark=5
+
+# How long (seconds) w/o critical errors before shutting down another service
+errorFreePeriod=60
 
 minNumInstances=1
 maxNumInstances=3
