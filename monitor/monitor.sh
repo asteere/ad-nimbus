@@ -280,13 +280,17 @@ function handleCriticalHealthChecks() {
             echo Increment $svcIndex criticality count
             criticalFailures[$svcIndex]=$((++count))
             numNetLocationInstances=`getNumberServices $serviceType`
-            if test "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" -a \
-                "$numNetLocationInstances" -le "$maxNumInstances"
+            echo "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" -a \
+                "$numNetLocationInstances" -lt "$maxNumInstances"
+            if test "${criticalFailures[$svcIndex]}" -gt "$netlocationHighWaterMark" 
             then
-                startService $svcIndex
-
-                # Reset the counter to let the service run awhile and see if the problem clears up
+                # Reset the counter to let the service run awhile and see if the problem has cleared or will clear up
                 unset criticalFailures[$svcIndex]
+
+                if test "$numNetLocationInstances" -lt "$maxNumInstances"
+                then
+                    startService $svcIndex
+                fi
             fi
         else
             if [[ "$count" -le 1 ]] 
@@ -492,6 +496,8 @@ then
         runChecks
 
         sleep $monitorRunChecksInterval 
+        echo
+        echo '==================================================================='
     done
     exit 0
 fi

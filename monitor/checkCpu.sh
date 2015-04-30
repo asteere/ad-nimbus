@@ -3,7 +3,7 @@
 function setup() {
     set -a
 
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
+    for envFile in /etc/environment /home/core/share/adNimbusEnvironment ${monitorDir}/monitorEnvironment
     do
         if test -f "$envFile"
         then
@@ -12,6 +12,12 @@ function setup() {
     done
     set +a
 }
+
+# Enable the script to be run from coreos and docker
+if test ! -d "/home/core/share/monitor"
+then
+    monitorDir=/home/core/share/monitor
+fi
 
 setup
 
@@ -32,14 +38,8 @@ processInfo=`ps -eo pcpu,comm,args | grep "$processName" | grep $ipAddr | grep -
 echo Process information: $processInfo
 
 pCpu=$(echo $processInfo | awk '{printf("%.0f\n", $1);}')
-
+echo Percent CPU for $processName is $pCpu
 set +x
-
-# Enable the script to be run from coreos and docker
-if test ! -d ${monitorDir}
-then
-    monitorDir=/home/core/share/monitor
-fi
 
 cpuCfgFile="${monitorDir}/tmp/${serviceId}.cfg"
 date
@@ -59,7 +59,7 @@ then
     exit 2
 fi
 
-echo $serviceId is using $pCpu percent of the CPU
+echo $serviceId is using \"$pCpu\" percent of the CPU percentCpuSuccess=\"$percentCpuSuccess\" perentCpuWarning=\"$percentCpuWarning\"
 
 if test "$pCpu" -lt "$percentCpuSuccess"
 then
