@@ -293,7 +293,7 @@ function fshutdown() {
 
     if test "$2" = ""
     then
-        svcs=$(fleetctl list-unit-files | awk '{print $1}')
+        svcs=$(fleetctl list-unit-files --no-legend | awk '{print $1}')
         shutdownAll=true
     else
         shutdownAll=false
@@ -328,9 +328,9 @@ function drmf() {
     for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
-        echo Checking for docker images on $ipAddr
+        echo Checking for docker containers on $ipAddr
         dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
-            grep -v -e 'list of known hosts' -e NAME | \
+            grep -v -e 'list of known hosts' -e NAME -e registry | \
             awk '{print $NF}'`
 
         if test ! "$dImages" == ""

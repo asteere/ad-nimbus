@@ -69,13 +69,22 @@ function removeNginxConfTempFiles() {
     fi
 }
 
+function loadPrivateRegistry() {
+    for i in nginx netlocation confd consul devutils
+    do 
+        d pull asteere/$i:$i
+        d tag asteere/$i:$i localhost:5000/$i:$i; 
+        d push localhost:5000/$i:$i; 
+    done
+}
+
 function startPrivateRegistry() {
     docker run \
         -d \
         -p 5000:5000 \
         -v "$AD_NIMBUS_DIR"/registry:/registry \
         --name=adnimbus_registry \
-        -e STORAGE_PATH=/registry
+        -e STORAGE_PATH=/registry \
         registry:2.0
 }
 

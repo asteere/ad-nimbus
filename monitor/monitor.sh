@@ -108,7 +108,7 @@ function createServiceJsonFile() {
 function registerNetLocationService() {
     instance=$1
     serviceIpAddr=$2
-    port=$netLocationGuestOsPort
+    port=$3
 
     registerService netlocation $instance $serviceIpAddr $port
 }
@@ -230,7 +230,8 @@ function startService() {
     serviceId=$1
     service=`echo $serviceId | sed -e 's/@.*//'`
 
-    instance=`fleetctl list-units -fields=unit | grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | tail -1`
+    instance=`fleetctl list-units -fields=unit --no-legend | \
+        grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | tail -1`
     instance=$((++instance))
 
     cd /home/core/share/$service
@@ -367,7 +368,7 @@ function stopServicesIfErrorFree() {
 function getNumberLoadedActiveRunningServices() {
     serviceType=$1
 
-    fleetctl list-units -fields=unit,load,active,sub | \
+    fleetctl list-units -fields=unit,load,active,sub --no-legend | \
         grep $serviceType | \
         grep -e 'loaded\sactive\srunning' -e 'loaded\sactivating' | \
         wc -l
@@ -376,7 +377,7 @@ function getNumberLoadedActiveRunningServices() {
 function getNumberServices() {
     instance=$1
 
-    fleetctl list-units | grep $instance | wc -l
+    fleetctl list-units --no-legend | grep $instance | wc -l
 }
 
 function dumpCriticalFailures() {
@@ -506,6 +507,10 @@ function runChecks() {
     dumpCriticalFailures
 }
 
+function harvestStoppedServices() {
+    fleetctl destroy `fleetctl list-units -fields=unit,load,active,sub --no-legend`
+}
+
 # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
 export consulIpAddr=172.17.8.101
 
@@ -525,7 +530,10 @@ while getopts "ad" opt; do
 done
 shift $((OPTIND-1))
 
-if test "$1" == "start"
+functionName=$1
+shift 1
+
+if test "$functionName" == "start"
 then
     while true; 
     do 
@@ -534,6 +542,8 @@ then
 
         runChecks
 
+        harvestStoppedServices
+
         sleep $monitorRunChecksInterval 
         echo
         echo '==================================================================='
@@ -541,7 +551,7 @@ then
     exit 0
 fi
 
-if test "$1" == "stop"
+if test "$functionName" == "stop"
 then
     pkill monitor.sh
     return 2>/dev/null || exit 0
@@ -549,10 +559,9 @@ fi
 
 setup
 
-# TODO: Do we need to expand this beyond register*Service and unregisterService?
-if [[ `type -t $1` == "function" ]]
+if [[ `type -t $functionName` == "function" ]]
 then
-    ${1} $2 $3
+    ${functionName} $*
     exit 0
 fi
 
