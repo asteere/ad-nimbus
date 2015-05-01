@@ -81,7 +81,7 @@ function registerService() {
     /home/core/share/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PUBLIC_IPV4} $port
 }
 
-function startNetLocation() {
+function start() {
     # From: https://github.com/coreos/fleet/issues/612
     /usr/bin/docker run \
         --name=${containerName} \

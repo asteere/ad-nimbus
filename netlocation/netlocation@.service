@@ -26,14 +26,11 @@ ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker ps -a
 
-ExecStart=/home/core/share/netlocation/startNetlocation.sh startNetLocation %i
+ExecStart=/home/core/share/netlocation/startNetlocation.sh start %i
 
 ExecStartPost=/home/core/share/netlocation/startNetlocation.sh registerNetLocation %i
 
-ExecStopPost=/home/core/share/netlocation/startNetlocation.sh cleanup %i
-
-ExecStop=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
-
+ExecStop=/home/core/share/netlocation/startNetlocation.sh cleanup %i
 
 #Restart=always
 
