@@ -47,8 +47,7 @@ monitor/.nfs*
 consul/data/*
 
 # Scribble area for monitor logs, demo config information, etc
-monitor/tmp
-consul/tmp
+**/tmp
 
 # Docker registry for this project
 registry

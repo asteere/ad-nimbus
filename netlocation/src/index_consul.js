@@ -60,7 +60,7 @@ app.get('/', function(request, response) {
             // TODO: Hack to make this netlocation process consume lots of CPU
                                      
             // TODO: Remove hack to cause the netlocation service to delay a response to cause the consul check to fail
-            var path = __dirname + "/netlocation_" + hostAddress + ".cfg";
+            var path = __dirname + "/tmp/netlocation_" + hostAddress + ".cfg";
             console.log("Attempting to read file: " + path);
             var delay = 0;
             try {

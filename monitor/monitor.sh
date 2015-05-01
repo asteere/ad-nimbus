@@ -222,8 +222,13 @@ function stopService() {
     serviceId=$1
     service=`echo $serviceId | sed 's/_.*//'`
 
-    echo Stopping $service
-    fleetctl stop $service
+    instance=`fleetctl list-units -fields=unit --no-legend | \
+        grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | head -1`
+
+
+    fleetCtlUnit=$service@${instance}.service
+    echo Stopping $fleetCtlUnit
+    fleetctl stop $fleetCtlUnit
 }
 
 function startService() {
@@ -300,10 +305,11 @@ function updateCriticalFailureList() {
             then
                 echo Remove $svcIndex criticality count
                 unset criticalFailures[$svcIndex]
-                if test "$numNetLocationInstances" -gt "$minNumInstances"
-                then
-                    stopService $svcIndex
-                fi
+                # TODO: Let the quiet period determine services to stop
+                #if test "$numNetLocationInstances" -gt "$minNumInstances"
+                #then
+                #    stopService $svcIndex
+                #fi
             else
                 echo Decrement $svcIndex criticality count
                 criticalFailures[$svcIndex]=$((--count))
@@ -321,7 +327,6 @@ function updateCriticalFailureList() {
 }
 
 function handleCriticalHealthChecks() {
-set -x
     currentlyFailedServices=`getStateOfService critical | \
             # User ServiceID as consul requires that to be unique
             awk '/ServiceID/ {gsub("\"", "", $NF); gsub(",", "", $NF); print $NF}' | \
@@ -337,8 +342,7 @@ set -x
 
     numNetLocationInstances=`getNumberLoadedActiveRunningServices $serviceType`
     echo Number of $serviceType services: $numNetLocationInstances
-    echo Number of $serviceType critical errors in datacenter: $dataCenterNetLocationFailures
-set +x
+    echo Number of $serviceType service that have had critical errors that haven\'t expired: $dataCenterNetLocationFailures
 }
 
 function resetClock() {
@@ -361,8 +365,19 @@ function stopServicesIfErrorFree() {
         if test "$elapsedTime" -gt "$errorFreePeriod" -a "$numRunningServices" -gt "$minNumInstances"
         then
             stopService $serviceType
+            resetClock
         fi
     fi
+}
+
+function debugOutput() {
+    echo '*********************'
+    fleetctl list-units -fields=unit,load,active,sub --no-legend 
+    echo '======================'
+    fleetctl list-units -fields=unit,load,active,sub --no-legend | \
+        grep $serviceType | \
+        grep -e 'loaded\sactive\srunning' -e 'loaded\sactivating' 
+    echo '+++++++++++++++++++++++'
 }
 
 function getNumberLoadedActiveRunningServices() {
@@ -508,7 +523,17 @@ function runChecks() {
 }
 
 function harvestStoppedServices() {
-    fleetctl destroy `fleetctl list-units -fields=unit,load,active,sub --no-legend`
+    # TODO: Remove once this becomes stable
+    #echo harvestStoppedServices
+    #echo '============='
+    #fleetctl list-units -fields=unit,load,active,sub --no-legend
+    #echo '++++++++++++++'
+    #fleetctl list-units -fields=unit,load,active,sub --no-legend | grep 'loaded\sinactive\sdead' | awk '{print $1}'
+    #echo '--------------'
+
+    fleetctl destroy `fleetctl list-units -fields=unit,load,active,sub --no-legend | \
+        grep 'loaded\sinactive\sdead' | \
+        awk '{print $1}'`
 }
 
 # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
