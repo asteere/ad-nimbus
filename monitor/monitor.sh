@@ -367,7 +367,10 @@ function stopServicesIfErrorFree() {
 function getNumberLoadedActiveRunningServices() {
     serviceType=$1
 
-    fleetctl list-units -fields=unit,load,active,sub | grep $serviceType | grep 'loaded\sactive\srunning' | wc -l
+    fleetctl list-units -fields=unit,load,active,sub | \
+        grep $serviceType | \
+        grep -e 'loaded\sactive\srunning' -e 'loaded\sactivating' | \
+        wc -l
 }
 
 function getNumberServices() {
