@@ -5,7 +5,8 @@ var geoReader = require('maxmind-db-reader');
 // TODO: Remove when we don't need the delay for debugging/testing
 var fs = require('fs');
 var hostAddress = process.argv[2];
-console.log('NodeJs is running on ' + hostAddress); // 10.25.10.147
+var instance = process.argv[3];
+console.log('NodeJs instance ' + instance + ' is running on ' + hostAddress); // 10.25.10.147
 var spawn = require('child_process').spawn;
 
 // Constants.
@@ -57,10 +58,7 @@ app.get('/', function(request, response) {
                 appendIsp(geoData, ispData);
             }
 
-            // TODO: Hack to make this netlocation process consume lots of CPU
-                                     
-            // TODO: Remove hack to cause the netlocation service to delay a response to cause the consul check to fail
-            var path = __dirname + "/tmp/netlocation_" + hostAddress + ".cfg";
+            var path = __dirname + "/tmp/netlocation@" + instance + ".service_" + hostAddress + ".cfg";
             console.log("Attempting to read file: " + path);
             var delay = 0;
             try {

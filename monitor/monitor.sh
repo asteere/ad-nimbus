@@ -342,7 +342,7 @@ function handleCriticalHealthChecks() {
 
     numNetLocationInstances=`getNumberLoadedActiveRunningServices $serviceType`
     echo Number of $serviceType services: $numNetLocationInstances
-    echo Number of $serviceType service that have had critical errors that haven\'t expired: $dataCenterNetLocationFailures
+    echo Number of $serviceType services that have had critical errors that haven\'t expired: $dataCenterNetLocationFailures
 }
 
 function resetClock() {

@@ -11,7 +11,7 @@ monitorRunChecksInterval=8
 criticalFailuresHighWaterMark=5
 
 # How long (seconds) w/o critical errors before shutting down another service
-errorFreePeriod=60
+errorFreePeriod=30
 
 minNumInstances=1
 maxNumInstances=3

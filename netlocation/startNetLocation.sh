@@ -89,7 +89,7 @@ function start() {
         -P \
         -v /home/core/share/${netLocationService}/src:/src \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
-        /src/startNpm.sh ${COREOS_PUBLIC_IPV4}
+        /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance
 }
 
 function cleanup() {
