@@ -20,7 +20,7 @@ function checknetlocation() {
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
     echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl -X GET $headers \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
-    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131\""
+    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
 function sourceadnimbusenvironment() {
