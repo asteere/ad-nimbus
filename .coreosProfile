@@ -138,6 +138,7 @@ function fstart() {
 }
 
 function fstartall() {
+    echo "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
     fdestroy
 
     removeNginxConfTempFiles
@@ -148,6 +149,8 @@ function fstartall() {
     (cd $AD_NIMBUS_DIR/nginx; rm -f nginx.conf nginx.error.log nginx.access.log)
 
     rm -f "$AD_NIMBUS_DIR"/monitor/tmp/*.log
+
+    echo "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
 
     export dontStatusService=true
 

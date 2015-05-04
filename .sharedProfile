@@ -19,8 +19,8 @@ function checknetlocation() {
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
-    echo curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
-    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl -X GET $headers \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
+    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131\""
 }
 
 function sourceadnimbusenvironment() {
@@ -82,9 +82,9 @@ function startPrivateRegistry() {
     docker run \
         -d \
         -p 5000:5000 \
-        -v "$AD_NIMBUS_DIR"/registry:/registry \
+        -v "$AD_NIMBUS_DIR"/registry-dev:/registry-dev \
         --name=adnimbus_registry \
-        -e STORAGE_PATH=/registry \
+        -e STORAGE_PATH=/registry-dev \
         registry:2.0
 }
 
