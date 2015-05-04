@@ -1,21 +1,51 @@
 # Host .profile
 # Everything to do with using vagrant and building docker containers
 
-alias vbm=VBoxManage
-alias gvmi=getvminfo
-alias v=vagrant
-alias vs='vagrant status'
-alias vstatus='vagrant status'
-alias vgs='vagrant global-status'
-
-alias b2d=boot2docker
-
-alias dps='rundocker ps -a'
-alias dpsa='rundocker ps -a'
-alias di='rundocker images'
-alias d='rundocker'
-
 # For foolish consistency use lowercase for function names
+function vbm() {
+    VBoxManage $*
+}
+
+function gvmi() {
+    getvminfo $*
+}
+
+function v() {
+    vagrant $*
+}
+
+function vs() {
+    vagrant status $*
+}
+
+function vstatus() {
+    vagrant status $*
+}
+
+function vgs() {
+    vagrant global-status $*
+}
+
+function b2d() {
+    boot2docker $*
+}
+
+function dps() {
+    rundocker ps -a $*
+}
+
+function dpsa() {
+    rundocker ps -a $*
+}
+
+function di() {
+    rundocker images $*
+}
+
+function d() {
+    rundocker $*
+}
+
 function vup() {
     cdad
     echo Creating cluster from Vagrantfile in folder `pwd`
@@ -251,7 +281,7 @@ fi
 export VAGRANT_HOME="$AD_NIMBUS_DIR/.vagrant.d"
 export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
 
-# Pull in the common aliases, functions, etc.
+# Pull in the common functions, etc.
 . "$AD_NIMBUS_DIR"/.sharedProfile
 
 cdad

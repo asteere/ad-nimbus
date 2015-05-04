@@ -1,6 +1,22 @@
 #! /bin/bash
 
 # For foolish consistency use lowercase for function names
+function show() {
+    numLines=`typeset -f $1 | wc -l`
+    case $numLines in
+    0)
+        printenv $1
+        if test $? == 0
+        then
+            return
+        fi
+        echo $1 is not a function or an environment variable
+        ;;
+    *)
+        typeset -f $1
+        ;;
+    esac 
+}
 
 function cdad() {
     cd "$AD_NIMBUS_DIR"
@@ -13,6 +29,15 @@ function checknetlocation() {
     if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
     then
         . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    fi
+
+    which fleetctl 2>&1 > /dev/null
+    if test $? == 0
+    then
+        nginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+            sed 's/ice.*\//ice /' | \
+            grep nginx | \
+            awk '{print $2}'`
     fi
 
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
@@ -96,3 +121,6 @@ export CLICOLOR=1
 
 # Common less options
 export LESS="-q -i-i -e -F -X -R"
+
+PATH=$PATH:"$AD_NIMBUS_DIR/bin"
+
