@@ -3,19 +3,27 @@
 # For foolish consistency use lowercase for function names
 function show() {
     numLines=`typeset -f $1 | wc -l`
-    case $numLines in
-    0)
-        printenv $1
-        if test $? == 0
-        then
-            return
-        fi
-        echo $1 is not a function or an environment variable
-        ;;
-    *)
+    if test $numLines -gt 0
+    then
         typeset -f $1
-        ;;
-    esac 
+        return
+    fi
+
+    which $1 > /dev/null 2>&1
+    if test $? == 0
+    then
+        which $1
+        return
+    fi
+
+    printenv $1
+    if test $? == 0
+    then
+        return
+    fi
+
+    echo $1 is not a function, environment variable or file in $PATH
+
 }
 
 function cdad() {

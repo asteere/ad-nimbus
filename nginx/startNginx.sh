@@ -1,6 +1,6 @@
 #! /bin/bash
 
-set -x
+#set -x
 
 function setup() {
     nginxDir=/opt/nginx

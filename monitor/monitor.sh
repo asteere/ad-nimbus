@@ -532,7 +532,7 @@ function harvestStoppedServices() {
     #echo '--------------'
 
     fleetctl destroy `fleetctl list-units -fields=unit,load,active,sub --no-legend | \
-        grep 'loaded\sinactive\sdead' | \
+        grep -e 'loaded\sfailed\sfailed' -e 'loaded\sinactive\sdead' | \
         awk '{print $1}'`
 }
 

@@ -38,7 +38,7 @@ ExecStart=/usr/bin/docker run \
     -debug=true \
     -verbose=true \
     -watch=true \
-    -interval=10 \
+    -interval=${confdCheckInterval} \
     -node=${COREOS_PUBLIC_IPV4}:${consulHttpPort}
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i
