@@ -39,7 +39,7 @@ function ftunnel() {
 }
 
 function ssh() { 
-    ssh -oStrictHostKeyChecking=no $*
+    /usr/bin/ssh -oStrictHostKeyChecking=no $*
 }
 
 function checkconsulmembers() {
@@ -381,14 +381,14 @@ function drmf() {
     do 
         ipAddr=${ipRoot}.10$i
         echo Checking for docker containers on $ipAddr
-        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
+        dImages=`ssh $ipAddr docker ps -a 2>&1 | \
             grep -v -e 'list of known hosts' -e NAMES -e registry | \
             awk '{print $NF}'`
 
         if test ! "$dImages" == ""
         then
             echo Removing docker images $dImages on $ipAddr
-            ssh -oStrictHostKeyChecking=no $ipAddr docker rm -f $dImages 
+            ssh $ipAddr docker rm -f $dImages 
         fi
     done
 }
@@ -397,6 +397,18 @@ function rundockerbash() {
     # Run the lightest container we have. Useful for seeing what commands are available, what the folder 
     # hierarchy is, testing different options like -v, etc.
     docker run -it -v /home/core/share:/usr/share asteere/consul:consul bash
+}
+
+function loadcoreosdocker() {
+    ipRoot=172.17.8
+
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
+    do 
+        ipAddr=${ipRoot}.10$i
+        echo Loading the tar images into docker on $ipAddr
+        ssh $ipAddr /home/core/share/bin/loadRegistry.sh
+    done
 }
 
 if test -d "/home/core/share"
