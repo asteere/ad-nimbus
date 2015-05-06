@@ -56,6 +56,11 @@ function checkconsulmembers() {
     done
 }
 
+function joinconsulmembers() {
+    echo "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+}
+
 function dockerbash() {
     cdad
     echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
@@ -192,7 +197,9 @@ function fstartall() {
             echo Consul $numConsulSvcs have started on $numInstances servers.
             break
         fi
-        echo Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        echo `date`: Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        flu | grep consul
+        checkconsulmembers
         sleep 10
     done
 
@@ -214,7 +221,8 @@ function fstartall() {
     do 
         if test ! -f "$nginxConfFile"
         then
-            echo Waiting for $nginxConfFile. When this file is created it indicates netlocation, consul and confd are working.
+            echo `date`: Waiting for $nginxConfFile. When this file is created it indicates netlocation, consul and confd are working.
+            flu 
             sleep 10
         else
             break
@@ -254,8 +262,14 @@ function fstatus() {
     echo Fetching status on $runningServices
     while true
     do
-        runningServices=`flu -fields=unit -no-legend`
-        ctr=`flu -fields=unit -no-legend | wc -l`
+        if test "$arg1" == ""
+        then
+            runningServices=`flu -fields=unit -no-legend`
+        else
+            runningServices=`flu -fields=unit -no-legend | grep $arg1`
+        fi
+
+        ctr=`echo $runningServices | wc -w`
         for service in $runningServices
         do 
             ctr=$((--ctr))
@@ -283,6 +297,7 @@ function fstatus() {
             fi
             # End of workaround
 
+            #echo ctr=$ctr runningServices=$runningServices service=$service
             if test "$ctr" -le 0
             then
                 break
@@ -362,7 +377,7 @@ function drmf() {
         ipAddr=${ipRoot}.10$i
         echo Checking for docker containers on $ipAddr
         dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
-            grep -v -e 'list of known hosts' -e NAME -e registry | \
+            grep -v -e 'list of known hosts' -e NAMES -e registry | \
             awk '{print $NF}'`
 
         if test ! "$dImages" == ""

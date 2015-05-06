@@ -1,23 +1,23 @@
 #! /bin/bash
 
-#set -x
+set -x
 
 function setup() {
+    set -a
+    . /etc/environment
+
     nginxDir=/opt/nginx
     nginxConfFile=$nginxDir/nginx.conf
     nginxPidFile=$nginxDir/nginx.pid
 
     if test -d "/home/core/share"
     then
-        set -a
-        . /etc/environment
-        . /home/core/share/.coreosProfile
-
-        nginxCoreosDir="$AD_NIMBUS_DIR/nginx"
+        nginxCoreosDir="/home/core/share/nginx"
         nginxCoreosConfFile=$nginxCoreosDir/nginx.conf
         nginxCoreosPidFile=$nginxCoreosDir/nginx.pid
-        set +a
     fi
+
+    set +a
 
     trap 'sendSignal stop' TERM
     trap 'sendSignal quit' QUIT
@@ -28,9 +28,11 @@ function setup() {
 function startDocker() {
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} \
+        --cidfile=${nginxCoreosDir}/nginx.cid \
         --rm=true \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        -v /home/core/share/${nginxService}:${nginxDir} \
+        --host=${COREOS_PUBLIC_IPV4}:2375 \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        --volume=/home/core/share/${nginxService}:${nginxDir} \
         -p ${COREOS_PUBLIC_IPV4}:${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
         nginx -c "$nginxConfFile"
@@ -46,16 +48,16 @@ function sendSignal() {
 function waitForNginxConf() {
     while true
     do
-        echo $attempts
         if test -f "$nginxCoreosConfFile"
         then
             break
         fi
 
         interval=5
-        echo Sleep $interval and see if confd has come up and created $nginxCoreosConfFile
+        echo `date`: Sleep $interval and see if confd has come up and created $nginxCoreosConfFile
         sleep $interval
     done
+    ls -l $nginxCoreosConfFile 
 }
 
 function start() {

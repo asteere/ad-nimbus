@@ -52,12 +52,28 @@ export GOMAXPROCS=8
 # Get number of coreos instances. This works as long as all machines are running etcd ?servers?
 # 
 #numServers=`etcdctl ls -recursive _etcd/machines | wc -l`
-curlOutput=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value'`
-
 clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value' | sed -e 's/.*%2F//' -e 's/%3.*//'`
 numServers=`echo $clusterPrivateIpAddrs | wc -w`
 
-echo etcd reported $numServers servers $clusterPrivateIpAddrs
+if test $(($numServers % 2)) == 0 -a $numServers -lt 3
+then 
+    echo Warning: Even number of consul servers getting created. Consul does not recommend this.
+fi
+
+# TODO: Generalize this for larger number of servers.
+case $numServers in
+1|2)
+    bootstrapExpect=1
+    ;;
+3|4)
+    bootstrapExpect=3
+    ;;
+5)
+    bootstrapExpect=5
+    ;;
+esac
+
+echo etcd reported $numServers servers: $clusterPrivateIpAddrs. Setting bootstrap-expect to $bootstrapExpect.
 
 # TODO: Override results while in initial development
 numServers=2
@@ -82,15 +98,15 @@ if test "$instance" = "1"
 then
     echo $COREOS_PUBLIC_IPV4 > "$consulServerCfg"
 else
-    for ctr in {1..60}
+    for ctr in {1..120}
     do
         if test -f "$consulServerCfg"
         then
             bootStrapIpAddr=`cat $consulServerCfg`
             if test "$bootStrapIpAddr" != ""
             then 
-                retryJoinArg="--retry-join=$bootStrapIpAddr"
-                retryJoinArg="$retryJoinArg --retry-interval=10s"
+                retryJoinArg="-retry-join=$bootStrapIpAddr"
+                retryJoinArg="$retryJoinArg -retry-interval=5s"
                 echo $retryJoinArg
                 break
             fi
@@ -117,22 +133,23 @@ dataDirArg="-data-dir ${consulDataDir}"
 
 configDirArg="-config-dir ${consulDir}/consul.d"
 
+# TODO: Handle more 5 and 7 servers in larger clusters
+bootstrapExpectArg="-bootstrap-expect $bootstrapExpect"
 case "$instance" in
 1)
     echo Start the first server, instance=$instance
 
-    bootstrapArg="-bootstrap"
     unset advertiseArg
     unset retryJoinArg    
-    
-;;
+    ;;
 2|3)
     echo start additional servers, instance=$instance
-;;
+    ;;
 *)
     echo start an agent, instance=$instance
     unset serverArg
-;;
+    unset bootstrapExpectArg
+    ;;
 esac
 
 # Find the smallest odd number greater than 1
@@ -162,15 +179,16 @@ set -x
     --name=${consulDockerTag}_${instance} \
     --net=host \
     -P \
-    --volume /var/run/docker.sock:/var/run/docker.sock \
-    --volume /home/core/share/${consulService}:${consulDir} \
-    --volume /home/core/share/${nginxService}:${nginxDir} \
-    --volume /home/core/share/${monitorService}:${monitorDir} \
+    --volume=/var/run/docker.sock:/var/run/docker.sock \
+    --volume=/home/core/share/${consulService}:${consulDir} \
+    --volume=/home/core/share/${nginxService}:${nginxDir} \
+    --volume=/home/core/share/${monitorService}:${monitorDir} \
     ${dockerImage} \
     ${consulDir}/${consulService} \
-    agent $serverArg $bootstrapArg $advertiseArg $bindArg $clientArg $retryJoinArg \
+    agent $serverArg $advertiseArg $bindArg $clientArg $retryJoinArg \
     $dataCenterArg \
     $uiDirArg $configDirArg \
     $dataDirArg \
+    $bootstrapExpectArg \
     $nodeArg
 

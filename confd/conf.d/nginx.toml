@@ -13,4 +13,5 @@ mode = "0777"
 
 # Send a signal to nginx to reload the configuration file
 # From: http://blog.dixo.net/category/docker/
-reload_cmd = "echo -e 'POST /containers/nginx/kill?signal=SIGHUP HTTP/1.0\r\n' | nc -U /var/run/docker.sock"
+# TODO: Figure out how to pass in the instance id or create a script to send the signal and let it figure it out.
+reload_cmd = "/opt/nginx/sendSignal.sh SIGHUP"

@@ -5,6 +5,8 @@ FROM centos:latest
 
 MAINTAINER Andy Steere <andy.steere@troppussoftware.com>
 
+RUN yum -y install curl
+
 # Consul is already part of the git code. Update as needed
 # TODO: Should we be pulling consul as part of the container build or as a separate intentional step?
 

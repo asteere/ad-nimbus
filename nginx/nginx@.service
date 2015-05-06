@@ -9,9 +9,6 @@ After=docker.service
 After=etcd.service
 #After=confd@*.service
 
-# To reduce edit mistakes force nginx and confd to run on *.105 
-# TODO: ConditionHost=core-05
-
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
 # Change killmode from "control-group" to "none" to let Docker remove
@@ -30,6 +27,8 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
+ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.cid
+ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.ipaddr
 
 # TODO: Add this back in once we have an nginx specific test
 # ExecStartPre=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}

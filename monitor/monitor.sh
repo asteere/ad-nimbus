@@ -423,6 +423,12 @@ function runOtherChecks() {
         echo The number of consul nodes $numConsulNodes equals the number of etcd nodes $numEtcdNodes
     fi
 
+    numConfigRbInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
+    if test "$numConfigRbInstances" != "$numEtcdNodes"
+    then
+        echo "Error: The number of etcd nodes($numEtcdNodes) doesn\'t match the number configured by vagrant($numConfigRbInstances) in config.rb file".
+    fi
+
     # Check that there is a raft leader
     echo
     leader=`getConsulLeader`
