@@ -49,7 +49,7 @@ function checkconsulmembers() {
     do
         echo "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
         "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
-        if test "$?" == 0
+        if test "$?" == 0 -a "$1" != "all"
         then
             break
         fi
@@ -192,6 +192,25 @@ function fstartall() {
 
     fstartconsul
 
+    waitforconsulmembers
+    checkconsulmembers
+
+    fstartnetlocation
+
+    fstartconfd_nginx
+
+    fstartmonitor
+
+    waitforallservicestoload
+
+    unset dontStatusService
+
+    fstatus
+
+    flu
+}
+
+function waitforconsulmembers() {
     # TODO: This should be in a service file or start*.sh
     while true 
     do
@@ -204,28 +223,26 @@ function fstartall() {
         flu | grep consul
         if test `flu | grep consul | grep loaded | grep running | grep active | wc -l` -eq "$numInstances"
         then
-            checkconsulmembers
+            checkconsulmembers all
+            joinconsulmembers
         fi
-        sleep 10
+        sleep 5
     done
+}
 
-    checkconsulmembers
-
-    fstartnetlocation
-
-    fstartconfd_nginx
-
-    #sleep 5
-
-    #fstartnginx
-
-    fstartmonitor
-
-    unset dontStatusService
-
-    fstatus
-
-    flu
+function waitforallservicestoload() {
+    while true
+    do
+        numStillLoading=`flu --no-legend | grep -v 'loaded.*active.*running' | wc -l`
+        if test "$numStillLoading" == 0
+        then
+            break
+        fi
+        echo Waiting for services to finish loading
+        flu --no-legend | grep -v 'loaded.*active.*running'
+    
+        sleep 5
+    done
 }
 
 function fstatus() {

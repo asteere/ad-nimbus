@@ -121,6 +121,24 @@ function startPrivateRegistry() {
         registry:2.0
 }
 
+function loadregistry {
+    cdad
+    for imageTar in $currentServices
+    do
+        d load -i registrySaves/$imageTar 
+    done
+}
+
+function saveregistry() {
+    cdad
+    for svc in $currentServices
+    do 
+        d save -o registrySaves/$svc.tar asteere/$svc:$svc
+    done
+}
+
+export currentServices="consul devutils netlocation confd nginx"
+
 sourceadnimbusenvironment
 
 if [ ! -z "$PS1" ]
