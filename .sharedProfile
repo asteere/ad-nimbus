@@ -1,6 +1,30 @@
 #! /bin/bash
 
 # For foolish consistency use lowercase for function names
+function show() {
+    numLines=`typeset -f $1 | wc -l`
+    if test $numLines -gt 0
+    then
+        typeset -f $1
+        return
+    fi
+
+    which $1 > /dev/null 2>&1
+    if test $? == 0
+    then
+        which $1
+        return
+    fi
+
+    printenv $1
+    if test $? == 0
+    then
+        return
+    fi
+
+    echo $1 is not a function, environment variable or file in $PATH
+
+}
 
 function cdad() {
     cd "$AD_NIMBUS_DIR"
@@ -15,11 +39,20 @@ function checknetlocation() {
         . "$AD_NIMBUS_DIR"/adNimbusEnvironment
     fi
 
+    which fleetctl 2>&1 > /dev/null
+    if test $? == 0
+    then
+        nginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+            sed 's/ice.*\//ice /' | \
+            grep nginx | \
+            awk '{print $2}'`
+    fi
+
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
-    echo curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl -X GET $headers \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
     curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
@@ -69,11 +102,36 @@ function removeNginxConfTempFiles() {
     fi
 }
 
+function loadPrivateRegistry() {
+    for i in nginx netlocation confd consul devutils
+    do 
+        d pull asteere/$i:$i
+        d tag asteere/$i:$i localhost:5000/$i:$i; 
+        d push localhost:5000/$i:$i; 
+    done
+}
+
+function startPrivateRegistry() {
+    docker run \
+        -d \
+        -p 5000:5000 \
+        -v "$AD_NIMBUS_DIR"/registry-dev:/registry-dev \
+        --name=adnimbus_registry \
+        -e STORAGE_PATH=/registry-dev \
+        registry:2.0
+}
+
 sourceadnimbusenvironment
 
-# Custom bash prompt via kirsle.net/wizards/ps1.html
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
-export CLICOLOR=1
+if [ ! -z "$PS1" ]
+then
+    # Custom bash prompt via kirsle.net/wizards/ps1.html
+    export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
+    export CLICOLOR=1
 
-# Common less options
-export LESS="-q -i-i -e -F -X -R"
+    # Common less options
+    export LESS="-q -i-i -e -F -X -R"
+fi
+
+PATH=$PATH:"$AD_NIMBUS_DIR/bin"
+

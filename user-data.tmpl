@@ -11,6 +11,7 @@ coreos:
   fleet:
     public-ip: $private_ipv4
     etcd_request_timeout: 3.0
+    metadata: core-01=172.17.8.101,core-02=172.17.8.102,core-03=172.17.8.103
   units:
   - name: etcd.service
     command: start
@@ -55,6 +56,9 @@ write_files:
     permissions: 0644
     owner: core
     content: |
-      #! /bin/bash
+      #!/bin/bash
 
-      . share/.coreosProfile
+      if test -f ~/share/.coreosProfile
+      then
+           . ~/share/.coreosProfile
+      fi

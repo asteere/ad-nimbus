@@ -10,6 +10,7 @@ confdDockerTag=confd
 confdGuestOsPort=49190
 confdContainerPort=80
 confdDir=/opt/consul
+confdCheckInterval=2
 
 # consul 
 consulService=consul
@@ -23,11 +24,11 @@ consulDir=/opt/consul
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation
-netLocationGuestOsPort=49180
+# netLocationGuestOsPort is mapped to a random port to allow multiple netlocations running on the same coreos
 netLocationContainerPort=8080
 netLocationDir=/opt/netlocation
 minNetLocationServices=1
-maxNetLocationServices=4
+maxNetLocationServices=3
 
 # nginx
 nginxService=nginx
@@ -37,3 +38,4 @@ nginxContainerPort=80
 nginxIpAddress=172.17.8.101
 nginxDir=/opt/nginx
 
+# monitor environment variables are in monitor/monitorEnvironment

@@ -1,20 +1,47 @@
 # CoreOS .profile
 # Currently, this file is sourced by monitor.sh. When run as part of a service things like '~' are not defined. Always use the full path.
 
-# Aliases go first so they can be used by the functions
-alias d='docker'
-alias dps='docker ps -a'
-alias dpsa='docker ps -a'
-alias di='docker images'
+# For the sake of foolish consistency and to make it easier to remember, functions are lower case
+function d() { 
+    docker $* 
+}
 
-alias f='fleetctl --strict-host-key-checking=false'
-alias flm='fleetctl list-machines -l'
-alias flu='fleetctl list-units -fields=unit,load,active,sub,machine,hash'
-alias fluf='fleetctl list-unit-files'
-alias ftunnel='fleetctl --tunnel 10.10.10.10'
-alias ssh='ssh -oStrictHostKeyChecking=no'
+function dps() { 
+    docker ps -a $*
+}
 
-# Foolish consistency sake, functions are lower case
+function dpsa() { 
+    docker ps -a $*
+}
+
+function di() { 
+    docker images $*
+}
+
+function f() { 
+    fleetctl --strict-host-key-checking=false $*
+}
+
+function flm() { 
+    fleetctl list-machines -l $*
+}
+
+function flu() { 
+    fleetctl list-units -fields=unit,load,active,sub,machine,hash $*
+}
+
+function fluf() { 
+    fleetctl list-unit-files $*
+}
+
+function ftunnel() { 
+    fleetctl --tunnel 10.10.10.10 $*
+}
+
+function ssh() { 
+    ssh -oStrictHostKeyChecking=no $*
+}
+
 function checkconsulmembers() {
     cdad
     instanceRange='{1..'$numInstances'}'
@@ -27,6 +54,11 @@ function checkconsulmembers() {
             break
         fi
     done
+}
+
+function joinconsulmembers() {
+    echo "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
 }
 
 function dockerbash() {
@@ -61,14 +93,17 @@ function fstartconfd() {
     fstart confd 1
 }
 
+function fstartconfd_nginx() {
+    fstart confd_nginx 1
+}
+
 function fstartconsul() {
     fstart consul $numInstances
 }
 
-#TODO: Remove once the cutover to consul health-checks and handling is complete
-#function fstartmon() {
-#    fstart monitor 1
-#}
+function fstartmonitor() {
+    fstart monitor 1
+}
 
 function frestartservice() {
     svc=$1
@@ -97,10 +132,10 @@ function fstart() {
         ;;
     esac
 
-    serviceDir=`echo $service | sed 's/@.*//'`
+    serviceDir=`echo $service | sed -e 's/@.*//' -e 's/_.*//'`
     cd "$AD_NIMBUS_DIR/$serviceDir"
 
-    if test "$serviceDir" != "$service"
+    if test "$serviceDir" != "$service" -a "$service" != "confd_nginx"
     then
         numServices="startOnlyThisService"
     else
@@ -112,28 +147,20 @@ function fstart() {
     # From: https://github.com/coreos/fleet/issues/914
     case $numServices in
     "startOnlyThisService")
-        fleetctl submit ${service}
-        sleep 2
         fleetctl start ${service}
 	;;
         
     0)
-        # Start a global service
-        fleetctl submit ${service}.service
-        sleep 2
+        # Start a non-templated service
         fleetctl start ${service}.service
 	;;
 
     1)
-        fleetctl submit ${service}@1.service
-        sleep 2
         fleetctl start ${service}@1.service
 	;;
 
     *)
         serviceRange='${service}@{1..'$numServices'}.service'
-        fleetctl submit `eval echo $serviceRange`
-        sleep 2
         fleetctl start `eval echo $serviceRange`
 	;;
     esac
@@ -147,6 +174,7 @@ function fstart() {
 }
 
 function fstartall() {
+    echo "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
     fdestroy
 
     removeNginxConfTempFiles
@@ -156,6 +184,10 @@ function fstartall() {
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
     (cd $AD_NIMBUS_DIR/nginx; rm -f nginx.conf nginx.error.log nginx.access.log)
 
+    rm -f "$AD_NIMBUS_DIR"/monitor/tmp/*.log
+
+    echo "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
+
     export dontStatusService=true
 
     fstartconsul
@@ -163,46 +195,37 @@ function fstartall() {
     # TODO: This should be in a service file or start*.sh
     while true 
     do
-        numConsulSvcs=`checkconsulmembers | grep server | wc -l`
+        numConsulSvcs=`checkconsulmembers | grep alive | wc -l`
         if test "$numConsulSvcs" -ge $numInstances
         then
-            echo Consul $numConsulSvcs have started on $numInstances servers.
             break
         fi
-        echo Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        echo `date`: Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        flu | grep consul
+        if test `flu | grep consul | grep loaded | grep running | grep active | wc -l` -eq "$numInstances"
+        then
+            checkconsulmembers
+        fi
         sleep 10
     done
 
-    if test "$numConsulSvcs" -lt $numInstances
-    then
-        echo Not all consul services started, exiting
-        return
-    fi
+    checkconsulmembers
 
     fstartnetlocation
 
-    fstartconfd
+    fstartconfd_nginx
 
-    sleep 5
+    #sleep 5
 
-    # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
-    nginxConfFile="$AD_NIMBUS_DIR/nginx/nginx.conf"
-    while test ! -f nginx/nginx.conf
-    do 
-        echo Waiting for nginxConfFile
-        sleep 10
-    done
-    if test ! -f nginx/nginx.conf
-    then
-        echo nginx service never started, exiting
-        return
-    fi
+    #fstartnginx
 
-    fstartnginx
+    fstartmonitor
 
     unset dontStatusService
 
     fstatus
+
+    flu
 }
 
 function fstatus() {
@@ -215,15 +238,30 @@ function fstatus() {
         return
     fi
 
+    # TODO: Do we want to handle typos and check to see if the service request is running? 
+    # TODO: What about if it isn't running yet?
+    #[[ $arg1 != *$runningServices* ]] && \
+    #    echo Error: \"$arg1\" not a running service. && \
+    #    echo Please select from one of the following$runningServices && return
+
     flu
     echo
 
     echo Fetching status on $runningServices
     while true
     do
-        runningServices=`flu -fields=unit -no-legend`
+        if test "$arg1" == ""
+        then
+            runningServices=`flu -fields=unit -no-legend`
+        else
+            runningServices=`flu -fields=unit -no-legend | grep $arg1`
+        fi
+
+        ctr=`echo $runningServices | wc -w`
         for service in $runningServices
         do 
+            ctr=$((--ctr))
+
             [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
 
             echo $service 
@@ -247,40 +285,66 @@ function fstatus() {
             fi
             # End of workaround
 
+            #echo ctr=$ctr runningServices=$runningServices service=$service
+            if test "$ctr" -le 0
+            then
+                break
+            fi
+
             echo
-            echo Hit enter for next service.
+            echo '==============' 
+            echo Hit enter to continue, \'q\' for quit.
             read a 
             case "$a" in 
             q|Q|quit)
                 return
                 ;;
             esac 
-            echo; 
-            echo '==============' 
+            echo
         done
+
+        echo
         echo '+++++++++++++++ Next round of services +++++++++' 
+        echo Hit enter to continue, \'q\' for quit.
+        read a
+        case "$a" in 
+        q|Q|quit)
+            return
+            ;;
+        esac 
     done
 }
 
 function fdestroy() {
-    if test "$1" = ""
+    fshutdown destroy $*
+}
+
+function fstop() {
+    fshutdown stop $*
+}
+
+function fshutdown() {
+    command=$1
+
+    if test "$2" = ""
     then
-        svcs=$(fleetctl list-unit-files | awk '{print $1}')
-        destroyAll=true
+        svcs=$(fleetctl list-unit-files --no-legend | awk '{print $1}')
+        shutdownAll=true
     else
-        destroyAll=false
+        shutdownAll=false
         svcs=$*
     fi
 
-    fleetctl destroy $svcs
+    fleetctl $command $svcs
 
     fluf
     echo
 
-    if test $destroyAll == true
+    if test $shutdownAll == true
     then
         while test `flu -no-legend | wc -l` != 0
         do
+            echo
             echo Waiting for services to exit
             flu
             sleep 2
@@ -299,9 +363,9 @@ function drmf() {
     for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
-        echo Checking for docker images on $ipAddr
+        echo Checking for docker containers on $ipAddr
         dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
-            grep -v -e 'list of known hosts' -e NAME | \
+            grep -v -e 'list of known hosts' -e NAMES -e registry | \
             awk '{print $NF}'`
 
         if test ! "$dImages" == ""
@@ -320,7 +384,7 @@ function rundockerbash() {
 
 if test -d "/home/core/share"
 then
-    AD_NIMBUS_DIR=/home/core/share
+    export AD_NIMBUS_DIR=/home/core/share
 
     . "$AD_NIMBUS_DIR"/.sharedProfile
 
@@ -342,7 +406,8 @@ fi
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
 then
-    ssh-add insecure_private_key
+    # if this gets read in by .bashrc there can't be any output
+    ssh-add insecure_private_key > /dev/null 2>&1
 fi
 
 # Setup fleetctl status
@@ -354,6 +419,9 @@ fi
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
 export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
 
-set -a 
-. /etc/environment
-set +a
+if test -f /etc/environment
+then
+    set -a 
+    . /etc/environment
+    set +a
+fi
