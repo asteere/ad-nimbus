@@ -1,19 +1,15 @@
 [Unit]
-Description=Monitor all netlocation services across all clusters. Precursor to using Salt or Sensu.
+Description=Work with consul to monitor services across the clusters. Precursor to using Salt, Ngios, Ganglia and/or Sensu.
 
 [Service]
 # Allow access to environment variables.
 EnvironmentFile=/etc/environment
 EnvironmentFile=/home/core/share/adNimbusEnvironment
+EnvironmentFile=/home/core/share/monitor/monitorEnvironment
 
 User=core
 
-ExecStart=/bin/bash -c "/home/core/share/monitor/monitor.sh start"
+ExecStart=/home/core/share/monitor/monitor.sh start
 
-ExecStop=/bin/bash -c "/home/core/share/monitor/monitor.sh stop"
-
-[X-Fleet]
-# Don't want the monitoring software to be on a server that could lock up
-Conflicts=${netLocationService}@*.service
-Conflicts=${nginxService}@*.service
+ExecStop=/home/core/share/monitor/monitor.sh stop
 

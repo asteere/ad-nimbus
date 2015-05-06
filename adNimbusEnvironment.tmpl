@@ -3,25 +3,39 @@ DOCKER_REGISTRY=REPLACE_ME
 # etcd
 etcdPort=4001
 
+# Use port numbers so the different types of services have their own cluster of numbers
 # confd 
 confdService=confd
 confdDockerTag=confd
-confdHostPort=49180
-confdContainerPort=88
+confdGuestOsPort=49190
+confdContainerPort=80
+confdDir=/opt/consul
+confdCheckInterval=2
+
+# consul 
+consulService=consul
+consulDockerRegistry=asteere
+consulDockerTag=consul
+consulHttpPort=8500
+consulDnsPort=8600
+consulDir=/opt/consul
 
 # netLocation
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation
-netLocationHostPort=49160
+# netLocationGuestOsPort is mapped to a random port to allow multiple netlocations running on the same coreos
 netLocationContainerPort=8080
+netLocationDir=/opt/netlocation
 minNetLocationServices=1
-maxNetLocationServices=4
+maxNetLocationServices=3
 
 # nginx
 nginxService=nginx
 nginxDockerTag=nginx
-nginxHostPort=49160
+nginxGuestOsPort=49160
 nginxContainerPort=80
-nginxIpAddress=172.17.8.105
+nginxIpAddress=172.17.8.101
+nginxDir=/opt/nginx
 
+# monitor environment variables are in monitor/monitorEnvironment

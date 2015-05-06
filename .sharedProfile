@@ -1,40 +1,137 @@
 #! /bin/bash
 
-function checkNetLocation() {
+# For foolish consistency use lowercase for function names
+function show() {
+    numLines=`typeset -f $1 | wc -l`
+    if test $numLines -gt 0
+    then
+        typeset -f $1
+        return
+    fi
+
+    which $1 > /dev/null 2>&1
+    if test $? == 0
+    then
+        which $1
+        return
+    fi
+
+    printenv $1
+    if test $? == 0
+    then
+        return
+    fi
+
+    echo $1 is not a function, environment variable or file in $PATH
+
+}
+
+function cdad() {
+    cd "$AD_NIMBUS_DIR"
+}
+
+function checknetlocation() {
     # Output the timestamp for comparison with other logs
     date
+
+    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    then
+        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    fi
+
+    which fleetctl 2>&1 > /dev/null
+    if test $? == 0
+    then
+        nginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+            sed 's/ice.*\//ice /' | \
+            grep nginx | \
+            awk '{print $2}'`
+    fi
 
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
-    curl -X GET $headers "http://$nginxIpAddress:$nginxHostPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl -X GET $headers \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
+    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
-function sourceAdNimbusEnvironment() {
+function sourceadnimbusenvironment() {
     # Make the fleetctl service variables available to shell scripts
     set -a
 
     # TODO: does this break anything if we have these variables defined
-    #. /etc/environment
-    . adNimbusEnvironment
+    if test -f /etc/environment
+    then
+        . /etc/environment
+    fi
+
+    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    then
+        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    fi
 
     set +a
 }
 
-function gzipAdNimbus() {
-    cdad
-    cd ..
-    folder=ad-nimbus 
-    gzipFile=$folder_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzipFile --exclude '.vagrant' --exclude '.git' --exclude src $folder
+function updateadnimbusenvironment() {
+    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$AD_NIMBUS_DIR"/adNimbusEnvironment.tmpl > "$AD_NIMBUS_DIR"/adNimbusEnvironment; 
+
+    sourceadnimbusenvironment
 }
 
-sourceAdNimbusEnvironment
+function createtar() {
+    cd "$AD_NIMBUS_DIR"/..
 
-# Custom bash prompt via kirsle.net/wizards/ps1.html
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
-export CLICOLOR=1
+    daProject=ad-nimbus
+    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' --exclude '.git' --exclude src --exclude=.vagrant.d --exclude nginx/.nginx.conf* $daProject
 
-# Common less options
-export LESS="-q -i-i -e -F -X -R"
+    ls -l $gzFile
+
+    cd -
+}
+
+function removeNginxConfTempFiles() {
+    echo Removing confd created '.nginx.conf*' temp files
+
+    # TODO: Are these tmp files still getting created?
+    if test -d "$AD_NIMBUS_DIR/nginx"
+    then
+        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
+    fi
+}
+
+function loadPrivateRegistry() {
+    for i in nginx netlocation confd consul devutils
+    do 
+        d pull asteere/$i:$i
+        d tag asteere/$i:$i localhost:5000/$i:$i; 
+        d push localhost:5000/$i:$i; 
+    done
+}
+
+function startPrivateRegistry() {
+    docker run \
+        -d \
+        -p 5000:5000 \
+        -v "$AD_NIMBUS_DIR"/registry-dev:/registry-dev \
+        --name=adnimbus_registry \
+        -e STORAGE_PATH=/registry-dev \
+        registry:2.0
+}
+
+sourceadnimbusenvironment
+
+if [ ! -z "$PS1" ]
+then
+    # Custom bash prompt via kirsle.net/wizards/ps1.html
+    export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
+    export CLICOLOR=1
+
+    # Common less options
+    export LESS="-q -i-i -e -F -X -R"
+fi
+
+PATH=$PATH:"$AD_NIMBUS_DIR/bin"
+

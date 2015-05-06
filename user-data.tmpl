@@ -3,7 +3,7 @@
 ---
 coreos:
   etcd:
-    discovery: https://discovery.etcd.io/DEADBEEF
+    discovery: https://discovery.etcd.io/06ba7da0d69ee50b963604714f7ea022
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
     peer-election-timeout: 2000
@@ -11,6 +11,7 @@ coreos:
   fleet:
     public-ip: $private_ipv4
     etcd_request_timeout: 3.0
+    metadata: core-01=172.17.8.101,core-02=172.17.8.102,core-03=172.17.8.103
   units:
   - name: etcd.service
     command: start
@@ -30,3 +31,34 @@ coreos:
 
       [Install]
       WantedBy=sockets.target
+write_files:
+  - path: /etc/ntp.conf
+    permissions: 0644
+    owner: root
+    content: |
+      # Allow for large adjustments in time
+      # From: http://serverfault.com/questions/365690/
+      #     best-practices-for-ntp-updating-in-virtualbox-virtual-machines-without-guest-add
+      tinker panic 0
+
+      # Common pool
+      server 0.coreos.pool.ntp.org
+      server 1.coreos.pool.ntp.org
+      server 2.coreos.pool.ntp.org
+      server 3.coreos.pool.ntp.org
+
+      # - Allow only time queries, at a limited rate.
+      # - Allow all local queries (IPv4, IPv6)
+      restrict default nomodify nopeer noquery limited kod
+      restrict 127.0.0.1
+      restrict [::1]
+  - path: /home/core/.bash_profile
+    permissions: 0644
+    owner: core
+    content: |
+      #!/bin/bash
+
+      if test -f ~/share/.coreosProfile
+      then
+           . ~/share/.coreosProfile
+      fi

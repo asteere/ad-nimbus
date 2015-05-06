@@ -25,7 +25,7 @@ end
 # after the equals sign..
 
 # Size of the CoreOS cluster created by Vagrant
-$num_instances=5
+$num_instances=3
 
 # Change basename of the VM
 # The default value is "core", which results in VMs named starting with
@@ -33,8 +33,8 @@ $num_instances=5
 $instance_name_prefix="core"
 
 # Official CoreOS channel from which updates should be downloaded
-#$update_channel='alpha'
-$update_channel='stable'
+#$update_channel='stable'
+$update_channel='alpha'
 
 # Log the serial consoles of CoreOS VMs to log/
 # Enable by setting value to true, disable with false

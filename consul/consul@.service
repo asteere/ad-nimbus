@@ -1,0 +1,35 @@
+[Unit]
+Description=consul docker service 
+
+Requires=docker.service
+
+After=docker.service
+
+[Service]
+# From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
+# Change killmode from "control-group" to "none" to let Docker remove
+# work correctly.
+KillMode=none
+
+# Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
+EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
+
+# Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
+TimeoutStartSec=0
+
+# TODO: When things become stable "enough" don't remove the image every time
+ExecStartPre=-/usr/bin/docker rm -f ${consulDockerTag}_%i
+ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/usr/bin/docker pull ${consulDockerRegistry}/${consulService}:${consulDockerTag}
+
+# TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
+# TODO: How do we get additional servers to join the consul cluster 
+ExecStart=/home/core/share/consul/startConsul.sh %i
+
+ExecStopPost=-/usr/bin/docker rm -f ${consulDockerTag}_%i
+ExecStopPost=-/usr/bin/docker ps -a
+
+[X-Fleet]
+# Install consul server on all devices for now.
+#Conflicts=consul@*.service

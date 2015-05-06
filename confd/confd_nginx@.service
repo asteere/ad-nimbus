@@ -1,0 +1,38 @@
+[Unit]
+Description=Combined confd and nginx service because fleetctl doesnt respect Requires
+
+Requires=docker.service
+Requires=etcd.service
+
+After=docker.service
+After=etcd.service
+
+[Service]
+# From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
+# Change killmode from "control-group" to "none" to let Docker remove
+# work correctly.
+KillMode=none
+
+# Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
+EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
+
+# Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
+TimeoutStartSec=0
+
+# TODO: Is there a performance startup improvement if we use stop and don't remove the container
+
+ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
+ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}_%i
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
+ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
+ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.cid
+ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.ipaddr
+
+ExecStart=/home/core/share/confd/startConfdNginx.sh %i
+
+ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
+ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i
+ExecStopPost=-/usr/bin/docker ps -a
+

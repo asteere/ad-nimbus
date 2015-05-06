@@ -1,23 +1,75 @@
 # CoreOS .profile
 # Currently, this file is sourced by monitor.sh. When run as part of a service things like '~' are not defined. Always use the full path.
 
-# Aliases go first so they can be used by the functions
-alias d='docker'
-alias dps='docker ps -a'
-alias dpsa='docker ps -a'
-alias di='docker images'
+# For the sake of foolish consistency and to make it easier to remember, functions are lower case
+function d() { 
+    docker $* 
+}
 
-alias f='fleetctl --strict-host-key-checking=false'
-alias flm='fleetctl list-machines -l'
-alias flu='fleetctl list-units'
-alias fluf='fleetctl list-unit-files'
-alias ftunnel='fleetctl --tunnel 10.10.10.10'
+function dps() { 
+    docker ps -a $*
+}
 
-alias ssh='ssh -oStrictHostKeyChecking=no'
+function dpsa() { 
+    docker ps -a $*
+}
+
+function di() { 
+    docker images $*
+}
+
+function f() { 
+    fleetctl --strict-host-key-checking=false $*
+}
+
+function flm() { 
+    fleetctl list-machines -l $*
+}
+
+function flu() { 
+    fleetctl list-units -fields=unit,load,active,sub,machine,hash $*
+}
+
+function fluf() { 
+    fleetctl list-unit-files $*
+}
+
+function ftunnel() { 
+    fleetctl --tunnel 10.10.10.10 $*
+}
+
+function ssh() { 
+    ssh -oStrictHostKeyChecking=no $*
+}
+
+function checkconsulmembers() {
+    cdad
+    instanceRange='{1..'$numInstances'}'
+    for i in `eval echo $instanceRange`
+    do
+        echo "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        if test "$?" == 0
+        then
+            break
+        fi
+    done
+}
+
+function joinconsulmembers() {
+    echo "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+}
+
+function dockerbash() {
+    cdad
+    echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
+    docker run -v /home/core/share:/opt/share -it asteere/devutils:devutils /bin/bash 
+}
 
 function fstartnetlocation() {
     numNetLocationInstances=1
-    fstartService netlocation $numNetLocationInstances
+    fstart netlocation $numNetLocationInstances
 }
 
 function etctree() { 
@@ -29,102 +81,277 @@ function etctree() {
     done
 }
 
-function fstatusNetlocationServices() {
-    while true 
-    do 
-        echo '============================='; 
-        for service in `fluf | grep 'launched.*launched' | grep netlocation | awk '{print $1}' `
-        do 
-            echo $service
-            f journal -lines=5 $service
-            echo
-            echo
-            read a
-        done
-    done
+function fjournal() {
+    f journal $*
 }
 
-
 function fstartnginx() {
-    fstartService nginx 1
+    fstart nginx 1
 }
 
 function fstartconfd() {
-    fstartService confd 1
+    fstart confd 1
 }
 
-function fstartmon() {
-    fstartService monitor 1
+function fstartconfd_nginx() {
+    fstart confd_nginx 1
 }
 
-function fstartService() {
+function fstartconsul() {
+    fstart consul $numInstances
+}
+
+function fstartmonitor() {
+    fstart monitor 1
+}
+
+function frestartservice() {
+    svc=$1
+    numInstances=$2
+    svcInstances=`flu -fields=unit | grep $svc`
+
+    fdestroy $svcInstances
+
+    if test "$2" == ""
+    then
+        numInstances=`echo $svcInstances | wc -w`
+    fi
+
+    fstart $svc $numInstances
+}
+
+function fstart() {
     service=$1
-    numServers=$2
+    numServices=$2
+    case "$numServices" in
+    "")
+        numServices=1
+        ;;
+    next)
+        # get the number of services already running
+        ;;
+    esac
 
-    cd /home/core/share/$service
+    serviceDir=`echo $service | sed -e 's/@.*//' -e 's/_.*//'`
+    cd "$AD_NIMBUS_DIR/$serviceDir"
 
-    echo Be patient, this can take awhile before you get the first service \"$service\" output for a total of $numServers 'service(s)'
+    if test "$serviceDir" != "$service" -a "$service" != "confd_nginx"
+    then
+        numServices="startOnlyThisService"
+    else
+        echo Be patient, this can take a while before you get the first service \"$service\" output for a total of $numServices 'service(s)'
+    fi
 
-    case $numServers in
+
+    # Fleetctl folks want a destroy, submit, start cycle if you change the systemd service file
+    # From: https://github.com/coreos/fleet/issues/914
+    case $numServices in
+    "startOnlyThisService")
+        fleetctl start ${service}
+	;;
+        
     0)
-	fleetctl start ${service}.service
+        # Start a non-templated service
+        fleetctl start ${service}.service
 	;;
 
     1)
-	fleetctl start ${service}@1.service
+        fleetctl start ${service}@1.service
 	;;
+
     *)
-        serviceRange='netlocation@{1..'$numServers'}.service'
-        `eval fleetctl start $serviceRange`
+        serviceRange='${service}@{1..'$numServices'}.service'
+        fleetctl start `eval echo $serviceRange`
 	;;
     esac
 
     cd - > /dev/null
 
+    if test "$dontStatusService" == "" -o "$dontStatusService" == "false"
+    then
+        fstatus $service
+    fi
 }
 
 function fstartall() {
+    echo "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
+    fdestroy
+
+    removeNginxConfTempFiles
+
     drmf
 
-    fstartconfd
-    fstartnetlocation
-    sleep 5
+    # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
+    (cd $AD_NIMBUS_DIR/nginx; rm -f nginx.conf nginx.error.log nginx.access.log)
 
-    # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
-    fstartnginx
-    sleep 3
-    fstartmon
-    fluf
+    rm -f "$AD_NIMBUS_DIR"/monitor/tmp/*.log
+
+    echo "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
+
+    export dontStatusService=true
+
+    fstartconsul
+
+    # TODO: This should be in a service file or start*.sh
+    while true 
+    do
+        numConsulSvcs=`checkconsulmembers | grep alive | wc -l`
+        if test "$numConsulSvcs" -ge $numInstances
+        then
+            break
+        fi
+        echo `date`: Currently only $numConsulSvcs have started. Waiting for $numInstances.
+        flu | grep consul
+        if test `flu | grep consul | grep loaded | grep running | grep active | wc -l` -eq "$numInstances"
+        then
+            checkconsulmembers
+        fi
+        sleep 10
+    done
+
+    checkconsulmembers
+
+    fstartnetlocation
+
+    fstartconfd_nginx
+
+    #sleep 5
+
+    #fstartnginx
+
+    fstartmonitor
+
+    unset dontStatusService
+
+    fstatus
+
+    flu
 }
 
-function fstatusall() {
-    for service in `fluf -fields=unit | grep -v UNIT`; 
-    do 
-        echo $service 
-        f status $service 
-        read a 
-        if test "$a" = "q"
+function fstatus() {
+    arg1=$1
+
+    runningServices=`flu -fields=unit -no-legend`
+    if test "$runningServices" = ""
+    then
+        echo No ad-nimbus services running
+        return
+    fi
+
+    # TODO: Do we want to handle typos and check to see if the service request is running? 
+    # TODO: What about if it isn't running yet?
+    #[[ $arg1 != *$runningServices* ]] && \
+    #    echo Error: \"$arg1\" not a running service. && \
+    #    echo Please select from one of the following$runningServices && return
+
+    flu
+    echo
+
+    echo Fetching status on $runningServices
+    while true
+    do
+        if test "$arg1" == ""
         then
-            return
+            runningServices=`flu -fields=unit -no-legend`
+        else
+            runningServices=`flu -fields=unit -no-legend | grep $arg1`
         fi
-        echo; 
-        echo '==============' 
+
+        ctr=`echo $runningServices | wc -w`
+        for service in $runningServices
+        do 
+            ctr=$((--ctr))
+
+            [[ "$arg1" != "" ]] && [[ $service != $arg1* ]] && continue
+
+            echo $service 
+
+            # Begin workaround. Remove when fleetctl bug is fixed
+            # There is a problem where fleetctl status says the service is
+            #   Loaded: not-found (Reason: No such file or directory)
+            #   Active: inactive (dead)
+            # User fleetctl journal instead
+
+            f status $service 2>&1 > /tmp/status.out
+            grep 'Loaded' /tmp/status.out | grep 'not-found' 2>&1 > /dev/null
+            if test $? == 1
+            then
+                cat /tmp/status.out
+                rm /tmp/status.out
+            else
+                echo Potential bug: $service is listed as inactive with a loaded status of not-found. Using fjournal.
+                echo
+                fjournal -lines=20 $service
+            fi
+            # End of workaround
+
+            #echo ctr=$ctr runningServices=$runningServices service=$service
+            if test "$ctr" -le 0
+            then
+                break
+            fi
+
+            echo
+            echo '==============' 
+            echo Hit enter to continue, \'q\' for quit.
+            read a 
+            case "$a" in 
+            q|Q|quit)
+                return
+                ;;
+            esac 
+            echo
+        done
+
+        echo
+        echo '+++++++++++++++ Next round of services +++++++++' 
+        echo Hit enter to continue, \'q\' for quit.
+        read a
+        case "$a" in 
+        q|Q|quit)
+            return
+            ;;
+        esac 
     done
 }
 
 function fdestroy() {
-    if test "$1" = ""
+    fshutdown destroy $*
+}
+
+function fstop() {
+    fshutdown stop $*
+}
+
+function fshutdown() {
+    command=$1
+
+    if test "$2" = ""
     then
-        svcs=$(fleetctl list-unit-files | awk '{print $1}')
+        svcs=$(fleetctl list-unit-files --no-legend | awk '{print $1}')
+        shutdownAll=true
     else
-        svcs=$1
+        shutdownAll=false
+        svcs=$*
     fi
 
-    for i in $svcs
-    do
-        fleetctl destroy $i
-    done
-    fleetctl list-unit-files
+    fleetctl $command $svcs
+
+    fluf
+    echo
+
+    if test $shutdownAll == true
+    then
+        while test `flu -no-legend | wc -l` != 0
+        do
+            echo
+            echo Waiting for services to exit
+            flu
+            sleep 2
+        done
+    fi
+
+    flu
 }
 
 function drmf() {
@@ -132,10 +359,15 @@ function drmf() {
 
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
-    for i in {101..105}
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
     do 
-        ipAddr=${ipRoot}.$i
-        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | awk '{print $NF}' | grep -v NAME`
+        ipAddr=${ipRoot}.10$i
+        echo Checking for docker containers on $ipAddr
+        dImages=`ssh -oStrictHostKeyChecking=no $ipAddr docker ps -a 2>&1 | \
+            grep -v -e 'list of known hosts' -e NAMES -e registry | \
+            awk '{print $NF}'`
+
         if test ! "$dImages" == ""
         then
             echo Removing docker images $dImages on $ipAddr
@@ -144,17 +376,38 @@ function drmf() {
     done
 }
 
-if test -d /home/core/share 
-then
-    cd /home/core/share 
+function rundockerbash() {
+    # Run the lightest container we have. Useful for seeing what commands are available, what the folder 
+    # hierarchy is, testing different options like -v, etc.
+    docker run -it -v /home/core/share:/usr/share asteere/consul:consul bash
+}
 
-    . .sharedProfile
+if test -d "/home/core/share"
+then
+    export AD_NIMBUS_DIR=/home/core/share
+
+    . "$AD_NIMBUS_DIR"/.sharedProfile
+
+    cdad
+fi
+
+if test -x "$AD_NIMBUS_DIR/devutils/jq"
+then
+    function jq() {
+        if test "$1" == ""
+        then
+            $AD_NIMBUS_DIR/devutils/jq .
+        else
+            $AD_NIMBUS_DIR/devutils/jq $*
+        fi
+    }
 fi
 
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test ! $? == 0
 then
-    ssh-add insecure_private_key
+    # if this gets read in by .bashrc there can't be any output
+    ssh-add insecure_private_key > /dev/null 2>&1
 fi
 
 # Setup fleetctl status
@@ -164,3 +417,11 @@ then
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
+export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
+
+if test -f /etc/environment
+then
+    set -a 
+    . /etc/environment
+    set +a
+fi

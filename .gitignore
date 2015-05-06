@@ -1,6 +1,10 @@
 *.mmdb
 .vagrant/
+.vagrant.d/
 .*.swp
+
+# TODO: Decide if we want a bin folder of Linux exes to help with debugging
+bin
 
 # Discovery token gets updated everytime "vagrant up" or "vagrant reload" occurs. 
 # Use a template file to minimize what gets committed.
@@ -25,9 +29,13 @@ netlocation/src/node_modules
 # Don't include maxmind stuff until we get our own repository for git and docker
 netlocation/src/data/*
 
+# Ignore test files for health checks
+netlocation/src/netlocation@*.service_*.cfg
+
 # confd is updating nginx.conf every time a netlocation service is added or subtracted
 nginx/nginx.conf
 nginx/.nginx.conf*
+nginx/nginx.cid
 
 # Ignore the error logs
 nginx/nginx_access.log
@@ -36,4 +44,11 @@ nginx/nginx_error.log
 # Not sure who is creating these
 monitor/.nfs*
 
+# TODO: Is there a better place to write the consul data for consistency over reboots?
+consul/data/*
 
+# Scribble area for monitor logs, demo config information, etc
+**/tmp
+
+# Docker registry for this project
+registry

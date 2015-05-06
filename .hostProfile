@@ -1,28 +1,66 @@
 # Host .profile
 # Everything to do with using vagrant and building docker containers
 
-alias vbm=VBoxManage
-alias gvmi=getvminfo
-alias v=vagrant
-alias vs='vagrant status'
-alias vgs='vagrant global-status'
-alias vup='vagrant up'
-alias vsh1='vagrant ssh core-01'
-alias vsh2='vagrant ssh core-02'
-alias vsh3='vagrant ssh core-03'
-alias vsh4='vagrant ssh core-04'
-alias vsh5='vagrant ssh core-05'
+# For foolish consistency use lowercase for function names
+function vbm() {
+    VBoxManage $*
+}
 
-alias b2d=boot2docker
+function gvmi() {
+    getvminfo $*
+}
 
-alias cdad="cd $VAGRANT_CWD"
+function v() {
+    vagrant $*
+}
 
-alias dps='runDocker ps -a'
-alias dpsa='runDocker ps -a'
-alias di='runDocker images'
-alias d='runDocker'
+function vs() {
+    vagrant status $*
+}
 
-function getLatestCurl() {
+function vstatus() {
+    vagrant status $*
+}
+
+function vgs() {
+    vagrant global-status $*
+}
+
+function b2d() {
+    boot2docker $*
+}
+
+function dps() {
+    rundocker ps -a $*
+}
+
+function dpsa() {
+    rundocker ps -a $*
+}
+
+function di() {
+    rundocker images $*
+}
+
+function d() {
+    rundocker $*
+}
+
+function vup() {
+    cdad
+    echo Creating cluster from Vagrantfile in folder `pwd`
+    vagrant up 2>&1 | tee /tmp/vup.lo
+}
+
+function vsh() {
+    vagrant ssh core-0$1
+}
+
+function vssh() {
+    vsh $1
+}
+
+function getlatestcurl() {
     cdad
     cd confd
 
@@ -35,27 +73,37 @@ function buildall() {
     buildconfd
     buildnginx
     buildnetlocation
+    buildconsul
+    builddevutils
+}
+
+function builddevutils() {
+    buildcontainer devutils
 }
 
 function buildconfd() {
-    buildContainer confd
+    buildcontainer confd
+}
+
+function buildconsul() {
+    buildcontainer consul
 }
 
 function buildnginx() {
-    buildContainer nginx
+    buildcontainer nginx
 }
 
 function buildnetlocation() {
-    buildContainer netlocation
+    buildcontainer netlocation
 }
 
-function buildContainer() {
+function buildcontainer() {
     cdad
 
     echo Building docker container $1
 
     # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
-    runDocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
+    rundocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
     if test ! $? == 0
     then
         return
@@ -67,31 +115,31 @@ function buildContainer() {
         return
     fi
 
-    runDocker push $DOCKER_REGISTRY/"$1":$1
+    rundocker push $DOCKER_REGISTRY/"$1":$1
 
     cd -
 
 }
 
-function getListOfVms() {
-    vbm list vms | awk '{print $1}' | sed 's/"//g'
+function getlistofvms() {
+    VBoxManage list vms | awk '{print $1}' | sed 's/"//g'
 }
 
 function getvminfo() {
-    for vm in  `getListOfVms | grep $1`
+    for vm in  `getlistofvms | grep $1`
     do
         echo 
         echo '********************************************************'
         echo
         echo VM: $vm
-        vbm showvminfo $vm
+        VBoxManage showvminfo $vm
     done 
 }
 
 function vdestroy() {
     if test "$1" = ""
     then
-        vboxes=`v status | grep virtualbox | awk '{print $1}'`
+        vboxes=`v status | grep -e docker -e virtualbox | awk '{print $1}'`
     else
         vboxes=$1
     fi
@@ -100,40 +148,54 @@ function vdestroy() {
     do 
         v destroy --force $i
 
-        machineDir=".vagrant/machines/$i"
+        machineDir="$VAGRANT_DOTFILE_PATH/machines/$i"
         if test -d "$machineDir"
         then
             rm -r "$machineDir"
         fi
-
     done
 
-    vms=`getListOfVms | grep -v boot2docker`
+    # Handle use case where a user destroyed a vm individually and then wanted to destroy all of the vms
+    if test "$1" = ""
+    then
+        rm -rf "$VAGRANT_DOTFILE_PATH"/machines/*
+    fi
+
+    vms=`getlistofvms | grep -v boot2docker`
     if test ! "$1" == ""
     then
         vms=`echo $vms | grep $1`
     fi
+
     for vm in $vms
     do 
-        vbm controlvm $vm poweroff 
-        vbm unregistervm --delete $vm
+        VBoxManage controlvm $vm poweroff 
+        VBoxManage unregistervm --delete $vm
     done
 
+    echo
     echo Remaining vms
-    getListOfVms
+    getlistofvms
 
     # See if vagrant has completely cleaned up. Use --prune as sometimes vagrant does completely clean up
-    echo vgs
+    echo
+    echo Vagrant global-status '--prune'
     vgs --prune
 
-    echo vagrant status
+    # TODO: For some reason, vagrant status reports that the core-0* machines are not created vs reporting nothing
+    #echo
+    #echo vagrant status
     #vagrant status
 
-    # TODO: Figure out who should delete these files - confd? nginx? service files?
-    rm -f "$VAGRANT_CWD"/nginx/.nginx.conf*
+    removeNginxConfTempFiles
+    # TODO: Are these tmp files still getting created?
+    if test -d "$AD_NIMBUS_DIR/nginx"
+    then
+        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
+    fi
 }
 
-function setupDocker() {
+function setupdocker() {
     if test ! "$DOCKER_HOST" == ""
     then
         # boot2docker already setup
@@ -159,8 +221,8 @@ function setupDocker() {
     fi
 }
 
-function runDocker() {
-    setupDocker
+function rundocker() {
+    setupdocker
 
     docker $*
 }
@@ -169,29 +231,27 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-function updateAdNimbusEnvironment() {
-    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$VAGRANT_CWD"/adNimbusEnvironment.tmpl > "$VAGRANT_CWD"/adNimbusEnvironment; 
-
-    sourceAdNimbusEnvironment
-}
-
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
     echo If VAGRANT_CWD is set, things like fleetctl status 'netlocation@1.service' will work. Thanks.
     echo For example:
     echo '    export VAGRANT_CWD=~/Research/asteere/ad-nimbus'
+    echo Exiting.
     return
 fi
 
 if test ! -d "$VAGRANT_CWD"
 then
     echo The environment variable "$VAGRANT_CWD" does not point to a valid folder, please set VAGRANT_CWD to your ad-nimbus folder and resource this .profile
-    echo VAGRANT_CWD=$VAGRANT_CWD
+    echo export VAGRANT_CWD=$VAGRANT_CWD
+    echo Exiting.
     return
+else
+    export AD_NIMBUS_DIR=$VAGRANT_CWD
 fi
 
-maxMindFolder="$VAGRANT_CWD/netlocation/src/data/maxMind"
+maxMindFolder="$AD_NIMBUS_DIR/netlocation/src/data/maxMind"
 for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
 do
     if test ! -f "$maxMindFolder/$dataFile" 
@@ -206,7 +266,8 @@ done
 if test "$DOCKER_REGISTRY" == ""
 then
     echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
-    return
+    echo Defaulting to asteere.
+    export DOCKER_REGISTRY=asteere
 fi
 
 if test "$DOCKER_USER" == ""
@@ -216,27 +277,26 @@ then
 fi
 
 # User's .profile or .bash_profile set up correctly, time to get to work
-cdad
 
-# Pull in the common aliases, functions, etc.
-. .sharedProfile
+export VAGRANT_HOME="$AD_NIMBUS_DIR/.vagrant.d"
+export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
+
+# Pull in the common functions, etc.
+. "$AD_NIMBUS_DIR"/.sharedProfile
+
+cdad
 
 # Tell the services what docker registry to use
 # From: https://wiki.archlinux.org/index.php/Systemd/User
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
 
-updateAdNimbusEnvironment
-
-# Setting PATH for Python 3.4
-# The orginal version is saved in .profile.pysave
-PATH="/Library/Frameworks/Python.framework/Versions/3.4/bin:${PATH}"
-export PATH
+updateadnimbusenvironment
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key
-if test -f ~/.vagrant.d/insecure_private_key
+if test -f "$VAGRANT_HOME"/insecure_private_key
 then
-    cp ~/.vagrant.d/insecure_private_key .
+    cp "$VAGRANT_HOME"/insecure_private_key .
 fi
 
 
