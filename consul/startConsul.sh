@@ -52,7 +52,10 @@ export GOMAXPROCS=8
 # Get number of coreos instances. This works as long as all machines are running etcd ?servers?
 # 
 #numServers=`etcdctl ls -recursive _etcd/machines | wc -l`
-clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | /home/core/share/devutils/jq '.node.nodes[].value' | sed -e 's/.*%2F//' -e 's/%3.*//'`
+clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
+    /home/core/share/devutils/jq '.node.nodes[].value' | \
+    sed -e 's/.*%2F//' -e 's/%3.*//'`
+
 numServers=`echo $clusterPrivateIpAddrs | wc -w`
 
 if test $(($numServers % 2)) == 0 -a $numServers -lt 3
@@ -151,10 +154,6 @@ case "$instance" in
     unset bootstrapExpectArg
     ;;
 esac
-
-# Find the smallest odd number greater than 1
-# If the number instances in less expected servers, start another
-# Otherwise, start agent with UI
 
 dockerImage="${consulDockerRegistry}/${consulService}:${consulDockerTag}"
 

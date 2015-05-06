@@ -1,9 +1,19 @@
 #!/bin/bash
 
-set -x
+function findMachineRunningService() {
+    service=$1
+
+    fleetctl list-units -fields=unit,machine --no-legend | grep $service | awk '{print $2}'
+}
 
 # Find the nginx container id
-nginxCidFile=/opt/nginx/nginx.cid
+if test -d /opt/nginx
+then
+    nginxCidFile=/opt/nginx/nginx.cid
+else
+    nginxCidFile=/home/core/share/nginx/nginx.cid
+fi
+
 if test ! -f "$nginxCidFile"
 then
     echo Warning: No $nginxCidFile found, has nginx been started?

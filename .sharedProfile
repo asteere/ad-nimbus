@@ -123,12 +123,15 @@ function startPrivateRegistry() {
 
 sourceadnimbusenvironment
 
-# Custom bash prompt via kirsle.net/wizards/ps1.html
-export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
-export CLICOLOR=1
+if [ ! -z "$PS1" ]
+then
+    # Custom bash prompt via kirsle.net/wizards/ps1.html
+    export PS1="\[$(tput setaf 5)\]\u@\[$(tput setaf 4)\]\h:\[$(tput setaf 2)\]\w:\n$\[$(tput setaf 0)\] \[$(tput sgr0)\]"
+    export CLICOLOR=1
 
-# Common less options
-export LESS="-q -i-i -e -F -X -R"
+    # Common less options
+    export LESS="-q -i-i -e -F -X -R"
+fi
 
 PATH=$PATH:"$AD_NIMBUS_DIR/bin"
 

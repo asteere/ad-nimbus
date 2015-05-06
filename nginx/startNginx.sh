@@ -26,11 +26,13 @@ function setup() {
 }
 
 function startDocker() {
+    nginxCidFile="${nginxCoreosDir}/nginx.cid"
+    rm -f "$nginxCidFile"
+
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} \
-        --cidfile=${nginxCoreosDir}/nginx.cid \
+        --cidfile=${nginxCidFile} \
         --rm=true \
-        --host=${COREOS_PUBLIC_IPV4}:2375 \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume=/home/core/share/${nginxService}:${nginxDir} \
         -p ${COREOS_PUBLIC_IPV4}:${nginxGuestOsPort}:${nginxContainerPort} \
@@ -53,7 +55,7 @@ function waitForNginxConf() {
             break
         fi
 
-        interval=5
+        interval=3
         echo `date`: Sleep $interval and see if confd has come up and created $nginxCoreosConfFile
         sleep $interval
     done

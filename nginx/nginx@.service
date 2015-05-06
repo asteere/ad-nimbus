@@ -3,7 +3,9 @@ Description=nginx load balancer aka reverse proxy %m %H:%i
 
 Requires=docker.service
 Requires=etcd.service
-#Requires=confd@*.service
+
+# TODO: Do we need to handle more than one confd service? Should we make these non-templated service for clarity?
+Requires=confd@1.service
 
 After=docker.service
 After=etcd.service

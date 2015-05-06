@@ -93,6 +93,10 @@ function fstartconfd() {
     fstart confd 1
 }
 
+function fstartconfd_nginx() {
+    fstart confd_nginx 1
+}
+
 function fstartconsul() {
     fstart consul $numInstances
 }
@@ -128,10 +132,10 @@ function fstart() {
         ;;
     esac
 
-    serviceDir=`echo $service | sed 's/@.*//'`
+    serviceDir=`echo $service | sed -e 's/@.*//' -e 's/_.*//'`
     cd "$AD_NIMBUS_DIR/$serviceDir"
 
-    if test "$serviceDir" != "$service"
+    if test "$serviceDir" != "$service" -a "$service" != "confd_nginx"
     then
         numServices="startOnlyThisService"
     else
@@ -147,7 +151,7 @@ function fstart() {
 	;;
         
     0)
-        # Start a global service
+        # Start a non-templated service
         fleetctl start ${service}.service
 	;;
 
@@ -194,42 +198,26 @@ function fstartall() {
         numConsulSvcs=`checkconsulmembers | grep alive | wc -l`
         if test "$numConsulSvcs" -ge $numInstances
         then
-            echo Consul $numConsulSvcs have started on $numInstances servers.
             break
         fi
         echo `date`: Currently only $numConsulSvcs have started. Waiting for $numInstances.
         flu | grep consul
-        checkconsulmembers
+        if test `flu | grep consul | grep loaded | grep running | grep active | wc -l` -eq "$numInstances"
+        then
+            checkconsulmembers
+        fi
         sleep 10
     done
 
-    if test "$numConsulSvcs" -lt $numInstances
-    then
-        echo Not all consul services started, exiting
-        return
-    fi
+    checkconsulmembers
 
     fstartnetlocation
 
-    fstartconfd
+    fstartconfd_nginx
 
-    sleep 5
+    #sleep 5
 
-    # TOOD: nginx will fail if the nginx.conf isn't there. Does it ever recover if confd creates it later?
-    nginxConfFile="$AD_NIMBUS_DIR/nginx/nginx.conf"
-    while true
-    do 
-        if test ! -f "$nginxConfFile"
-        then
-            echo `date`: Waiting for $nginxConfFile. When this file is created it indicates netlocation, consul and confd are working.
-            flu 
-            sleep 10
-        else
-            break
-        fi
-    done
-
-    fstartnginx
+    #fstartnginx
 
     fstartmonitor
 

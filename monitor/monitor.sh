@@ -414,19 +414,22 @@ function getEtcdNodes() {
 }
 
 function runOtherChecks() {
-    numConsulNodes=`getConsulNodes | grep Node | wc -l`
+    configRbFile="$AD_NIMBUS_DIR"/config.rb
+    numConfigRbInstances=`grep '$num_instances=' "$configRbFile" | sed 's/.*=//'`
     numEtcdNodes=`getEtcdNodes | wc -l`
+    if test "$numConfigRbInstances" != "$numEtcdNodes"
+    then
+        echo "Error: The number of etcd nodes($numEtcdNodes) doesn't match the number configured by vagrant($numConfigRbInstances) in config.rb file".
+    fi
+    echo The number of nodes in etcd matches num_instances in $configRbFile
+
+    echo
+    numConsulNodes=`getConsulNodes | grep Node | wc -l`
     if test "$numConsulNodes" != "$numEtcdNodes"
     then
         echo Error: The number of consul nodes $numConsulNodes does not equals the number of etcd nodes $numEtcdNodes
     else
         echo The number of consul nodes $numConsulNodes equals the number of etcd nodes $numEtcdNodes
-    fi
-
-    numConfigRbInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
-    if test "$numConfigRbInstances" != "$numEtcdNodes"
-    then
-        echo "Error: The number of etcd nodes($numEtcdNodes) doesn\'t match the number configured by vagrant($numConfigRbInstances) in config.rb file".
     fi
 
     # Check that there is a raft leader
@@ -454,10 +457,9 @@ function runOtherChecks() {
     fi
 
     echo
-    echo
     echo List services running in datacenter
     getServicesInDataCenter
-
+    
     # Lists nodes in a given DC. Should equal numInstances
     echo
     echo Nodes: 
@@ -487,6 +489,11 @@ function runOtherChecks() {
         echo $svc: 
         getNodesInService $svc
         echo
+
+        if test `fleetctl | grep $svc | wc -l` -lt 1
+        then
+            echo Warning: There are no $svc services running
+        fi
     done
 
     echo
