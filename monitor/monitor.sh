@@ -385,7 +385,7 @@ function getNumberLoadedActiveRunningServices() {
 
     fleetctl list-units -fields=unit,load,active,sub --no-legend | \
         grep $serviceType | \
-        grep -e 'loaded\sactive\srunning' -e 'loaded\sactivating' | \
+        grep -e 'loaded\sactive' -e 'loaded\sactivating' | \
         wc -l
 }
 

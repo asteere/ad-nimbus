@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 function findMachineRunningService() {
     service=$1
 

@@ -9,12 +9,7 @@ EnvironmentFile=/home/core/share/monitor/monitorEnvironment
 
 User=core
 
-ExecStart=/bin/bash -c "/home/core/share/monitor/monitor.sh start"
+ExecStart=/home/core/share/monitor/monitor.sh start
 
-ExecStop=/bin/bash -c "/home/core/share/monitor/monitor.sh stop"
-
-#[X-Fleet]
-# Don't want the monitoring software to be on a server that could lock up
-#Conflicts=netlocation@*.service
-#Conflicts=nginx@*.service
+ExecStop=/home/core/share/monitor/monitor.sh stop
 
