@@ -1,37 +1,41 @@
-Regression Testing
-# Start the cluster and services (see Installation.md)
+Regression Testing (super high-level and needs review)
+# 1.0 Start the cluster and services (see Installation.md)
 
-# Create an addService file and check that the monitor service adds up to adNimbusEnvironment maxNetLocationServices 
-# Note: this can take awhile for the new service to download the container and start.
-touch ~/share/addService
+# 2.0 Validate nginx, netlocation and maxmind are working
+checknetlocation
 
-while true; do date; fluf; sleep 5; echo; done
+# 3.0 Validate that two netlocations are added when the consul health checks start to fail
 
-# Test that the load balancer is using all the netlocation servies in a round robin fashion.
+# Watch the number of netlocations
+mywatch.sh -n .5 "flu | grep netlocation"
 
-# To view nginx reloading after confd sends the SIGHUP
-tail -f ~/share/nginx/nginx_error.log
+# Watch for netlocation services getting added 
+fjournal -f monitor@1.service
 
-# To view nginx redirecting the curl request to the different netlocation service
-tail -f ~/share/nginx/nginx_access.log
+# Watch confd update nginx/nginx.conf. Look for the output of "grep 172.17.8 nginx/nginx.conf"
+fjournal -f confd_nginx@1.service
 
-# Run checkNetLocation to send the netlocation request to nginx.
-checkNetLocation
+# Watch nginx round robin. Note it can take up to one minute for the nginx entries to be logged
+tail -f nginx/nginx_access.log
 
-# Remove the addService file, watch the netlocation services decrease to the adNimbusEnvironment minNetLocationServices value.
-while true; do date; fluf; sleep 5; echo; done
+# Create a hack failure situation
+forceFailures.sh 
 
-# The netlocation State and Dstate columns should go from launched to loaded 
+# When a new netlocation is added, run checkNetLocation 4 times and validate that the IP address are correct.
+# You have about a minute to check before the third netlocation is added.
 
-# The monitor service will output an Error message if the number of launched instances doesn't match the etcdctl number of netlocation keys. I am uncertain if this is a real issue.
+# 4.0 Watch the number of netlocations go from 3 to 1 using the fjournal, tail and mywatch.sh commands above
 
-# Once the number of netlocation services launched matches the expected this cycle of the test is complete.
+# Validate that two netlocation services are removed once the failures are removed. It takes 30+ seconds after the failures
+# are cleared for the first netlocation service to be removed.
 
-# The next two cycles of the test are to create the addService file, watch the netlocations start to the maximum, nginx continues to load balance, remove addServices, watch the netlocation stop, nginx continues to load balance.
+# Clear the hack failure situation
+forceFailures.sh clear
 
-# TODO: Stop the services, verify that the etcdctl keys are correct (etctree)
+# 5.0 Validate that monitor runOtherChecks detects configuration issues
+monitor/monitor.sh runOtherChecks 
 
-# TODO: Restart the services and validate that the services are available and working
+# 6.0 Use the consul web api to validate the nodes, services, key/values and health checks are correct
 
 Known Bugs
 If there are no netlocation services, monitor does not start one

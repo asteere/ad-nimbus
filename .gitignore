@@ -52,3 +52,7 @@ consul/data/*
 
 # Docker registry for this project
 registry
+registrySaves
+
+# TODO: where do these files come from?
+consul/.nfs*
