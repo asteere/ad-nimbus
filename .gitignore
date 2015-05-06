@@ -35,6 +35,7 @@ netlocation/src/netlocation@*.service_*.cfg
 # confd is updating nginx.conf every time a netlocation service is added or subtracted
 nginx/nginx.conf
 nginx/.nginx.conf*
+nginx/nginx.cid
 
 # Ignore the error logs
 nginx/nginx_access.log
