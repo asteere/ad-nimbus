@@ -351,23 +351,30 @@ function resetClock() {
 
 function stopServicesIfErrorFree() {
     # If the number of dataCenterNetLocationFailures == 0 and more than X amount of time has passed, stop another service   
-    if test "$dataCenterNetLocationFailures" == 0 
+    if test "$dataCenterNetLocationFailures" -gt 0 
     then
-        if test "$clockStart" == 0
-        then
-            clockStart=$(date +%s)
-        fi
-
-        currentTime=$(date +%s)
-        elapsedTime=$((currentTime - clockStart))
-
-        numRunningServices=`getNumberLoadedActiveRunningServices $serviceType`
-        if test "$elapsedTime" -gt "$errorFreePeriod" -a "$numRunningServices" -gt "$minNumInstances"
-        then
-            stopService $serviceType
-            resetClock
-        fi
+        return
     fi
+
+    if test "$clockStart" == 0
+    then
+        clockStart=$(date +%s)
+    fi
+
+    currentTime=$(date +%s)
+    elapsedTime=$((currentTime - clockStart))
+
+    numRunningServices=`getNumberLoadedActiveRunningServices $serviceType`
+    if test "$elapsedTime" -gt "$errorFreePeriod" -a "$numRunningServices" -gt "$minNumInstances"
+    then
+        stopService $serviceType
+        resetClock
+    fi
+
+    # Only harvest in times of error-free operation.
+    # TODO: This may need to be revisited if we were to run out of resources
+    harvestStoppedServices
+
 }
 
 function debugOutput() {
@@ -579,8 +586,6 @@ then
         setup
 
         runChecks
-
-        harvestStoppedServices
 
         sleep $monitorRunChecksInterval 
         echo
