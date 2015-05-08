@@ -48,8 +48,9 @@ function d() {
 
 function vup() {
     cdad
-    echo Creating cluster from Vagrantfile in folder `pwd`
+    echo `date`: Creating cluster from Vagrantfile in folder `pwd`
     vagrant up 2>&1 | tee /tmp/vup.lo
+    date
 }
 
 function vsh() {
@@ -137,6 +138,7 @@ function getvminfo() {
 }
 
 function vdestroy() {
+    date
     if test "$1" = ""
     then
         vboxes=`v status | grep -e docker -e virtualbox | awk '{print $1}'`
@@ -188,6 +190,8 @@ function vdestroy() {
     #vagrant status
 
     removenginxconftempfiles
+    
+    date
 }
 
 function setupdocker() {

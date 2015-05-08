@@ -7,16 +7,56 @@ set -a
 . /home/core/share/adNimbusEnvironment
 set +a
 
+function cdad() {
+    cd "$AD_NIMBUS_DIR"
+}
+
+function loadregistry {
+    cdad
+    for imageTar in $currentContainers
+    do
+        echo `date`: $myDocker load -i registrySaves/${imageTar}.tar
+        $myDocker load -i registrySaves/${imageTar}.tar
+    done
+    
+    $myDocker images
+}
+
+function saveregistry() {
+    cdad
+    for svc in $currentContainers
+    do 
+        $myDocker save -o registrySaves/$svc.tar $DOCKER_REGISTRY/$svc:$svc
+    done
+
+    $myDocker images
+}
+
+function clearregistry {
+    . "$AD_NIMBUS_DIR"/.coreosProfile
+
+    fdestroy
+
+    cdad
+    for svc in $currentContainers
+    do
+        echo $svc
+        $myDocker rmi -f $DOCKER_REGISTRY/$svc:$svc
+    done
+    
+    $myDocker images
+}
+
 function loadadnimbusregistry() {
-    if test "`$mydocker images | grep $adNimbusRegistryService`" == ""
+    if test "`$myDocker images | grep $adNimbusRegistryService`" == ""
     then
-        echo $mydocker load -i "$AD_NIMBUS_DIR"/registrySaves/${adNimbusRegistryService}.tar
-        $mydocker load -i "$AD_NIMBUS_DIR"/registrySaves/${adNimbusRegistryService}.tar
+        echo $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${adNimbusRegistryService}.tar
+        $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${adNimbusRegistryService}.tar
     fi
 }
 
 function startadnimbusregistry() { 
-    $mydocker run \
+    $myDocker run \
         --rm \
         --name=${adNimbusRegistryService}_$instance \
         -p ${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
@@ -32,10 +72,10 @@ function start() {
 
 if test "`uname -s`" == "Linux"
 then
-    mydocker=/usr/bin/docker
+    myDocker=/usr/bin/docker
     AD_NIMBUS_DIR=/home/core/share
 else
-    mydocker=runDocker
+    myDocker=runDocker
 fi
 
 functionName=$1

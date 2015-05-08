@@ -143,7 +143,7 @@ function fstart() {
     then
         numServices="startOnlyThisService"
     else
-        echo Be patient, this can take a while before you get the first service \"$service\" output for a total of $numServices 'service(s)'
+        echo `date`: Be patient, this can take a while before you get the first service \"$service\" output for a total of $numServices 'service(s)'
     fi
 
 
@@ -194,6 +194,10 @@ function fstartall() {
 
     export dontStatusService=true
 
+    # TODO: Is this faster to load the tar files into docker so the docker private registry can pretend to load them
+    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
+    
+    echo
     fstartadnimbus_registry
     waitforalladnimbus_registry
 
@@ -240,7 +244,13 @@ function waitforalladnimbus_registry() {
             break
         fi
 
-        sleep 10
+        interval=5
+        if test "$numRunningRegistries" -lt 2
+        then
+            interval=15
+        fi
+        sleep $interval
+
     done
 }
 

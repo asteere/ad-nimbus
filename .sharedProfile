@@ -116,38 +116,16 @@ function startadnimbusregistry() {
 }
 
 function loadregistry {
-    cdad
-    for imageTar in $currentContainers
-    do
-        echo d load -i registrySaves/${imageTar}.tar
-        d load -i registrySaves/${imageTar}.tar
-    done
-    
-    d images
+    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
 }
 
 function saveregistry() {
-    cdad
-    for svc in $currentContainers
-    do 
-        d save -o registrySaves/$svc.tar $DOCKER_REGISTRY/$svc:$svc
-    done
-
-    d images
+    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh saveregistry
 }
 
 function clearregistry {
-    cdad
-    for svc in $currentContainers
-    do
-        echo $svc
-        d rmi $DOCKER_REGISTRY/$svc:$svc
-    done
-    
-    d images
+    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh clearregistry
 }
-
-export currentContainers="consul netlocation confd nginx adnimbus_registry" # devutils
 
 sourceadnimbusenvironment
 
