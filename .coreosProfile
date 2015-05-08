@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # CoreOS .profile
 # Currently, this file is sourced by monitor.sh. When run as part of a service things like '~' are not defined. Always use the full path.
 
@@ -59,12 +61,6 @@ function checkconsulmembers() {
 function joinconsulmembers() {
     echo "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
     "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
-}
-
-function dockerbash() {
-    cdad
-    echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
-    docker run -v /home/core/share:/opt/share -it asteere/devutils:devutils /bin/bash 
 }
 
 function fstartnetlocation() {
@@ -177,7 +173,7 @@ function fstartall() {
     echo "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
     fdestroy
 
-    removeNginxConfTempFiles
+    removenginxconftempfiles
 
     drmf
 
@@ -393,10 +389,23 @@ function drmf() {
     done
 }
 
-function rundockerbash() {
-    # Run the lightest container we have. Useful for seeing what commands are available, what the folder 
-    # hierarchy is, testing different options like -v, etc.
-    docker run -it -v /home/core/share:/usr/share asteere/consul:consul bash
+function dockerbash() {
+    cdad
+    echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
+    docker run -v /home/core/share:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
+}
+
+function timeloadcoreosdocker() {
+    date
+    loadcoreosdocker
+    while "`jobs 2>&1`" != ""
+    do
+        jobs
+        echo
+        sleep 3
+    done
+
+    date
 }
 
 function loadcoreosdocker() {
@@ -407,7 +416,7 @@ function loadcoreosdocker() {
     do 
         ipAddr=${ipRoot}.10$i
         echo Loading the tar images into docker on $ipAddr
-        ssh $ipAddr /home/core/share/bin/loadRegistry.sh
+        ssh $ipAddr /home/core/share/bin/loadRegistry.sh &
     done
 }
 

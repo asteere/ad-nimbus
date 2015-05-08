@@ -92,7 +92,7 @@ function createtar() {
     cd -
 }
 
-function removeNginxConfTempFiles() {
+function removenginxconftempfiles() {
     echo Removing confd created '.nginx.conf*' temp files
 
     # TODO: Are these tmp files still getting created?
@@ -102,31 +102,37 @@ function removeNginxConfTempFiles() {
     fi
 }
 
-function loadPrivateRegistry() {
-    for i in nginx netlocation confd consul devutils
+function loadprivateregistry() {
+    for i in $currentContainers
     do 
-        d pull ${currentRepo}/$i:$i
-        d tag ${currentRepo}/$i:$i localhost:5000/$i:$i; 
+        d pull $DOCKER_REGISTRY/$i:$i
+        d tag $DOCKER_REGISTRY/$i:$i localhost:5000/$i:$i; 
         d push localhost:5000/$i:$i; 
     done
 }
 
-function startPrivateRegistry() {
+function startadnimbusregistry() {
+    svc=adnimbus_registry
+
+    if test "`d images | grep $svc`" == ""
+    then
+        d load -i "$AD_NIMBUS_DIR"/registrySaves/$svc.tar
+    fi
+
     d run \
         -d \
         -p 5000:5000 \
         -v "$AD_NIMBUS_DIR"/registry-dev:/registry-dev \
-        --name=adnimbus_registry \
-        -e STORAGE_PATH=/registry-dev \
-        registry:2.0
+        --name=$svc \
+        $DOCKER_REGISTRY/${svc}:${svc}
 }
 
 function loadregistry {
     cdad
-    for imageTar in $currentServices
+    for imageTar in $currentContainers
     do
         echo d load -i registrySaves/${imageTar}.tar
-        time d load -i registrySaves/${imageTar}.tar
+        d load -i registrySaves/${imageTar}.tar
     done
     
     d images
@@ -134,9 +140,9 @@ function loadregistry {
 
 function saveregistry() {
     cdad
-    for svc in $currentServices
+    for svc in $currentContainers
     do 
-        d save -o registrySaves/$svc.tar ${currentRepo}/$svc:$svc
+        d save -o registrySaves/$svc.tar $DOCKER_REGISTRY/$svc:$svc
     done
 
     d images
@@ -144,17 +150,16 @@ function saveregistry() {
 
 function clearregistry {
     cdad
-    for svc in $currentServices
+    for svc in $currentContainers
     do
         echo $svc
-        d rmi ${currentRepo}/$svc:$svc
+        d rmi $DOCKER_REGISTRY/$svc:$svc
     done
     
     d images
 }
 
-export currentRepo=asteere
-export currentServices="consul netlocation confd nginx" # devutils
+export currentContainers="consul netlocation confd nginx adnimbus_registry" # devutils
 
 sourceadnimbusenvironment
 

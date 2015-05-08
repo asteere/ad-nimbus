@@ -41,8 +41,8 @@ nginx/nginx.cid
 nginx/nginx_access.log
 nginx/nginx_error.log
 
-# Not sure who is creating these
-monitor/.nfs*
+# Not sure why nfs is creating these
+*/.nfs*
 
 # TODO: Is there a better place to write the consul data for consistency over reboots?
 consul/data/*
@@ -51,8 +51,5 @@ consul/data/*
 **/tmp
 
 # Docker registry for this project
-registry
 registrySaves
-
-# TODO: where do these files come from?
-consul/.nfs*
+registry-dev

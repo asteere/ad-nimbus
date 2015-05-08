@@ -187,12 +187,7 @@ function vdestroy() {
     #echo vagrant status
     #vagrant status
 
-    removeNginxConfTempFiles
-    # TODO: Are these tmp files still getting created?
-    if test -d "$AD_NIMBUS_DIR/nginx"
-    then
-        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.c nf${i}*; done)
-    fi
+    removenginxconftempfiles
 }
 
 function setupdocker() {
@@ -265,14 +260,15 @@ done
 
 if test "$DOCKER_REGISTRY" == ""
 then
-    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, etc.)'.
-    echo Defaulting to asteere.
-    export DOCKER_REGISTRY=asteere
+    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, localhost:5000, etc.)'.
+    echo Exiting
+    return
 fi
 
 if test "$DOCKER_USER" == ""
 then
     echo Please set and export DOCKER_USER in your ~/.profile to the docker registry user you want to use '(asteere, mark-larter, etc.)'.
+    echo Exiting.
     return
 fi
 
@@ -285,10 +281,6 @@ export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
 . "$AD_NIMBUS_DIR"/.sharedProfile
 
 cdad
-
-# Tell the services what docker registry to use
-# From: https://wiki.archlinux.org/index.php/Systemd/User
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-asteere}
 
 updateadnimbusenvironment
 

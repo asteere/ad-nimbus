@@ -7,6 +7,10 @@ exitSuccess=0
 exitWarning=1
 exitCritical=2
 
+function calcOverallCpuPercent() {
+    cpuPercent=`ps -eo pcpu,cmd | grep -v -e 'CPU CMD' | awk '{percentTotal+=$1;} END {printf("%.0f\n", percentTotal)}'`
+}
+
 function updateMonitorDir() {
     # Enable the script to be run from coreos and docker
     if test -d "/home/core/share/monitor"

@@ -155,7 +155,7 @@ case "$instance" in
     ;;
 esac
 
-dockerImage="${consulDockerRegistry}/${consulService}:${consulDockerTag}"
+dockerImage="${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}"
 
 #dockerImage=progrium/consul
 #    --rm=true \
