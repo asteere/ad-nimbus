@@ -2,6 +2,8 @@
 
 ---
 coreos:
+  update:
+    reboot-strategy:off
   etcd:
     discovery: https://discovery.etcd.io/06ba7da0d69ee50b963604714f7ea022
     addr: $private_ipv4:4001

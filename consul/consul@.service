@@ -32,4 +32,4 @@ ExecStopPost=-/usr/bin/docker ps -a
 
 [X-Fleet]
 # Install consul server on all devices for now.
-#Conflicts=consul@*.service
+Conflicts=consul@*.service
