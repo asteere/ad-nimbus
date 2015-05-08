@@ -112,19 +112,7 @@ function loadprivateregistry() {
 }
 
 function startadnimbusregistry() {
-    svc=adnimbus_registry
-
-    if test "`d images | grep $svc`" == ""
-    then
-        d load -i "$AD_NIMBUS_DIR"/registrySaves/$svc.tar
-    fi
-
-    d run \
-        -d \
-        -p 5000:5000 \
-        -v "$AD_NIMBUS_DIR"/registry-dev:/registry-dev \
-        --name=$svc \
-        $DOCKER_REGISTRY/${svc}:${svc}
+    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh start
 }
 
 function loadregistry {

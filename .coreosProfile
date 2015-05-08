@@ -63,6 +63,10 @@ function joinconsulmembers() {
     "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
 }
 
+function fstartadnimbusregistry() {
+    fstart adnimbus_registry $numInstances
+}
+
 function fstartnetlocation() {
     numNetLocationInstances=1
     fstart netlocation $numNetLocationInstances
@@ -128,7 +132,11 @@ function fstart() {
         ;;
     esac
 
-    serviceDir=`echo $service | sed -e 's/@.*//' -e 's/_.*//'`
+    serviceDir=`echo $service | sed -e 's/@.*//'`
+    if test ! -d "$serviceDir"
+    then
+        serviceDir=`echo $serviceDir | sed -e 's/_.*//'`
+    fi
     cd "$AD_NIMBUS_DIR/$serviceDir"
 
     if test "$serviceDir" != "$service" -a "$service" != "confd_nginx"
@@ -378,7 +386,7 @@ function drmf() {
         ipAddr=${ipRoot}.10$i
         echo Checking for docker containers on $ipAddr
         dImages=`ssh $ipAddr docker ps -a 2>&1 | \
-            grep -v -e 'list of known hosts' -e NAMES -e registry | \
+            grep -v -e 'list of known hosts' -e NAMES | \
             awk '{print $NF}'`
 
         if test ! "$dImages" == ""
