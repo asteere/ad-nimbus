@@ -1,0 +1,46 @@
+[Unit]
+Description=private registry with adnimbus services loaded %m %H:%i 
+
+Requires=docker.service
+Requires=etcd.service
+
+After=docker.service
+After=etcd.service
+
+[Service]
+# From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
+# Change killmode from "control-group" to "none" to let Docker remove
+# work correctly.
+KillMode=none
+
+# Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
+EnvironmentFile=/etc/environment
+EnvironmentFile=/home/core/share/adNimbusEnvironment
+
+# Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
+TimeoutStartSec=0
+
+# TODO: Is there a performance startup improvement if we use stop and don't remove the container
+
+ExecStartPre=-/usr/bin/docker rm -f ${adNimbusRegistryDockerTag}_%i
+ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh loadadnimbusregistry
+
+ExecStart=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startadnimbusregistry %i
+
+ExecStopPost=-/usr/bin/docker rm -f ${adNimbusRegistryDockerTag}_%i
+ExecStopPost=-/usr/bin/docker ps -a
+
+#Restart=always
+
+[X-Fleet]
+#Conflicts=netlocation@*.service
+Conflicts=adnimbus_registry@*.service
+
+# adNimbus and confd must run on the same machine due to limitations of signaling between docker containers. 
+# There are more complicated solutions but may not be needed if we go to consul and consul-template
+# Postmaster, JMeter, etc. have the adNimbus IP address hard coded. 
+
+# TODO: This should be ${confdService}@*.service
+# Doesn't work: MachineOf=${confdService}@1.service
+#MachineOf=confd@1.service

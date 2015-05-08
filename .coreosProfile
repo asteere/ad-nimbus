@@ -63,7 +63,7 @@ function joinconsulmembers() {
     "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
 }
 
-function fstartadnimbusregistry() {
+function fstartadnimbus_registry() {
     fstart adnimbus_registry $numInstances
 }
 
@@ -178,7 +178,7 @@ function fstart() {
 }
 
 function fstartall() {
-    echo "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
+    echo `date`: "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
     fdestroy
 
     removenginxconftempfiles
@@ -190,32 +190,63 @@ function fstartall() {
 
     rm -f "$AD_NIMBUS_DIR"/monitor/tmp/*.log
 
-    echo "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
+    echo `date`: "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
 
     export dontStatusService=true
 
-    fstartconsul
+    fstartadnimbus_registry
+    waitforalladnimbus_registry
 
+    echo
+    fstartconsul
     waitforconsulmembers
     checkconsulmembers
 
+    echo
     fstartnetlocation
 
+    echo
     fstartconfd_nginx
 
+    echo
     fstartmonitor
 
+    echo
     waitforallservicestoload
 
     unset dontStatusService
 
-    fstatus
+    # fstatus
 
+    echo
     flu
+
+    echo
+    date
+}
+
+function waitforalladnimbus_registry() {
+    # TODO: This should be in a service file or start*.sh
+    svc="${adNimbusRegistryService}"
+
+    while true 
+    do
+        numRunningRegistries=`flu | grep $svc | grep loaded | grep running | grep active | wc -l`
+        echo `date`: Currently have $numRunningRegistries waiting for $numInstances.
+        flu | grep $svc
+
+        if test "$numRunningRegistries" -eq "$numInstances"
+        then
+            break
+        fi
+
+        sleep 5
+    done
 }
 
 function waitforconsulmembers() {
     # TODO: This should be in a service file or start*.sh
+    svc=consul
     while true 
     do
         numConsulSvcs=`checkconsulmembers | grep alive | wc -l`
@@ -223,9 +254,9 @@ function waitforconsulmembers() {
         then
             break
         fi
-        echo `date`: Currently only $numConsulSvcs have started. Waiting for $numInstances.
-        flu | grep consul
-        if test `flu | grep consul | grep loaded | grep running | grep active | wc -l` -eq "$numInstances"
+        echo `date`: Currently have $numConsulSvcs waiting for $numInstances.
+        flu | grep $svc
+        if test `flu | grep $svc | grep loaded | grep running | grep active | wc -l` -eq "$numInstances"
         then
             checkconsulmembers all
             joinconsulmembers
@@ -314,7 +345,7 @@ function fstatus() {
 
             echo
             echo '==============' 
-            echo Hit enter to continue, \'q\' for quit.
+            echo Hit enter for next service, \'q\' for quit.
             read a 
             case "$a" in 
             q|Q|quit)
@@ -326,7 +357,7 @@ function fstatus() {
 
         echo
         echo '+++++++++++++++ Next round of services +++++++++' 
-        echo Hit enter to continue, \'q\' for quit.
+        echo Hit enter for next round of services, \'q\' for quit.
         read a
         case "$a" in 
         q|Q|quit)
