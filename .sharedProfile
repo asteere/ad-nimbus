@@ -52,8 +52,8 @@ function checknetlocation() {
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
-    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl -X GET $headers \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
-    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
+    curl $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
 function sourceadnimbusenvironment() {
@@ -74,19 +74,24 @@ function sourceadnimbusenvironment() {
     set +a
 }
 
-function updateadnimbusenvironment() {
-    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$AD_NIMBUS_DIR"/adNimbusEnvironment.tmpl > "$AD_NIMBUS_DIR"/adNimbusEnvironment; 
-
-    sourceadnimbusenvironment
-}
+#function updateadnimbusenvironment() {
+#    sed 's/REPLACE_ME/'$MY_DOCKER_REGISTRY'/' "$AD_NIMBUS_DIR"/adNimbusEnvironment.tmpl > "$AD_NIMBUS_DIR"/adNimbusEnvironment; 
+#
+#    sourceadnimbusenvironment
+#}
 
 function createtar() {
     cd "$AD_NIMBUS_DIR"/..
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' --exclude '.git' --exclude src --exclude=.vagrant.d --exclude nginx/.nginx.conf* $daProject
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' \
+        --exclude '.git' --exclude src --exclude=.vagrant.d \
+        --exclude nginx/.nginx.conf* --exclude registrySaves --exclude registry-dev \
+        --exclude nginx/nginx_error.log --exclude nginx/nginx_access.log --exclude tmp \
+        $daProject
 
+    pwd
     ls -l $gzFile
 
     cd -

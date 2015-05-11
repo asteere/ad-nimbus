@@ -24,9 +24,9 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${adNimbusRegistryDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh loadadnimbusregistry
+ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh load
 
-ExecStart=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startadnimbusregistry %i
+ExecStart=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh start %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${adNimbusRegistryDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a

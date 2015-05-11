@@ -25,7 +25,7 @@ fi
 
 if test "$cmd" == "mywatch.sh"
 then
-    typeset -f $*
+    typeset -f "$*"
     watch -n $interval $*
 else
     typeset -f vs

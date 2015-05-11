@@ -49,7 +49,7 @@ function d() {
 function vup() {
     cdad
     echo `date`: Creating cluster from Vagrantfile in folder `pwd`
-    vagrant up 2>&1 | tee /tmp/vup.lo
+    vagrant up 2>&1 | tee /tmp/vup.log
     date
 }
 
@@ -286,7 +286,7 @@ export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
 
 cdad
 
-updateadnimbusenvironment
+#updateadnimbusenvironment
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key

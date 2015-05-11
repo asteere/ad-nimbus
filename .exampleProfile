@@ -5,7 +5,7 @@
 # Otherwise, the code below to your ~/.profile.
 
 # Allow the ad-nimbus .profile to login to docker hub and to use the right registry
-export DOCKER_REGISTRY=asteere
+export MY_DOCKER_REGISTRY=asteere
 
 # Change these value to your DockerHub account so you can build and push containers
 export DOCKER_USER=asteere

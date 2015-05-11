@@ -34,7 +34,7 @@ fstartall
 
 # Run fstatus at any point to iterate through the running services. Alternatively, you can run fstatus "somestring" so that only services with "somestring" in the name will be output.
 
-# The checknetlocation function can be run to see if nginx, netlocation and maxmind are working correctly.
+# The checknetlocation function can be run to see if nginx, netlocation and maxmind are working correctly. If checknetlocation is run soon after fstartall, you may get a "Connection refused"
 
 # If you want to destroy all the services
 fdestroy

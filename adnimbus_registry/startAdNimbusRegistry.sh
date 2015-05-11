@@ -11,18 +11,20 @@ function cdad() {
     cd "$AD_NIMBUS_DIR"
 }
 
-function loadregistry {
-    cdad
+function load {
     for imageTar in $currentContainers
     do
-        echo `date`: $myDocker load -i registrySaves/${imageTar}.tar
-        $myDocker load -i registrySaves/${imageTar}.tar
+        if test "`$myDocker images | grep $imageTar`" == ""
+        then
+            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${imageTar}.tar
+            $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${imageTar}.tar
+        fi
     done
     
     $myDocker images
 }
 
-function saveregistry() {
+function save() {
     cdad
     for svc in $currentContainers
     do 
@@ -32,7 +34,7 @@ function saveregistry() {
     $myDocker images
 }
 
-function clearregistry {
+function clear {
     . "$AD_NIMBUS_DIR"/.coreosProfile
 
     fdestroy
@@ -47,15 +49,7 @@ function clearregistry {
     $myDocker images
 }
 
-function loadadnimbusregistry() {
-    if test "`$myDocker images | grep $adNimbusRegistryService`" == ""
-    then
-        echo $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${adNimbusRegistryService}.tar
-        $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${adNimbusRegistryService}.tar
-    fi
-}
-
-function startadnimbusregistry() { 
+function start() { 
     $myDocker run \
         --rm \
         --name=${adNimbusRegistryService}_$instance \
@@ -92,5 +86,5 @@ then
     exit 0
 fi
 
-echo `basename $0` '[loadadnimbusregistry | startadnimbusregistry | all ]' instance
+echo `basename $0` '[load | start | all ]' instance
 

@@ -43,6 +43,7 @@ Vagrant.configure("2") do |config|
     config.ssh.forward_agent = true;
 
     config.vm.box = "coreos-%s" % $update_channel
+    config.vm.box_version = "== %d" % "668.2.0"
     #config.vm.box_version = ">= %d" % $minimumRelease
     config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
 

@@ -177,6 +177,27 @@ function fstart() {
     fi
 }
 
+function waitforcoreosdockertar() {
+    while true
+    do
+        jobs=`jobs 2>&1`
+        if test "$jobs" == ""
+        then
+            break;
+        fi
+
+        echo Jobs still running: 
+        jobs
+        interval=10
+        echo $jobs | grep Stopped 2>&1 > /dev/null
+        if test "$?" == 0
+        then
+            interval=5
+        fi
+        sleep $interval
+    done
+}
+
 function fstartall() {
     echo `date`: "++++++++++++++++++++++ Cleaning up from prior run +++++++++++++++++++++++++++"
     fdestroy
@@ -195,11 +216,11 @@ function fstartall() {
     export dontStatusService=true
 
     # TODO: Is this faster to load the tar files into docker so the docker private registry can pretend to load them
-    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
-    
-    echo
-    fstartadnimbus_registry
-    waitforalladnimbus_registry
+    loadcoreosdockertar
+    waitforcoreosdockertar
+
+    #fstartadnimbus_registry
+    #waitforalladnimbus_registry
 
     echo
     fstartconsul
@@ -444,9 +465,9 @@ function dockerbash() {
     docker run -v /home/core/share:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
 
-function timeloadcoreosdocker() {
+function timeloadcoreosdockertar() {
     date
-    loadcoreosdocker
+    loadcoreosdockertar
     while "`jobs 2>&1`" != ""
     do
         jobs
@@ -457,15 +478,14 @@ function timeloadcoreosdocker() {
     date
 }
 
-function loadcoreosdocker() {
+function loadcoreosdockertar() {
     ipRoot=172.17.8
 
     instanceRange={1..$numInstances}
     for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
-        echo Loading the tar images into docker on $ipAddr
-        ssh $ipAddr /home/core/share/bin/loadRegistry.sh &
+        (ssh $ipAddr /home/core/share/adnimbus_registry/startAdNimbusRegistry.sh load) 
     done
 }
 
