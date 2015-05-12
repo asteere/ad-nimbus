@@ -7,7 +7,7 @@ set +a
 functionName=$1
 instance=$2
 
-function startDocker() {
+function start() {
     /usr/bin/docker run \
         --name=${confdDockerTag}_${instance} \
         --rm=true -e "HOST_IP=${COREOS_PUBLIC_IPV4}" \

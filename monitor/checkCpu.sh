@@ -1,6 +1,7 @@
 #! /bin/sh
 
-#set -x 
+echo '==============================='
+set -x 
 
 # Consul script health check "constants"
 exitSuccess=0
@@ -66,7 +67,7 @@ echo Percent CPU for $processName is $pCpu
 cpuCfgFile="${monitorDir}/tmp/${serviceId}.cfg"
 date
 echo Looking for $cpuCfgFile
-ls -l ${monitorDir}/tmp
+#ls -l ${monitorDir}/tmp
 if test -f "$cpuCfgFile"
 then
     oldPCpu=$pCpu

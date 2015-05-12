@@ -28,7 +28,7 @@ ExecStartPre=/usr/bin/docker ps -a
 
 ExecStart=/home/core/share/netlocation/startNetlocation.sh start %i
 
-ExecStartPost=/home/core/share/netlocation/startNetlocation.sh registerNetLocation %i
+ExecStartPost=-/home/core/share/netlocation/startNetlocation.sh registerNetLocation %i
 
 ExecStop=/home/core/share/netlocation/startNetlocation.sh cleanup %i
 

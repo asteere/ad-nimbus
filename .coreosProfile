@@ -206,9 +206,6 @@ function fstartall() {
 
     drmf
 
-    # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    (cd $AD_NIMBUS_DIR/nginx; rm -f nginx.conf nginx.error.log nginx.access.log)
-
     rm -f "$AD_NIMBUS_DIR"/monitor/tmp/*.log
 
     echo `date`: "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"

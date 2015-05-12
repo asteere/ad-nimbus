@@ -29,8 +29,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
-ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.cid
-ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.ipaddr
 
 # TODO: Add this back in once we have an nginx specific test
 # ExecStartPre=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}

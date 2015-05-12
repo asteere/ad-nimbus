@@ -231,8 +231,15 @@ function dlogin() {
 }
 
 function checkhostnetlocation() {
-    coreosNginxPorts=`grep $nginxGuestOsPort /tmp/vup.log | grep "adapter 1" | awk '{print $4}'`
-    hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
+    if test "$1" == ""
+    then
+        coreosNginxPorts=`grep $nginxGuestOsPort /tmp/vup.log | grep "adapter 1" | awk '{print $4}'`
+        hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
+    else
+        coreosNginxPorts=`grep $2 /tmp/vup.log | grep "adapter 1" | awk '{print $4}'`
+        hostIpAddr=$1
+    fi
+
     for anIpAddr in localhost $hostIpAddr
     do
         for port in $coreosNginxPorts

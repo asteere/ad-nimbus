@@ -24,7 +24,7 @@ ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 
-ExecStart=/home/core/share/confd/startConfd.sh %i
+ExecStart=/home/core/share/confd/startConfd.sh start %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a

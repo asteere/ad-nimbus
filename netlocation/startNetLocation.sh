@@ -83,6 +83,7 @@ function registerService() {
 
 function start() {
     # From: https://github.com/coreos/fleet/issues/612
+    # -p 49170:8080 \
     /usr/bin/docker run \
         --name=${containerName} \
         --rm=true \
