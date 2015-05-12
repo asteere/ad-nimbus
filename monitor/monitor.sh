@@ -424,11 +424,11 @@ function runOtherChecks() {
     configRbFile="$AD_NIMBUS_DIR"/config.rb
     numConfigRbInstances=`grep '$num_instances=' "$configRbFile" | sed 's/.*=//'`
     numEtcdNodes=`getEtcdNodes | wc -l`
-    if test "$numConfigRbInstances" != "$numEtcdNodes"
+    if test "$numEtcdNodes" != "$numConfigRbInstances"
     then
         echo "Error: The number of etcd nodes($numEtcdNodes) doesn't match the number configured by vagrant($numConfigRbInstances) in config.rb file".
     fi
-    echo The number of nodes in etcd matches num_instances in $configRbFile
+    echo "The number of nodes in etcd($numEtcdNodes) matches num_instances in $configRbFile($numConfigRbInstances)"
 
     echo
     numConsulNodes=`getConsulNodes | grep Node | wc -l`

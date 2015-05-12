@@ -42,18 +42,22 @@ function checknetlocation() {
     which fleetctl 2>&1 > /dev/null
     if test $? == 0
     then
-        nginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+        tmpNginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
             sed 's/ice.*\//ice /' | \
             grep nginx | \
             awk '{print $2}'`
+        tmpNginxGuestOsPort=$nginxGuestOsPort
+    else
+        tmpNginxIpAddress=$1
+        tmpNginxGuestOsPort=$2
     fi
 
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
-    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
-    curl $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
+    curl $headers "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
 function sourceadnimbusenvironment() {

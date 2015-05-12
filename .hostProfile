@@ -230,6 +230,19 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
+function checkhostnetlocation() {
+    coreosNginxPorts=`grep $nginxGuestOsPort /tmp/vup.log | grep "adapter 1" | awk '{print $4}'`
+    hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
+    for anIpAddr in localhost $hostIpAddr
+    do
+        for port in $coreosNginxPorts
+        do
+            checknetlocation $anIpAddr $port
+            echo
+        done
+    done
+}
+
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 

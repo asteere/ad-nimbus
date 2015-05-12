@@ -43,8 +43,9 @@ Vagrant.configure("2") do |config|
     config.ssh.forward_agent = true;
 
     config.vm.box = "coreos-%s" % $update_channel
-    config.vm.box_version = "== %d" % "668.2.0"
-    #config.vm.box_version = ">= %d" % $minimumRelease
+
+    # To fix the coreos release that vagrant uses
+    # config.vm.box_version = "= 668.2.0"
     config.vm.box_url = "http://%s.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json" % $update_channel
 
     ["vmware_fusion", "vmware_workstation"].each do |vmware|
@@ -114,10 +115,9 @@ Vagrant.configure("2") do |config|
             # TODO: Figure out how to get these numbers from adNimbusEnvironment
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
-            # config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             # TODO: For load testing purposes, allow the net location servers to be individually queried
-            config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
+            #config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             ["vmware_fusion", "vmware_workstation"].each do |vmware|
                 config.vm.provider vmware do |v|
