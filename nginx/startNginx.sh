@@ -1,4 +1,6 @@
-#! /bin/bash
+#!/bin/bash
+
+echo `basename $0` args:$*:
 
 set -x
 

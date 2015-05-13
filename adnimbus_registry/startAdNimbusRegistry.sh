@@ -50,10 +50,11 @@ function clear {
 }
 
 function start() { 
+    # Bind to only the internal VM to prevent the registry port becoming generally available
     $myDocker run \
         --rm \
         --name=${adNimbusRegistryService}_$instance \
-        -p ${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
+        -p ${COREOS_PUBLIC_IPV4}:${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
         -v $AD_NIMBUS_DIR/registry-dev:/registry-dev \
         ${DOCKER_REGISTRY}/${adNimbusRegistryService}:${adNimbusRegistryDockerTag}
 }

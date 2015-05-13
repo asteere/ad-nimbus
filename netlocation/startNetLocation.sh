@@ -84,11 +84,11 @@ function registerService() {
 
 function start() {
     # From: https://github.com/coreos/fleet/issues/612
-    #        -P \
+    #    -p 49170:8080 \
     /usr/bin/docker run \
         --name=${containerName} \
         --rm=true \
-        -p 49170:8080 \
+        -P \
         -v /home/core/share/${netLocationService}/src:/src \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
         /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance

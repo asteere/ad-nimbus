@@ -1,5 +1,6 @@
 [Unit]
-Description=Combined confd and nginx service because fleetctl doesnt respect Requires
+Description=Combined confd and nginx service 
+# TODO: fleetctl appears to try only once to create both services on the same box even though other nodes might work.
 
 Requires=docker.service
 Requires=etcd.service
@@ -28,7 +29,7 @@ ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDock
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 
-ExecStart=/home/core/share/confd/startConfdNginx.sh %i
+ExecStart=/home/core/share/confd/startConfd_Nginx.sh start %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i

@@ -423,33 +423,45 @@ function fshutdown() {
 
     fleetctl $command $svcs
 
+    sleep 2
+
     fluf
     echo
 
     if test "$shutdownAll" == true
     then
-        while test `flu -no-legend | wc -l` != 0
+        while test `flu --no-legend | wc -l` != 0
         do
             echo
-            echo Waiting for services to exit
+            echo Waiting for all services to exit
             flu
             sleep 2
         done
     else
-        while test `fleetctl list-unit-files -fields=unit --no-legend | grep $serviceSubString | wc -l` != 0
+        while true
         do
-            echo
-            echo Waiting for services to exit
+            stillRunning=`fleetctl list-units -fields=unit --no-legend | grep $serviceSubString`
+            if test "$stillRunning" == ""
+            then
+                break
+            fi
+            echo Waiting for $stillRunning to exit
             flu
+            echo
             sleep 2
         done
     fi
 
+    echo
     flu
 }
 
+function getIpRoot() {
+    echo $COREOS_PUBLIC_IPV4 | sed 's/\(.*\)\.[0-9]*$/\1/'
+}
+
 function drmf() {
-    ipRoot=172.17.8
+    ipRoot=`getIpRoot`
 
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
@@ -458,14 +470,14 @@ function drmf() {
     do 
         ipAddr=${ipRoot}.10$i
         echo Checking for docker containers on $ipAddr
-        dImages=`ssh $ipAddr docker ps -a 2>&1 | \
+        dockerContainers=`ssh $ipAddr docker ps -a 2>&1 | \
             grep -v -e 'list of known hosts' -e NAMES | \
             awk '{print $NF}'`
 
-        if test ! "$dImages" == ""
+        if test ! "$dockerContainers" == ""
         then
-            echo Removing docker images $dImages on $ipAddr
-            ssh $ipAddr docker rm -f $dImages 
+            echo Removing docker containers: $dockerContainers on $ipAddr
+            ssh $ipAddr docker rm -f $dockerContainers 
         fi
     done
 }
@@ -490,7 +502,7 @@ function timeloadcoreosdockertar() {
 }
 
 function loadcoreosdockertar() {
-    ipRoot=172.17.8
+    ipRoot=`getIpRoot`
 
     instanceRange={1..$numInstances}
     for i in `eval echo $instanceRange`

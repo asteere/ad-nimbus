@@ -1,22 +1,15 @@
 #!/bin/bash
 
-instance=1
+echo `basename $0` args:$*:
+
+functionName=$1
+instance=$2
 
 function setup() {
     set -a
     . /etc/environment
 
-    nginxDir=/opt/nginx
-    nginxConfFile=$nginxDir/nginx.conf
-    nginxPidFile=$nginxDir/nginx.pid
-
     shareDir="/home/core/share"
-    if test -d "$shareDir"
-    then
-        nginxCoreosDir="$shareDir/nginx"
-        nginxCoreosConfFile=$nginxCoreosDir/nginx.conf
-        nginxCoreosPidFile=$nginxCoreosDir/nginx.pid
-    fi
 
     set +a
 
@@ -40,10 +33,12 @@ function cleanup() {
     (cd $shareDir/nginx; rm -f nginx.conf nginx.error.log nginx.access.log nginx.cid)
 }
 
+set -x
+
 setup
 
 cleanup
 
-($shareDir/confd/startConfd.sh start $instance 2>&1 | tee -a $shareDir/monitor/tmp/startConfd.log) &
+$shareDir/confd/startConfd.sh start $instance 2>&1 | tee $shareDir/monitor/tmp/startConfd.log &
 
-$shareDir/nginx/startNginx.sh start $instance 2>&1 | tee -a $shareDir/monitor/tmp/startNginx.log 
+$shareDir/nginx/startNginx.sh start $instance 2>&1 | tee $shareDir/monitor/tmp/startNginx.log 
