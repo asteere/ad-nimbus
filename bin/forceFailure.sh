@@ -5,12 +5,6 @@
 # If the arg is start see what type of failure they want internal (cpu-util)  or external (http)
 
 function setup() {
-    trap 'cleanup TERM' TERM
-    trap 'cleanup INT' INT 
-    trap 'cleanup QUIT' QUIT 
-    trap 'cleanup HUP' HUP
-    trap 'cleanup USR1' USR1
-
     set -a
         
     for envFile in /etc/environment /home/core/share/adNimbusEnvironment 

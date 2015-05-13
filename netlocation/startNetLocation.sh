@@ -6,6 +6,7 @@
 # Upon termination remove the consul key, send the signal to docker
 
 function setup() {
+    echo in setup
     trap 'cleanup TERM' TERM
     trap 'cleanup INT' INT 
     trap 'cleanup QUIT' QUIT 
@@ -83,17 +84,19 @@ function registerService() {
 
 function start() {
     # From: https://github.com/coreos/fleet/issues/612
-    # -p 49170:8080 \
+    #        -P \
     /usr/bin/docker run \
         --name=${containerName} \
         --rm=true \
-        -P \
+        -p 49170:8080 \
         -v /home/core/share/${netLocationService}/src:/src \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
         /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance
 }
 
 function cleanup() {
+    echo Received signal $1
+
     signal=$1
     if test "$signal" == ""
     then

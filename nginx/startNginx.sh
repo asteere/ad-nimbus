@@ -35,7 +35,7 @@ function startDocker() {
         --rm=true \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume=/home/core/share/${nginxService}:${nginxDir} \
-        -p ${COREOS_PUBLIC_IPV4}:${nginxGuestOsPort}:${nginxContainerPort} \
+        -p ${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
         nginx -c "$nginxConfFile"
 }

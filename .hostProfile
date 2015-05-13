@@ -49,7 +49,7 @@ function d() {
 function vup() {
     cdad
     echo `date`: Creating cluster from Vagrantfile in folder `pwd`
-    vagrant up 2>&1 | tee /tmp/vup.log
+    VAGRANT_LOG=info vagrant up 2>&1 | tee /tmp/vup.log
     date
 }
 
@@ -230,15 +230,25 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
+function findMappedPorts() {
+    grep $1 /tmp/vup.log | grep "adapter 1" | awk '{print $4}'
+}
+
 function checkhostnetlocation() {
-    if test "$1" == ""
-    then
-        coreosNginxPorts=`grep $nginxGuestOsPort /tmp/vup.log | grep "adapter 1" | awk '{print $4}'`
-        hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
-    else
-        coreosNginxPorts=`grep $2 /tmp/vup.log | grep "adapter 1" | awk '{print $4}'`
+    hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
+
+    case "$#" in
+    0)
+        coreosNginxPorts=`findMappedPorts $nginxGuestOsPort`
+        ;;
+    1)
+        coreosNginxPorts=`findMappedPorts $1`
+        ;;
+    2)
+        coreosNginxPorts=`findMappedPorts $2`
         hostIpAddr=$1
-    fi
+        ;;
+    esac
 
     for anIpAddr in localhost $hostIpAddr
     do

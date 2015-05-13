@@ -30,32 +30,37 @@ function cdad() {
     cd "$AD_NIMBUS_DIR"
 }
 
+function runDate() {
+    date +%Y/%m/%d_%H:%M:%S
+}
+
 function checknetlocation() {
-    # Output the timestamp for comparison with other logs
-    date
-
-    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
-    then
-        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
-    fi
-
-    which fleetctl 2>&1 > /dev/null
-    if test $? == 0
-    then
-        tmpNginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
-            sed 's/ice.*\//ice /' | \
-            grep nginx | \
-            awk '{print $2}'`
-        tmpNginxGuestOsPort=$nginxGuestOsPort
-    else
+    case "$#" in 
+    0)
+        which fleetctl 2>&1 > /dev/null
+        if test "$?" == 0
+        then
+            tmpNginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+                sed 's/ice.*\//ice /' | \
+                grep nginx | \
+                awk '{print $2}'`
+            tmpNginxGuestOsPort=$nginxGuestOsPort
+        fi
+        ;;
+    1)
+        tmpNginxIpAddress=localhost
+        tmpNginxGuestOsPort=$1
+        ;;
+    2)
         tmpNginxIpAddress=$1
         tmpNginxGuestOsPort=$2
-    fi
+    esac
 
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
 
+    echo -n "`runDate`: "
     echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
     curl $headers "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort?ipAddress=198.243.23.131"
 }

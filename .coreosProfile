@@ -408,11 +408,17 @@ function fshutdown() {
 
     if test "$2" = ""
     then
-        svcs=$(fleetctl list-unit-files --no-legend | awk '{print $1}')
+        svcs="$(fleetctl list-unit-files -fields=unit --no-legend)"
         shutdownAll=true
     else
+        serviceSubString=$2
+        svcs="$(fleetctl list-unit-files -fields=unit --no-legend | grep $serviceSubString)"
+        if test "$svcs" == ""
+        then
+            echo Unable to find services $serviceSubString
+            return
+        fi
         shutdownAll=false
-        svcs=$*
     fi
 
     fleetctl $command $svcs
@@ -420,9 +426,17 @@ function fshutdown() {
     fluf
     echo
 
-    if test $shutdownAll == true
+    if test "$shutdownAll" == true
     then
         while test `flu -no-legend | wc -l` != 0
+        do
+            echo
+            echo Waiting for services to exit
+            flu
+            sleep 2
+        done
+    else
+        while test `fleetctl list-unit-files -fields=unit --no-legend | grep $serviceSubString | wc -l` != 0
         do
             echo
             echo Waiting for services to exit
