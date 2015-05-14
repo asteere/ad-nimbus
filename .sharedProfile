@@ -59,10 +59,10 @@ function checknetlocation() {
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
-
+    
     echo -n "`runDate`: "
-    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
-    curl $headers "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl -s -L \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
+    curl -s -L "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
 function sourceadnimbusenvironment() {

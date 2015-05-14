@@ -9,16 +9,14 @@ function setup() {
     . /etc/environment
 
     nginxDir=/opt/nginx
-    nginxConfFile=$nginxDir/nginx.conf
-    nginxPidFile=$nginxDir/nginx.pid
-    nginxCidFile="${nginxCoreosDir}/nginx.cid"
+    nginxConfFile="$nginxDir/nginx.conf"
 
     if test -d "/home/core/share"
     then
         nginxCoreosDir="/home/core/share/nginx"
-        nginxCoreosConfFile=$nginxCoreosDir/nginx.conf
-        nginxCoreosPidFile=$nginxCoreosDir/nginx.pid
-        nginxCoreosCidFile="${nginxCoreosDir}/nginx.ipaddr"
+        nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
+        nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
+        nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
     fi
 
     set +a
@@ -30,14 +28,13 @@ function setup() {
 }
 
 function startDocker() {
-    rm -f "$nginxCidFile"
+    rm -f "$nginxCoreosCidFile" "$nginxCoreosIpAddrFile"
 
-    nginxIpAddrFile="${nginxCoreosDir}/nginx.ipaddr"
-    echo ${COREOS_PUBLIC_IPV4} > "$nginxIpAddrFile"
+    echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
 
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} \
-        --cidfile=${nginxCidFile} \
+        --cidfile=${nginxCoreosCidFile} \
         --rm=true \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume=/home/core/share/${nginxService}:${nginxDir} \

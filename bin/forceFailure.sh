@@ -1,5 +1,6 @@
 #! /bin/sh
 
+date
 
 # If the arg is clear remove the files
 # If the arg is start see what type of failure they want internal (cpu-util)  or external (http)

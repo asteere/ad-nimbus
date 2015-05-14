@@ -94,7 +94,7 @@ function createServiceJsonFile() {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
                 "Notes": "'${serviceId}'_cpu-util",
-                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu_'${instance}_${serviceIpAddr}'.log",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId'",
                 "Interval": "10s"
             }
         ]

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-echo '==============================='$0 args:$*
+echo `date`: '===============================' $0 args:$* "==============="
 set -x 
 
 # Consul script health check "constants"
@@ -49,6 +49,18 @@ serviceId=netlocation@1.service_172.17.8.101
 if test "$1" != ""
 then
     serviceId="$1"
+fi
+
+
+loggingArg=startLogging
+if test "$2" != "$loggingArg"
+then
+    updateMonitorDir
+
+    timestamp=`date "+%Y-%m-%d-%H-%M-%s"`
+    outputFile="$monitorDir/tmp/checkCpu_${serviceId}_${timestamp}.log"
+    $0 $* $loggingArg > "$outputFile" 2>&1
+    exit $?
 fi
 
 processName=$(echo $serviceId | sed 's/@.*//')

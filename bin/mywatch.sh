@@ -13,7 +13,7 @@ cmd=`basename $0`
 
 Usage="$cmd -n interval scriptFunctionAlias arguments"
 
-set -x
+#set -x
 echo $*
 interval=2
 if test "$1" == "-n"
