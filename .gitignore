@@ -36,6 +36,7 @@ netlocation/src/netlocation@*.service_*.cfg
 nginx/nginx.conf
 nginx/.nginx.conf*
 nginx/nginx.cid
+nginx/nginx.ipaddr
 
 # Ignore the error logs
 nginx/nginx_access.log
