@@ -7,16 +7,6 @@
 function setup() {
     set -a
         
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment 
-    do  
-        if test ! -f "$envFile"
-        then
-            echo Error: Unable to find envFile $envFile
-            exit 1
-        fi
-        . "$envFile"
-    done
-
     service=netlocation
 
     # The CPU Util test is considered an internal test

@@ -1,13 +1,11 @@
 [Unit]
 Description=Network geo-location service %m %H:%i
 
-Requires=docker.service
 Requires=etcd.service
-Requires=consul@1.service
+Requires=docker.service
 
-After=docker.service
 After=etcd.service
-After=consul@1.service
+After=docker.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files

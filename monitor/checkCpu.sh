@@ -1,6 +1,6 @@
 #! /bin/sh
 
-echo '==============================='
+echo '==============================='$0 args:$*
 set -x 
 
 # Consul script health check "constants"
@@ -54,11 +54,15 @@ fi
 processName=$(echo $serviceId | sed 's/@.*//')
 if [[ "$serviceId" == *"netlocation"* ]]
 then
-    processName=node
+    processName='node'
 fi
 
 ipAddr=$(echo $serviceId | sed 's/.*_//')
-processInfo=`ps -eo pcpu,comm,args | grep "$processName" | grep $ipAddr | grep -v -e docker -e grep`
+echo Looking for processName:$processName ipAddr:$ipAddr
+
+# TODO: consul health checks run in the consul container and can't see the netlocation container processes
+
+processInfo=`ps -Aeo pcpu,comm,args | grep "$processName" | grep $ipAddr | grep -v -e docker -e grep -e /opt/consul/consul`
 echo Process information: $processInfo
 
 pCpu=$(echo $processInfo | awk '{printf("%.0f\n", $1);}')

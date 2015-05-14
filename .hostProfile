@@ -232,7 +232,16 @@ function dlogin() {
 }
 
 function findMappedPorts() {
-    grep $1 /tmp/vup.log | grep "adapter 1" | awk '{print $4}'
+    if test "$2" == ""
+    then
+        grep $1 /tmp/vup.log | grep "adapter 1" | awk '{print $4}'
+    else
+        grep $1 /tmp/vup.log | grep $2 | grep "adapter 1" | awk '{print $4}'
+    fi
+}
+
+function ipAddrToMachineName() {
+    echo $1 | sed 's/.*\([0-9]\)$/core-0\1/'
 }
 
 function checkhostnetlocation() {
@@ -240,7 +249,9 @@ function checkhostnetlocation() {
 
     case "$#" in
     0)
-        coreosNginxPorts=`findMappedPorts $nginxGuestOsPort`
+        nginxIpAddr=`cat "$AD_NIMBUS_DIR"/nginx/nginx.ipaddr`
+        nginxHostName=`ipAddrToMachineName $nginxIpAddr`
+        coreosNginxPorts=`findMappedPorts $nginxGuestOsPort $nginxHostName`
         ;;
     1)
         coreosNginxPorts=`findMappedPorts $1`

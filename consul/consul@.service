@@ -1,8 +1,10 @@
 [Unit]
 Description=consul docker service 
 
+Requires=etcd.service
 Requires=docker.service
 
+After=etcd.service
 After=docker.service
 
 [Service]

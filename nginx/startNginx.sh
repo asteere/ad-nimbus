@@ -11,12 +11,14 @@ function setup() {
     nginxDir=/opt/nginx
     nginxConfFile=$nginxDir/nginx.conf
     nginxPidFile=$nginxDir/nginx.pid
+    nginxCidFile="${nginxCoreosDir}/nginx.cid"
 
     if test -d "/home/core/share"
     then
         nginxCoreosDir="/home/core/share/nginx"
         nginxCoreosConfFile=$nginxCoreosDir/nginx.conf
         nginxCoreosPidFile=$nginxCoreosDir/nginx.pid
+        nginxCoreosCidFile="${nginxCoreosDir}/nginx.ipaddr"
     fi
 
     set +a
@@ -28,8 +30,10 @@ function setup() {
 }
 
 function startDocker() {
-    nginxCidFile="${nginxCoreosDir}/nginx.cid"
     rm -f "$nginxCidFile"
+
+    nginxIpAddrFile="${nginxCoreosDir}/nginx.ipaddr"
+    echo ${COREOS_PUBLIC_IPV4} > "$nginxIpAddrFile"
 
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} \
@@ -42,11 +46,22 @@ function startDocker() {
         nginx -c "$nginxConfFile"
 }
 
+function runCmd() {
+    cmd=$1
+    /usr/bin/docker exec nginx_1 nginx -s $cmd -c $nginxConfFile
+}
+
+function reload() {
+    runCmd reload
+}
+
 # TODO: Is this needed?
 function sendSignal() {
     echo Sending $1 to nginx
-    docker kill -s $1 
+    runCmd stop
 
+    # TODO: This may be overkill
+    docker kill -s $1 
 }
 
 function waitForNginxConf() {
