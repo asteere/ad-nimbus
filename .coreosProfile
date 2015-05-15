@@ -230,8 +230,8 @@ function fstartall() {
     export dontStatusService=true
 
     # TODO: Is this faster to load the tar files into docker so the docker private registry can pretend to load them
-    loadcoreosdockertar
-    waitforcoreosdockertar
+    #loadcoreosdockertar
+    #waitforcoreosdockertar
 
     #fstartadnimbus_registry
     #waitforalladnimbus_registry
@@ -501,13 +501,17 @@ function drmf() {
 
 function dockerbash() {
     cdad
+
     echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
-    docker run -v /home/core/share:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
+
+    docker run -v $AD_NIMBUS_DIR:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
 
 function timeloadcoreosdockertar() {
     date
+
     loadcoreosdockertar
+
     while "`jobs 2>&1`" != ""
     do
         jobs
@@ -525,8 +529,10 @@ function loadcoreosdockertar() {
     for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
-        (ssh $ipAddr /home/core/share/adnimbus_registry/startAdNimbusRegistry.sh load) 
+        (ssh $ipAddr "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh load) &
     done
+
+    wait
 }
 
 if test -d "/home/core/share"

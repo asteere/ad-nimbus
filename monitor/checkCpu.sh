@@ -27,17 +27,10 @@ function setup() {
 
     updateMonitorDir
 
-    for envFile in /etc/environment "${monitorDir}/monitorEnvironment"
-    do
-        echo envFile:$envFile
-        if test ! -f "$envFile"
-        then
-            echo Error: Unable to find envFile $envFile
-            exit $exitCritical
-        fi
-        . "$envFile"
-    done
+    . /etc/environment 
+    . "${monitorDir}/monitorEnvironment"
 
+    # reset this based on actual filesystem
     updateMonitorDir
 
     set +a
@@ -49,18 +42,6 @@ serviceId=netlocation@1.service_172.17.8.101
 if test "$1" != ""
 then
     serviceId="$1"
-fi
-
-
-loggingArg=startLogging
-if test "$2" != "$loggingArg"
-then
-    updateMonitorDir
-
-    timestamp=`date "+%Y-%m-%d-%H-%M-%s"`
-    outputFile="$monitorDir/tmp/checkCpu_${serviceId}_${timestamp}.log"
-    $0 $* $loggingArg > "$outputFile" 2>&1
-    exit $?
 fi
 
 processName=$(echo $serviceId | sed 's/@.*//')

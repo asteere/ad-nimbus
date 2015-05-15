@@ -8,8 +8,7 @@ instance=$2
 function setup() {
     set -a
     . /etc/environment
-
-    shareDir="/home/core/share"
+    . /home/core/share/adNimbusEnvironment
 
     set +a
 
@@ -23,14 +22,19 @@ function setup() {
 function sendSignal() {
     echo Sending $1 to nginx
     docker kill -s $1 
-
 }
 
 function cleanup() {
-    rm -f monitor/tmp/startConfd.log monitor/tmp/startNginx.log
+    origDir=`pwd`
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    (cd $shareDir/nginx; rm -f nginx.conf nginx.error.log nginx.access.log nginx.cid)
+    cd "$AD_NIMBUS_DIR"/nginx; 
+    rm -f nginx.conf nginx.error.log nginx.access.log nginx.cid
+
+    cd "$AD_NIMBUS_DIR"/monitor/tmp/
+    rm -f startConfd.log startNginx.log
+
+    cd "$origDir"
 }
 
 set -x
@@ -39,6 +43,6 @@ setup
 
 cleanup
 
-$shareDir/confd/startConfd.sh start $instance 2>&1 | tee $shareDir/monitor/tmp/startConfd.log &
+"$AD_NIMBUS_DIR"/confd/startConfd.sh start $instance 2>&1 | tee "$AD_NIMBUS_DIR"/monitor/tmp/startConfd.log &
 
-$shareDir/nginx/startNginx.sh start $instance 2>&1 | tee $shareDir/monitor/tmp/startNginx.log 
+"$AD_NIMBUS_DIR"/nginx/startNginx.sh start $instance 2>&1 | tee "$AD_NIMBUS_DIR"/monitor/tmp/startNginx.log 

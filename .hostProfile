@@ -232,11 +232,19 @@ function dlogin() {
 }
 
 function findMappedPorts() {
+    nginxGuestOsPortArg=$1
+
     if test "$2" == ""
     then
-        grep $1 /tmp/vup.log | grep "adapter 1" | awk '{print $4}'
+        # No coreos specified
+        grep $nginxGuestOsPortArg /tmp/vup.log | grep "adapter 1" | awk '{print $4}'
     else
-        grep $1 /tmp/vup.log | grep $2 | grep "adapter 1" | awk '{print $4}'
+        #grep $1 /tmp/vup.log | grep $2 | grep "adapter 1" | awk '{print $4}'
+
+        nginxHostName=$2
+        vmId=`VBoxManage list vms | grep $nginxHostName | awk '{print $1}' | sed 's/"//g'` 
+        VBoxManage showvminfo $vmId | grep $nginxGuestOsPortArg | \
+            grep 'guest port' | sed -e 's/.*host port = //' -e 's/, .*//'
     fi
 }
 
@@ -247,6 +255,11 @@ function ipAddrToMachineName() {
 function checkhostnetlocation() {
     hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
 
+    # No args - find the nginx coreos hostname and then the nginx port that has been forwarded on that machine. 
+    # 1 arg - user specified the nginx coreos port, find all the forwarded ports for that port. 
+    #    Useful to test netlocation directly on all forwarded ports.
+    # 2 args - user specified the host ip address and the nginx coreos port, find the forwarded port for that coreos port. 
+    #   Useful to try other netlocation from other machines
     case "$#" in
     0)
         nginxIpAddr=`cat "$AD_NIMBUS_DIR"/nginx/nginx.ipaddr`
@@ -327,8 +340,6 @@ export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
 . "$AD_NIMBUS_DIR"/.sharedProfile
 
 cdad
-
-#updateadnimbusenvironment
 
 # Make vagrant's key accessible to coreos 
 vagrantInsecureKey=insecure_private_key

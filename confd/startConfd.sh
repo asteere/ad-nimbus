@@ -7,6 +7,7 @@ set -x
 function setup() {
     set -a
     . /etc/environment
+    . /home/core/share/adNimbusEnvironment
     set +a
 
     trap 'sendSignal stop' TERM
@@ -28,8 +29,8 @@ function start() {
         -e "HOST_IP=${COREOS_PUBLIC_IPV4}" \
         -p ${COREOS_PUBLIC_IPV4}:${confdGuestOsPort}:${confdContainerPort} \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        -v /home/core/share/${confdService}:${confdDir} \
-        -v /home/core/share/${nginxService}:${nginxDir} \
+        -v "$AD_NIMBUS_DIR"/${confdService}:${confdDir} \
+        -v "$AD_NIMBUS_DIR"/${nginxService}:${nginxDir} \
         ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} \
         /etc/confd/confd \
         -backend=${consulService} \

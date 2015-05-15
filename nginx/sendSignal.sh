@@ -13,7 +13,7 @@ if test -d /opt/nginx
 then
     nginxDir=/opt/nginx
 else
-    nginxDir=/home/core/share/nginx/nginx.cid
+    nginxDir=/home/core/share/nginx
 fi
 nginxCidFile="$nginxDir"/nginx.cid
 
@@ -29,6 +29,3 @@ nginxId=`cat $nginxCidFile`
 echo -e 'POST /containers/'$nginxId'/kill?signal=SIGHUP HTTP/1.0\r\n' | nc -U /var/run/docker.sock
 
 grep 'server 1' ${nginxDir}/nginx.conf
-echo
-echo
-echo

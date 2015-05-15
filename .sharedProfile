@@ -77,7 +77,9 @@ function sourceadnimbusenvironment() {
 
     if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
     then
+        oldAdNimbusDir="$AD_NIMBUS_DIR"
         . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+        AD_NIMBUS_DIR="$oldAdNimbusDir"
     fi
 
     set +a

@@ -2,10 +2,21 @@
 
 #set -x
 
-set -a 
-. /etc/environment
-. /home/core/share/adNimbusEnvironment
-set +a
+function setup() {
+    set -a 
+
+    if test "`uname -s`" == "Linux"
+    then
+        myDocker=/usr/bin/docker
+    else
+        myDocker=runDocker
+    fi
+
+    . /etc/environment
+    . /home/core/share/adNimbusEnvironment
+
+    set +a
+}
 
 function cdad() {
     cd "$AD_NIMBUS_DIR"
@@ -65,13 +76,7 @@ function start() {
     startadnimbusregistry
 }
 
-if test "`uname -s`" == "Linux"
-then
-    myDocker=/usr/bin/docker
-    AD_NIMBUS_DIR=/home/core/share
-else
-    myDocker=runDocker
-fi
+setup
 
 functionName=$1
 instance=$2

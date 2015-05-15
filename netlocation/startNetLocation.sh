@@ -79,7 +79,7 @@ function createNetLocationConsulValue() {
 function registerService() {
     port=$1
 
-    /home/core/share/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PUBLIC_IPV4} $port
+    "$AD_NIMBUS_DIR"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PUBLIC_IPV4} $port
 }
 
 function start() {
@@ -89,7 +89,7 @@ function start() {
         --name=${containerName} \
         --rm=true \
         -P \
-        -v /home/core/share/${netLocationService}/src:/src \
+        -v "$AD_NIMBUS_DIR"/${netLocationService}/src:/src \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
         /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance
 }
@@ -113,7 +113,7 @@ function cleanup() {
 
     removeKeyValue $netLocationConsulKey
 
-    /home/core/share/monitor/monitor.sh unregisterNetLocationService $instance ${COREOS_PUBLIC_IPV4}
+    "$AD_NIMBUS_DIR"/monitor/monitor.sh unregisterNetLocationService $instance ${COREOS_PUBLIC_IPV4}
 }
 
 function registerNetLocation() {

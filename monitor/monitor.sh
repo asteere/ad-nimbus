@@ -15,6 +15,8 @@ function setup() {
         fi
     done 
     set +a
+
+    rm -f "$AD_NIMBUS_DIR"/monitor/tmp/checkCpu*
 }
 
 function runCurlGet() {
@@ -71,6 +73,8 @@ function createServiceJsonFile() {
 
     jsonFile=/tmp/$service$instance.json
 
+    outputFile=$monitorDir/tmp/${serviceId}_$$.log
+
     echo '{
         "ID": "'$serviceId'",
         "Name": "'$service'",
@@ -87,13 +91,13 @@ function createServiceJsonFile() {
                 "Notes": "'$serviceId'_http",
                 "Http": "'$url'",
                 "Interval": "10s",
-                "Timeout": "5s"
+                "Timeout": "10s"
             },
             {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
                 "Notes": "'${serviceId}'_cpu-util",
-                "Script": "'$monitorDir'/checkCpu.sh '$serviceId'",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' > '$outputFile' 2>&1",
                 "Interval": "10s"
             }
         ]
@@ -242,7 +246,7 @@ function startService() {
         grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | tail -1`
     instance=$((++instance))
 
-    cd /home/core/share/$service
+    cd "$AD_NIMBUS_DIR"/$service
 
     fleetCtlUnit=$service@${instance}.service
     echo Starting $fleetCtlUnit
@@ -420,7 +424,7 @@ function dumpCriticalFailures() {
 
 function getEtcdNodes() {
     curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-        /home/core/share/devutils/jq '.node.nodes[].value' 
+        "$AD_NIMBUS_DIR"/devutils/jq '.node.nodes[].value' 
 }
 
 function runOtherChecks() {

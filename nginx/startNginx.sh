@@ -13,7 +13,9 @@ function setup() {
 
     if test -d "/home/core/share"
     then
-        nginxCoreosDir="/home/core/share/nginx"
+        . /home/core/share/adNimbusEnvironment
+
+        nginxCoreosDir=""$AD_NIMBUS_DIR"/nginx"
         nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
         nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
         nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
@@ -37,7 +39,7 @@ function startDocker() {
         --cidfile=${nginxCoreosCidFile} \
         --rm=true \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
-        --volume=/home/core/share/${nginxService}:${nginxDir} \
+        --volume="$AD_NIMBUS_DIR"/${nginxService}:${nginxDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
         nginx -c "$nginxConfFile"
