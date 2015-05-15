@@ -19,7 +19,7 @@ function setup() {
 }
 
 function cdad() {
-    cd "$AD_NIMBUS_DIR"
+    cd "$adNimbusDir"
 }
 
 function load {
@@ -27,8 +27,8 @@ function load {
     do
         if test "`$myDocker images | grep $imageTar`" == ""
         then
-            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${imageTar}.tar
-            $myDocker load -i "$AD_NIMBUS_DIR"/registrySaves/${imageTar}.tar
+            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$adNimbusDir"/registrySaves/${imageTar}.tar
+            $myDocker load -i "$adNimbusDir"/registrySaves/${imageTar}.tar
         fi
     done
     
@@ -46,7 +46,7 @@ function save() {
 }
 
 function clear {
-    . "$AD_NIMBUS_DIR"/.coreosProfile
+    . "$adNimbusDir"/.coreosProfile
 
     fdestroy
 
@@ -66,7 +66,7 @@ function start() {
         --rm \
         --name=${adNimbusRegistryService}_$instance \
         -p ${COREOS_PUBLIC_IPV4}:${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
-        -v $AD_NIMBUS_DIR/registry-dev:/registry-dev \
+        -v $adNimbusDir/registry-dev:/registry-dev \
         ${DOCKER_REGISTRY}/${adNimbusRegistryService}:${adNimbusRegistryDockerTag}
 }
 

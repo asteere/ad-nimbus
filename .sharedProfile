@@ -27,7 +27,7 @@ function show() {
 }
 
 function cdad() {
-    cd "$AD_NIMBUS_DIR"
+    cd "$adNimbusDir"
 }
 
 function runDate() {
@@ -75,24 +75,24 @@ function sourceadnimbusenvironment() {
         . /etc/environment
     fi
 
-    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    if test -f "$adNimbusDir"/adNimbusEnvironment
     then
-        oldAdNimbusDir="$AD_NIMBUS_DIR"
-        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
-        AD_NIMBUS_DIR="$oldAdNimbusDir"
+        oldAdNimbusDir="$adNimbusDir"
+        . "$adNimbusDir"/adNimbusEnvironment
+        adNimbusDir="$oldAdNimbusDir"
     fi
 
     set +a
 }
 
 #function updateadnimbusenvironment() {
-#    sed 's/REPLACE_ME/'$MY_DOCKER_REGISTRY'/' "$AD_NIMBUS_DIR"/adNimbusEnvironment.tmpl > "$AD_NIMBUS_DIR"/adNimbusEnvironment; 
+#    sed 's/REPLACE_ME/'$MY_DOCKER_REGISTRY'/' "$adNimbusDir"/adNimbusEnvironment.tmpl > "$adNimbusDir"/adNimbusEnvironment; 
 #
 #    sourceadnimbusenvironment
 #}
 
 function createtar() {
-    cd "$AD_NIMBUS_DIR"/..
+    cd "$adNimbusDir"/..
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
@@ -112,9 +112,9 @@ function removenginxconftempfiles() {
     echo Removing confd created '.nginx.conf*' temp files
 
     # TODO: Are these tmp files still getting created?
-    if test -d "$AD_NIMBUS_DIR/nginx"
+    if test -d "$adNimbusDir/nginx"
     then
-        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
+        (cd "$adNimbusDir"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
     fi
 }
 
@@ -128,19 +128,19 @@ function loadprivateregistry() {
 }
 
 function startadnimbusregistry() {
-    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh start
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh start
 }
 
 function loadregistry {
-    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
 }
 
 function saveregistry() {
-    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh saveregistry
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveregistry
 }
 
 function clearregistry {
-    "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh clearregistry
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh clearregistry
 }
 
 sourceadnimbusenvironment
@@ -155,5 +155,5 @@ then
     export LESS="-q -i-i -e -F -X -R"
 fi
 
-PATH=$PATH:"$AD_NIMBUS_DIR/bin"
+PATH=$PATH:"$adNimbusDir/bin"
 

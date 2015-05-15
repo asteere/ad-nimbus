@@ -28,10 +28,10 @@ function cleanup() {
     origDir=`pwd`
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    cd "$AD_NIMBUS_DIR"/nginx; 
+    cd "$adNimbusDir"/nginx; 
     rm -f nginx.conf nginx.error.log nginx.access.log nginx.cid
 
-    cd "$AD_NIMBUS_DIR"/monitor/tmp/
+    cd "$adNimbusDir"/monitor/tmp/
     rm -f startConfd.log startNginx.log
 
     cd "$origDir"
@@ -43,6 +43,6 @@ setup
 
 cleanup
 
-"$AD_NIMBUS_DIR"/confd/startConfd.sh start $instance 2>&1 | tee "$AD_NIMBUS_DIR"/monitor/tmp/startConfd.log &
+"$adNimbusDir"/confd/startConfd.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startConfd.log &
 
-"$AD_NIMBUS_DIR"/nginx/startNginx.sh start $instance 2>&1 | tee "$AD_NIMBUS_DIR"/monitor/tmp/startNginx.log 
+"$adNimbusDir"/nginx/startNginx.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startNginx.log 

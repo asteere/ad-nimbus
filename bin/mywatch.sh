@@ -3,9 +3,9 @@
 set -a
 if test -d "/home/core/share"
 then
-    . "$AD_NIMBUS_DIR"/.coreosProfile
+    . "$adNimbusDir"/.coreosProfile
 else
-    . "$AD_NIMBUS_DIR/".hostProfile
+    . "$adNimbusDir/".hostProfile
 fi
 set +a
 

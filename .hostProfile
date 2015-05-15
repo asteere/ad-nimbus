@@ -262,7 +262,7 @@ function checkhostnetlocation() {
     #   Useful to try other netlocation from other machines
     case "$#" in
     0)
-        nginxIpAddr=`cat "$AD_NIMBUS_DIR"/nginx/nginx.ipaddr`
+        nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
         nginxHostName=`ipAddrToMachineName $nginxIpAddr`
         coreosNginxPorts=`findMappedPorts $nginxGuestOsPort $nginxHostName`
         ;;
@@ -302,10 +302,10 @@ then
     echo Exiting.
     return
 else
-    export AD_NIMBUS_DIR=$VAGRANT_CWD
+    export adNimbusDir=$VAGRANT_CWD
 fi
 
-maxMindFolder="$AD_NIMBUS_DIR/netlocation/src/data/maxMind"
+maxMindFolder="$adNimbusDir/netlocation/src/data/maxMind"
 for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
 do
     if test ! -f "$maxMindFolder/$dataFile" 
@@ -333,11 +333,11 @@ fi
 
 # User's .profile or .bash_profile set up correctly, time to get to work
 
-export VAGRANT_HOME="$AD_NIMBUS_DIR/.vagrant.d"
-export VAGRANT_DOTFILE_PATH="$AD_NIMBUS_DIR/.vagrant"
+export VAGRANT_HOME="$adNimbusDir/.vagrant.d"
+export VAGRANT_DOTFILE_PATH="$adNimbusDir/.vagrant"
 
 # Pull in the common functions, etc.
-. "$AD_NIMBUS_DIR"/.sharedProfile
+. "$adNimbusDir"/.sharedProfile
 
 cdad
 

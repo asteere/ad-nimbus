@@ -24,7 +24,7 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker load -i /${AD_NIMBUS_DIR}/registrySaves/${nginxService}.tar
+ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${nginxService}.tar
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
 
 ExecStartPre=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}
@@ -35,7 +35,7 @@ ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a
 
 # TODO: See TODO above
-ExecStopPost=/${AD_NIMBUS_DIR}/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
+ExecStopPost=/${adNimbusDir}/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
 
 #Restart=always
 

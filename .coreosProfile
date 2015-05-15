@@ -49,8 +49,8 @@ function checkconsulmembers() {
     instanceRange='{1..'$numInstances'}'
     for i in `eval echo $instanceRange`
     do
-        echo "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
-        "$AD_NIMBUS_DIR"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        echo "$adNimbusDir"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        "$adNimbusDir"/consul/consul members -rpc-addr=172.17.8.10$i:8400
         if test "$?" == 0 -a "$1" != "all"
         then
             break
@@ -59,8 +59,8 @@ function checkconsulmembers() {
 }
 
 function joinconsulmembers() {
-    echo "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
-    "$AD_NIMBUS_DIR"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
 }
 
 function fstartadnimbus_registry() {
@@ -154,7 +154,7 @@ function fstart() {
     then
         serviceDir=`echo $serviceDir | sed -e 's/_.*//'`
     fi
-    cd "$AD_NIMBUS_DIR/$serviceDir"
+    cd "$adNimbusDir/$serviceDir"
 
     if test "$serviceDir" != "$service" -a "$service" != "confd_nginx"
     then
@@ -223,7 +223,7 @@ function fstartall() {
 
     drmf
 
-    rm -f "$AD_NIMBUS_DIR"/monitor/tmp/*.log
+    rm -f "$adNimbusDir"/monitor/tmp/*.log
 
     echo `date`: "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
 
@@ -502,9 +502,9 @@ function drmf() {
 function dockerbash() {
     cdad
 
-    echo NFS share $AD_NIMBUS_DIR will be located on /opt/share
+    echo NFS share $adNimbusDir will be located on /opt/share
 
-    docker run -v $AD_NIMBUS_DIR:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
+    docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
 
 function timeloadcoreosdockertar() {
@@ -529,7 +529,7 @@ function loadcoreosdockertar() {
     for i in `eval echo $instanceRange`
     do 
         ipAddr=${ipRoot}.10$i
-        (ssh $ipAddr "$AD_NIMBUS_DIR"/adnimbus_registry/startAdNimbusRegistry.sh load) &
+        (ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh load) &
     done
 
     wait
@@ -537,21 +537,21 @@ function loadcoreosdockertar() {
 
 if test -d "/home/core/share"
 then
-    export AD_NIMBUS_DIR=/home/core/share
+    export adNimbusDir=/home/core/share
 
-    . "$AD_NIMBUS_DIR"/.sharedProfile
+    . "$adNimbusDir"/.sharedProfile
 
     cdad
 fi
 
-if test -x "$AD_NIMBUS_DIR/devutils/jq"
+if test -x "$adNimbusDir/devutils/jq"
 then
     function jq() {
         if test "$1" == ""
         then
-            $AD_NIMBUS_DIR/devutils/jq .
+            $adNimbusDir/devutils/jq .
         else
-            $AD_NIMBUS_DIR/devutils/jq $*
+            $adNimbusDir/devutils/jq $*
         fi
     }
 fi

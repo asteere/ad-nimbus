@@ -1,5 +1,9 @@
 #! /bin/bash
 
+set -x
+
+echo '=========================' `basename $0` args:$*: '=========================='
+
 function sendSignal() {
     echo Sending $1 to consul 
     # TODO: Not sure the use cases where this is needed
@@ -41,7 +45,7 @@ do
 done
 
 instance=$1
-consulServerCfg="$AD_NIMBUS_DIR"/consul/tmp/consulServer.cfg
+consulServerCfg="$adNimbusDir"/consul/tmp/consulServer.cfg
 
 hostname=`uname -n`
 
@@ -53,7 +57,7 @@ export GOMAXPROCS=8
 # 
 #numServers=`etcdctl ls -recursive _etcd/machines | wc -l`
 clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-    "$AD_NIMBUS_DIR"/devutils/jq '.node.nodes[].value' | \
+    "$adNimbusDir"/devutils/jq '.node.nodes[].value' | \
     sed -e 's/.*%2F//' -e 's/%3.*//'`
 
 numServers=`echo $clusterPrivateIpAddrs | wc -w`
@@ -173,15 +177,14 @@ dockerImage="${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}"
 # Uncomment when running from the command line
 #/usr/bin/docker rm -f ${consulDockerTag} > /dev/null 2>&1
 
-set -x
 /usr/bin/docker run \
     --name=${consulDockerTag}_${instance} \
     --net=host \
     -P \
     --volume=/var/run/docker.sock:/var/run/docker.sock \
-    --volume="$AD_NIMBUS_DIR"/${consulService}:${consulDir} \
-    --volume="$AD_NIMBUS_DIR"/${nginxService}:${nginxDir} \
-    --volume="$AD_NIMBUS_DIR"/${monitorService}:${monitorDir} \
+    --volume="$adNimbusDir"/${consulService}:${consulDir} \
+    --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
+    --volume="$adNimbusDir"/${monitorService}:${monitorDir} \
     ${dockerImage} \
     ${consulDir}/${consulService} \
     agent $serverArg $advertiseArg $bindArg $clientArg $retryJoinArg \

@@ -11,10 +11,10 @@ function setup() {
     service=netlocation
 
     # The CPU Util test is considered an internal test
-    internalDir="$AD_NIMBUS_DIR"/monitor/tmp
+    internalDir="$adNimbusDir"/monitor/tmp
 
     # The HTTP test is considered an external test
-    externalDir="$AD_NIMBUS_DIR"/$service/src/tmp
+    externalDir="$adNimbusDir"/$service/src/tmp
 
     set +a
 }

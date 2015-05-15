@@ -16,7 +16,7 @@ function setup() {
     done 
     set +a
 
-    rm -f "$AD_NIMBUS_DIR"/monitor/tmp/checkCpu*
+    rm -f "$adNimbusDir"/monitor/tmp/checkCpu*
 }
 
 function runCurlGet() {
@@ -246,7 +246,7 @@ function startService() {
         grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | tail -1`
     instance=$((++instance))
 
-    cd "$AD_NIMBUS_DIR"/$service
+    cd "$adNimbusDir"/$service
 
     fleetCtlUnit=$service@${instance}.service
     echo Starting $fleetCtlUnit
@@ -424,11 +424,11 @@ function dumpCriticalFailures() {
 
 function getEtcdNodes() {
     curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-        "$AD_NIMBUS_DIR"/devutils/jq '.node.nodes[].value' 
+        "$adNimbusDir"/devutils/jq '.node.nodes[].value' 
 }
 
 function runOtherChecks() {
-    configRbFile="$AD_NIMBUS_DIR"/config.rb
+    configRbFile="$adNimbusDir"/config.rb
     numConfigRbInstances=`grep '$num_instances=' "$configRbFile" | sed 's/.*=//'`
     numEtcdNodes=`getEtcdNodes | wc -l`
     if test "$numEtcdNodes" != "$numConfigRbInstances"

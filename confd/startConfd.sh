@@ -29,8 +29,8 @@ function start() {
         -e "HOST_IP=${COREOS_PUBLIC_IPV4}" \
         -p ${COREOS_PUBLIC_IPV4}:${confdGuestOsPort}:${confdContainerPort} \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "$AD_NIMBUS_DIR"/${confdService}:${confdDir} \
-        -v "$AD_NIMBUS_DIR"/${nginxService}:${nginxDir} \
+        -v "$adNimbusDir"/${confdService}:${confdDir} \
+        -v "$adNimbusDir"/${nginxService}:${nginxDir} \
         ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} \
         /etc/confd/confd \
         -backend=${consulService} \
