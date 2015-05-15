@@ -115,7 +115,6 @@ Vagrant.configure("2") do |config|
             # TODO: Figure out how to get these numbers from adNimbusEnvironment
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
-            config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             # TODO: For load testing purposes, allow the net location servers to be individually queried
             #config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true

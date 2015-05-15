@@ -82,7 +82,24 @@ function etctree() {
 }
 
 function fjournal() {
-    f journal $*
+    unset followArg
+    unset linesArg
+
+    if test "$1" == "-f"
+    then
+        followArg="$1"
+        shift 1
+    fi
+
+    if [[ "$1=" == "-lines="* ]]
+    then
+        linesArg="$1"
+        shift 1
+    fi
+
+    svc=`fleetctl list-units -fields=unit -no-legend | grep $1`
+
+    f journal $followArg $linesArg $svc
 }
 
 function fstartnginx() {

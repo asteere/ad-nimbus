@@ -29,7 +29,11 @@ ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDock
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
 
+ExecStartPost=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}
+
 ExecStart=/home/core/share/confd/startConfd_Nginx.sh start %i
+
+ExecStopPost=/home/core/share/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i

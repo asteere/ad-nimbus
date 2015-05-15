@@ -45,8 +45,9 @@ function registerService() {
     instance=$2
     serviceIpAddr=$3
     port=$4
+    url=$5
 
-    dataFile=`createServiceJsonFile $service $instance $serviceIpAddr $port`
+    dataFile=`createServiceJsonFile $service $instance $serviceIpAddr $port $url`
 
     runCurlPut $serviceIpAddr "/v1/agent/service/register" "@$dataFile"
 }
@@ -64,11 +65,9 @@ function createServiceJsonFile() {
     instance=$2
     serviceIpAddr=$3
     port=$4
+    url=$5 
 
     serviceId="`createServiceId $service $instance $serviceIpAddr`"
-
-    # Use canned IP address so that all the fields are returned
-    url="http://$serviceIpAddr:$port?ipAddress=198.243.23.131"
 
     jsonFile=/tmp/$service$instance.json
 
@@ -110,15 +109,19 @@ function registerNetLocationService() {
     serviceIpAddr=$2
     port=$3
 
-    registerService netlocation $instance $serviceIpAddr $port
+    # Use canned IP address so that all the fields are returned
+    url="http://$serviceIpAddr:$port?ipAddress=198.243.23.131"
+    
+    registerService netlocation $instance $serviceIpAddr $port $url
 }
 
 function registerNginxService() {
     instance=$1
     serviceIpAddr=$2
     port=$nginxGuestOsPort
+    url="http://$serviceIpAddr:$port/consul-check/index.html"
 
-    registerService nginx $instance $serviceIpAddr $port
+    registerService nginx $instance $serviceIpAddr $port $url
 }
 
 function unregisterService() {
