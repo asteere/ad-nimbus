@@ -102,9 +102,9 @@ function fjournal() {
     f journal $followArg $linesArg $svc
 }
 
-function fstartnginx() {
-    fstart nginx 1
-}
+#function fstartnginx() {
+#    fstart nginx 1
+#}
 
 function fstartconfd() {
     fstart confd 1
@@ -114,9 +114,9 @@ function fstartconfd_nginx() {
     fstart confd_nginx 1
 }
 
-function fstartconsul() {
-    fstart consul $numInstances
-}
+#function fstartconsul() {
+#    fstart consul $numInstances
+#}
 
 function fstartmonitor() {
     fstart monitor 1

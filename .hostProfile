@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Host .profile
 # Everything to do with using vagrant and building docker containers
 
@@ -49,8 +51,7 @@ function d() {
 function vup() {
     cdad
     echo `date`: Creating cluster from Vagrantfile in folder `pwd`
-    #VAGRANT_LOG=info 
-    vagrant up 2>&1 | tee /tmp/vup.log
+    VAGRANT_LOG=info vagrant up 2>&1 | tee /tmp/vup.log
     date
 }
 
@@ -346,6 +347,13 @@ vagrantInsecureKey=insecure_private_key
 if test -f "$VAGRANT_HOME"/insecure_private_key
 then
     cp "$VAGRANT_HOME"/insecure_private_key .
+fi
+
+# If you want to make the WebContent Research available clone the repo into ~/Research/WebContent. 
+# Or, define webContentDir separately.
+if test -d "$HOME/Research/WebContent"
+then
+    export webContentDir="~/Research/WebContent"
 fi
 
 
