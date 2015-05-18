@@ -1,4 +1,6 @@
-#! /bin/bash
+#!/bin/bash
+
+echo `basename $0` args:$*:
 
 set -x
 
@@ -7,14 +9,16 @@ function setup() {
     . /etc/environment
 
     nginxDir=/opt/nginx
-    nginxConfFile=$nginxDir/nginx.conf
-    nginxPidFile=$nginxDir/nginx.pid
+    nginxConfFile="$nginxDir/nginx.conf"
 
     if test -d "/home/core/share"
     then
-        nginxCoreosDir="/home/core/share/nginx"
-        nginxCoreosConfFile=$nginxCoreosDir/nginx.conf
-        nginxCoreosPidFile=$nginxCoreosDir/nginx.pid
+        . /home/core/share/adNimbusEnvironment
+
+        nginxCoreosDir=""$adNimbusDir"/nginx"
+        nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
+        nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
+        nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
     fi
 
     set +a
@@ -26,25 +30,37 @@ function setup() {
 }
 
 function startDocker() {
-    nginxCidFile="${nginxCoreosDir}/nginx.cid"
-    rm -f "$nginxCidFile"
+    rm -f "$nginxCoreosCidFile" "$nginxCoreosIpAddrFile"
+
+    echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
 
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} \
-        --cidfile=${nginxCidFile} \
+        --cidfile=${nginxCoreosCidFile} \
         --rm=true \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
-        --volume=/home/core/share/${nginxService}:${nginxDir} \
-        -p ${COREOS_PUBLIC_IPV4}:${nginxGuestOsPort}:${nginxContainerPort} \
+        --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
+        -p ${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
         nginx -c "$nginxConfFile"
+}
+
+function runCmd() {
+    cmd=$1
+    /usr/bin/docker exec nginx_1 nginx -s $cmd -c $nginxConfFile
+}
+
+function reload() {
+    runCmd reload
 }
 
 # TODO: Is this needed?
 function sendSignal() {
     echo Sending $1 to nginx
-    docker kill -s $1 
+    runCmd stop
 
+    # TODO: This may be overkill
+    docker kill -s $1 
 }
 
 function waitForNginxConf() {

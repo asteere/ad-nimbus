@@ -10,10 +10,9 @@ Add the contents of the .exampleProfile to your .profile. The .*Profile files ha
 Starting and Using Vagrant/Docker/Coreos Cluster
 The remaining instructions assume you have familiarized yourself with the .hostProfile and .coreosProfile files.
 
-Open a mac terminal which will source your updated .profile
+Open a mac terminal which will source your updated .profile. You should be in the $VAGRANT_CWD folder.
 
 # The remaining instructions are written as if this was a shell script
-cd "$VAGRANT_CWD"
 
 # Ask Mark or Andy for the location/zip/tar of the maxmind database.
 # Assuming it is a zip file in the Downloads directory on the mac
@@ -24,25 +23,18 @@ mv maxMind-ss maxMind
 
 # The next step will create, provision and start the coreos VMs. This can take a while the first time. 
 # Stick around until you are prompted for your password. After that you can get a cup of coffee.
-v up
+vup
 
 # Log in to one of the virtual machines
-vsh1
+vsh 1
 
-. share/.coreosProfile
+# Start the services for basic operations (consul, confd&nginx combo, netlocation, monitor)
+# fstartall should finish with all the services setup and running. Fstartall will hang waiting for a condition to happen
+fstartall
 
-# Start the services for basic operations (nginx, confd, 1 netlocation, monitor)
-fstartAll
+# Run fstatus at any point to iterate through the running services. Alternatively, you can run fstatus "somestring" so that only services with "somestring" in the name will be output.
 
-# Although the command prompt will come back the services are not operational at this point. The following commands will provide status.
-fluf
-
-f status netlocation@1.service
-f status nginx@1.service
-
-# The output of the fluf command will indicate what IP address the nginx service/container is running. Open a browser
-# and type in the nginx IP Address and port (49160). For example: 172.17.8.102:49160. 
-# If everything is running correctly, you should get a JSON payload with your IP address.
+# The checknetlocation function can be run to see if nginx, netlocation and maxmind are working correctly. If checknetlocation is run soon after fstartall, you may get a "Connection refused"
 
 # If you want to destroy all the services
 fdestroy

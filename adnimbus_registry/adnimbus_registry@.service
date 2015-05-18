@@ -1,5 +1,5 @@
 [Unit]
-Description=nginx load balancer aka reverse proxy %m %H:%i 
+Description=private registry with adnimbus services loaded %m %H:%i 
 
 Requires=docker.service
 Requires=etcd.service
@@ -22,30 +22,24 @@ TimeoutStartSec=0
 
 # TODO: Is there a performance startup improvement if we use stop and don't remove the container
 
-ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
+ExecStartPre=-/usr/bin/docker rm -f ${adNimbusRegistryDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${nginxService}.tar
-ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
+ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh load
 
-ExecStartPre=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}
+ExecStart=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh start %i
 
-ExecStart=/home/core/share/nginx/startNginx.sh start %i
-
-ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
+ExecStopPost=-/usr/bin/docker rm -f ${adNimbusRegistryDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a
-
-# TODO: See TODO above
-ExecStopPost=/${adNimbusDir}/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
 
 #Restart=always
 
 [X-Fleet]
 #Conflicts=netlocation@*.service
-#Conflicts=nginx@*.service
+Conflicts=adnimbus_registry@*.service
 
-# nginx and confd must run on the same machine due to limitations of signaling between docker containers. 
+# adNimbus and confd must run on the same machine due to limitations of signaling between docker containers. 
 # There are more complicated solutions but may not be needed if we go to consul and consul-template
-# Postmaster, JMeter, etc. have the nginx IP address hard coded. 
+# Postmaster, JMeter, etc. have the adNimbus IP address hard coded. 
 
 # TODO: This should be ${confdService}@*.service
 # Doesn't work: MachineOf=${confdService}@1.service

@@ -1,11 +1,11 @@
 [Unit]
 Description=confd docker service 
 
+Requires=etcd.service
 Requires=docker.service
-#Requires=consul.service
 
+After=etcd.service
 After=docker.service
-#After=consul.service
 
 [Service]
 # From: https://www.digitalocean.com/community/tutorials/how-to-create-flexible-services-for-a-coreos-cluster-with-fleet-unit-files
@@ -22,9 +22,10 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
+ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${confdService}.tar
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 
-ExecStart=/home/core/share/confd/startConfd.sh %i
+ExecStart=/home/core/share/confd/startConfd.sh start %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a

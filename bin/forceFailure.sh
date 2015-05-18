@@ -1,35 +1,20 @@
 #! /bin/sh
 
+date
 
 # If the arg is clear remove the files
 # If the arg is start see what type of failure they want internal (cpu-util)  or external (http)
 
 function setup() {
-    trap 'cleanup TERM' TERM
-    trap 'cleanup INT' INT 
-    trap 'cleanup QUIT' QUIT 
-    trap 'cleanup HUP' HUP
-    trap 'cleanup USR1' USR1
-
     set -a
         
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment 
-    do  
-        if test ! -f "$envFile"
-        then
-            echo Error: Unable to find envFile $envFile
-            exit 1
-        fi
-        . "$envFile"
-    done
-
     service=netlocation
 
     # The CPU Util test is considered an internal test
-    internalDir="$AD_NIMBUS_DIR"/monitor/tmp
+    internalDir="$adNimbusDir"/monitor/tmp
 
     # The HTTP test is considered an external test
-    externalDir="$AD_NIMBUS_DIR"/$service/src/tmp
+    externalDir="$adNimbusDir"/$service/src/tmp
 
     set +a
 }

@@ -6,6 +6,7 @@
 # Upon termination remove the consul key, send the signal to docker
 
 function setup() {
+    echo in setup
     trap 'cleanup TERM' TERM
     trap 'cleanup INT' INT 
     trap 'cleanup QUIT' QUIT 
@@ -78,21 +79,24 @@ function createNetLocationConsulValue() {
 function registerService() {
     port=$1
 
-    /home/core/share/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PUBLIC_IPV4} $port
+    "$adNimbusDir"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PUBLIC_IPV4} $port
 }
 
 function start() {
     # From: https://github.com/coreos/fleet/issues/612
+    #    -p 49170:8080 \
     /usr/bin/docker run \
         --name=${containerName} \
         --rm=true \
         -P \
-        -v /home/core/share/${netLocationService}/src:/src \
+        -v "$adNimbusDir"/${netLocationService}/src:/src \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
         /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance
 }
 
 function cleanup() {
+    echo Received signal $1
+
     signal=$1
     if test "$signal" == ""
     then
@@ -109,7 +113,7 @@ function cleanup() {
 
     removeKeyValue $netLocationConsulKey
 
-    /home/core/share/monitor/monitor.sh unregisterNetLocationService $instance ${COREOS_PUBLIC_IPV4}
+    "$adNimbusDir"/monitor/monitor.sh unregisterNetLocationService $instance ${COREOS_PUBLIC_IPV4}
 }
 
 function registerNetLocation() {
