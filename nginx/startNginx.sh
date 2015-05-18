@@ -34,10 +34,15 @@ function startDocker() {
 
     echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
 
+    if test -d "$HOME/WebContent"
+    then
+        webContentVol="--volume=$HOME/WebContent:/opt/WebContent"
+    fi
+
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} \
         --cidfile=${nginxCoreosCidFile} \
-        --rm=true \
+        --rm=true "$webContentVol" \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
