@@ -22,8 +22,13 @@ function show() {
         return
     fi
 
-    echo $1 is not a function, environment variable or file in $PATH
+    set | grep $1
+    if test "$?" == "0"
+    then
+        return
+    fi
 
+    echo $1 is not a function, environment variable or file in $PATH
 }
 
 function cdad() {
@@ -34,9 +39,23 @@ function runDate() {
     date +%Y/%m/%d_%H:%M:%S
 }
 
+function checkwebcontent() {
+    url=/WebContent/GuidedHelp/Modem-Motorola-SBG6580-Hopper913/GuidedContentUnit.html
+
+    runCurl $url $1 $2
+}
+
 function checknetlocation() {
+    url="?ipAddress=198.243.23.131"
+
+    runCurl $url $1 $2
+}
+
+function runCurl() {
+    url=$1
+    
     case "$#" in 
-    0)
+    1)
         which fleetctl 2>&1 > /dev/null
         if test "$?" == 0
         then
@@ -47,13 +66,13 @@ function checknetlocation() {
             tmpNginxGuestOsPort=$nginxGuestOsPort
         fi
         ;;
-    1)
-        tmpNginxIpAddress=localhost
-        tmpNginxGuestOsPort=$1
-        ;;
     2)
-        tmpNginxIpAddress=$1
+        tmpNginxIpAddress=localhost
         tmpNginxGuestOsPort=$2
+        ;;
+    3)
+        tmpNginxIpAddress=$2
+        tmpNginxGuestOsPort=$3
     esac
 
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
@@ -61,8 +80,10 @@ function checknetlocation() {
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
     
     echo -n "`runDate`: "
-    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl -s -L \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
-    curl -s -L "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort?ipAddress=198.243.23.131"
+    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl -s -L \"http://\$ipAddr:\$port$url\""
+    curl -s -L "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort$url"
+
+    echo
 }
 
 function sourceadnimbusenvironment() {
