@@ -1,5 +1,9 @@
 #! /bin/bash
 
+set -x
+
+echo '=========================' `basename $0` args:$*: '=========================='
+
 function sendSignal() {
     echo Sending $1 to consul 
     # TODO: Not sure the use cases where this is needed
@@ -28,9 +32,6 @@ then
     exit 1
 fi
 
-instance=$1
-consulServerCfg=/home/core/share/consul/tmp/consulServer.cfg
-
 set -a
     
 for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
@@ -43,9 +44,12 @@ do
     . "$envFile"
 done
 
-set +a
+instance=$1
+consulServerCfg="$adNimbusDir"/consul/tmp/consulServer.cfg
 
 hostname=`uname -n`
+
+set +a
 
 export GOMAXPROCS=8
 
@@ -53,7 +57,7 @@ export GOMAXPROCS=8
 # 
 #numServers=`etcdctl ls -recursive _etcd/machines | wc -l`
 clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-    /home/core/share/devutils/jq '.node.nodes[].value' | \
+    "$adNimbusDir"/devutils/jq '.node.nodes[].value' | \
     sed -e 's/.*%2F//' -e 's/%3.*//'`
 
 numServers=`echo $clusterPrivateIpAddrs | wc -w`
@@ -155,7 +159,7 @@ case "$instance" in
     ;;
 esac
 
-dockerImage="${consulDockerRegistry}/${consulService}:${consulDockerTag}"
+dockerImage="${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}"
 
 #dockerImage=progrium/consul
 #    --rm=true \
@@ -173,15 +177,14 @@ dockerImage="${consulDockerRegistry}/${consulService}:${consulDockerTag}"
 # Uncomment when running from the command line
 #/usr/bin/docker rm -f ${consulDockerTag} > /dev/null 2>&1
 
-set -x
 /usr/bin/docker run \
     --name=${consulDockerTag}_${instance} \
     --net=host \
     -P \
     --volume=/var/run/docker.sock:/var/run/docker.sock \
-    --volume=/home/core/share/${consulService}:${consulDir} \
-    --volume=/home/core/share/${nginxService}:${nginxDir} \
-    --volume=/home/core/share/${monitorService}:${monitorDir} \
+    --volume="$adNimbusDir"/${consulService}:${consulDir} \
+    --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
+    --volume="$adNimbusDir"/${monitorService}:${monitorDir} \
     ${dockerImage} \
     ${consulDir}/${consulService} \
     agent $serverArg $advertiseArg $bindArg $clientArg $retryJoinArg \

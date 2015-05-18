@@ -1,5 +1,6 @@
 [Unit]
-Description=Combined confd and nginx service because fleetctl doesnt respect Requires
+Description=Combined confd and nginx service 
+# TODO: fleetctl appears to try only once to create both services on the same box even though other nodes might work.
 
 Requires=docker.service
 Requires=etcd.service
@@ -24,13 +25,17 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}_%i
+ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${nginxService}.tar
+ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${consulService}.tar
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.cid
-ExecStartPre=/usr/bin/rm -f ${nginxDir}/nginx.ipaddr
 
-ExecStart=/home/core/share/confd/startConfdNginx.sh %i
+ExecStartPost=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}
+
+ExecStart=/home/core/share/confd/startConfd_Nginx.sh start %i
+
+ExecStopPost=/${adNimbusDir}/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i

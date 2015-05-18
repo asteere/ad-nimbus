@@ -15,6 +15,8 @@ function setup() {
         fi
     done 
     set +a
+
+    rm -f "$adNimbusDir"/monitor/tmp/checkCpu*
 }
 
 function runCurlGet() {
@@ -45,8 +47,9 @@ function registerService() {
     instance=$2
     serviceIpAddr=$3
     port=$4
+    url=$5
 
-    dataFile=`createServiceJsonFile $service $instance $serviceIpAddr $port`
+    dataFile=`createServiceJsonFile $service $instance $serviceIpAddr $port $url`
 
     runCurlPut $serviceIpAddr "/v1/agent/service/register" "@$dataFile"
 }
@@ -64,13 +67,13 @@ function createServiceJsonFile() {
     instance=$2
     serviceIpAddr=$3
     port=$4
+    url=$5 
 
     serviceId="`createServiceId $service $instance $serviceIpAddr`"
 
-    # Use canned IP address so that all the fields are returned
-    url="http://$serviceIpAddr:$port?ipAddress=198.243.23.131"
-
     jsonFile=/tmp/$service$instance.json
+
+    outputFile=$monitorDir/tmp/${serviceId}_$$.log
 
     echo '{
         "ID": "'$serviceId'",
@@ -88,13 +91,13 @@ function createServiceJsonFile() {
                 "Notes": "'$serviceId'_http",
                 "Http": "'$url'",
                 "Interval": "10s",
-                "Timeout": "5s"
+                "Timeout": "10s"
             },
             {
                 "Id": "'${serviceId}'_cpu-util",
                 "Name": "CPU utilization",
                 "Notes": "'${serviceId}'_cpu-util",
-                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' 2>&1 >> '$monitorDir'/tmp/checkCpu_'${instance}_${serviceIpAddr}'.log",
+                "Script": "'$monitorDir'/checkCpu.sh '$serviceId' > '$outputFile' 2>&1",
                 "Interval": "10s"
             }
         ]
@@ -110,15 +113,19 @@ function registerNetLocationService() {
     serviceIpAddr=$2
     port=$3
 
-    registerService netlocation $instance $serviceIpAddr $port
+    # Use canned IP address so that all the fields are returned
+    url="http://$serviceIpAddr:$port?ipAddress=198.243.23.131"
+    
+    registerService netlocation $instance $serviceIpAddr $port $url
 }
 
 function registerNginxService() {
     instance=$1
     serviceIpAddr=$2
     port=$nginxGuestOsPort
+    url="http://$serviceIpAddr:$port/consul-check/index.html"
 
-    registerService nginx $instance $serviceIpAddr $port
+    registerService nginx $instance $serviceIpAddr $port $url
 }
 
 function unregisterService() {
@@ -239,7 +246,7 @@ function startService() {
         grep $service | sed -e 's/.*@//' -e 's/.service//' | sort -n | tail -1`
     instance=$((++instance))
 
-    cd /home/core/share/$service
+    cd "$adNimbusDir"/$service
 
     fleetCtlUnit=$service@${instance}.service
     echo Starting $fleetCtlUnit
@@ -417,18 +424,18 @@ function dumpCriticalFailures() {
 
 function getEtcdNodes() {
     curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-        /home/core/share/devutils/jq '.node.nodes[].value' 
+        "$adNimbusDir"/devutils/jq '.node.nodes[].value' 
 }
 
 function runOtherChecks() {
-    configRbFile="$AD_NIMBUS_DIR"/config.rb
+    configRbFile="$adNimbusDir"/config.rb
     numConfigRbInstances=`grep '$num_instances=' "$configRbFile" | sed 's/.*=//'`
     numEtcdNodes=`getEtcdNodes | wc -l`
-    if test "$numConfigRbInstances" != "$numEtcdNodes"
+    if test "$numEtcdNodes" != "$numConfigRbInstances"
     then
         echo "Error: The number of etcd nodes($numEtcdNodes) doesn't match the number configured by vagrant($numConfigRbInstances) in config.rb file".
     fi
-    echo The number of nodes in etcd matches num_instances in $configRbFile
+    echo "The number of nodes in etcd($numEtcdNodes) matches num_instances in $configRbFile($numConfigRbInstances)"
 
     echo
     numConsulNodes=`getConsulNodes | grep Node | wc -l`

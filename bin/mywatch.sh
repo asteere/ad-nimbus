@@ -3,9 +3,9 @@
 set -a
 if test -d "/home/core/share"
 then
-    . "$AD_NIMBUS_DIR"/.coreosProfile
+    . "$adNimbusDir"/.coreosProfile
 else
-    . "$AD_NIMBUS_DIR/".hostProfile
+    . "$adNimbusDir/".hostProfile
 fi
 set +a
 
@@ -13,7 +13,7 @@ cmd=`basename $0`
 
 Usage="$cmd -n interval scriptFunctionAlias arguments"
 
-set -x
+#set -x
 echo $*
 interval=2
 if test "$1" == "-n"
@@ -25,7 +25,7 @@ fi
 
 if test "$cmd" == "mywatch.sh"
 then
-    typeset -f $*
+    typeset -f "$*"
     watch -n $interval $*
 else
     typeset -f vs

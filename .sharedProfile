@@ -27,33 +27,42 @@ function show() {
 }
 
 function cdad() {
-    cd "$AD_NIMBUS_DIR"
+    cd "$adNimbusDir"
+}
+
+function runDate() {
+    date +%Y/%m/%d_%H:%M:%S
 }
 
 function checknetlocation() {
-    # Output the timestamp for comparison with other logs
-    date
-
-    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
-    then
-        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
-    fi
-
-    which fleetctl 2>&1 > /dev/null
-    if test $? == 0
-    then
-        nginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
-            sed 's/ice.*\//ice /' | \
-            grep nginx | \
-            awk '{print $2}'`
-    fi
+    case "$#" in 
+    0)
+        which fleetctl 2>&1 > /dev/null
+        if test "$?" == 0
+        then
+            tmpNginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+                sed 's/ice.*\//ice /' | \
+                grep nginx | \
+                awk '{print $2}'`
+            tmpNginxGuestOsPort=$nginxGuestOsPort
+        fi
+        ;;
+    1)
+        tmpNginxIpAddress=localhost
+        tmpNginxGuestOsPort=$1
+        ;;
+    2)
+        tmpNginxIpAddress=$1
+        tmpNginxGuestOsPort=$2
+    esac
 
     # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
     # TODO: Do we add the headers to the nodejs code or remove them here?
     #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
-
-    echo "ipAddr=$nginxIpAddress; port=$nginxGuestOsPort; curl -X GET $headers \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
-    curl -X GET $headers "http://$nginxIpAddress:$nginxGuestOsPort?ipAddress=198.243.23.131"
+    
+    echo -n "`runDate`: "
+    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl -s -L \"http://\$ipAddr:\$port?ipAddress=198.243.23.131\""
+    curl -s -L "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort?ipAddress=198.243.23.131"
 }
 
 function sourceadnimbusenvironment() {
@@ -66,78 +75,73 @@ function sourceadnimbusenvironment() {
         . /etc/environment
     fi
 
-    if test -f "$AD_NIMBUS_DIR"/adNimbusEnvironment
+    if test -f "$adNimbusDir"/adNimbusEnvironment
     then
-        . "$AD_NIMBUS_DIR"/adNimbusEnvironment
+        oldAdNimbusDir="$adNimbusDir"
+        . "$adNimbusDir"/adNimbusEnvironment
+        adNimbusDir="$oldAdNimbusDir"
     fi
 
     set +a
 }
 
-function updateadnimbusenvironment() {
-    sed 's/REPLACE_ME/'$DOCKER_REGISTRY'/' "$AD_NIMBUS_DIR"/adNimbusEnvironment.tmpl > "$AD_NIMBUS_DIR"/adNimbusEnvironment; 
-
-    sourceadnimbusenvironment
-}
+#function updateadnimbusenvironment() {
+#    sed 's/REPLACE_ME/'$MY_DOCKER_REGISTRY'/' "$adNimbusDir"/adNimbusEnvironment.tmpl > "$adNimbusDir"/adNimbusEnvironment; 
+#
+#    sourceadnimbusenvironment
+#}
 
 function createtar() {
-    cd "$AD_NIMBUS_DIR"/..
+    cd "$adNimbusDir"/..
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' --exclude '.git' --exclude src --exclude=.vagrant.d --exclude nginx/.nginx.conf* $daProject
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' \
+        --exclude '.git' --exclude src --exclude=.vagrant.d \
+        --exclude nginx/.nginx.conf* --exclude registrySaves --exclude registry-dev \
+        --exclude nginx/nginx_error.log --exclude nginx/nginx_access.log --exclude tmp \
+        $daProject
 
+    pwd
     ls -l $gzFile
 
     cd -
 }
 
-function removeNginxConfTempFiles() {
+function removenginxconftempfiles() {
     echo Removing confd created '.nginx.conf*' temp files
 
     # TODO: Are these tmp files still getting created?
-    if test -d "$AD_NIMBUS_DIR/nginx"
+    if test -d "$adNimbusDir/nginx"
     then
-        (cd "$AD_NIMBUS_DIR"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
+        (cd "$adNimbusDir"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
     fi
 }
 
-function loadPrivateRegistry() {
-    for i in nginx netlocation confd consul devutils
+function loadprivateregistry() {
+    for i in $currentContainers
     do 
-        d pull asteere/$i:$i
-        d tag asteere/$i:$i localhost:5000/$i:$i; 
+        d pull $DOCKER_REGISTRY/$i:$i
+        d tag $DOCKER_REGISTRY/$i:$i localhost:5000/$i:$i; 
         d push localhost:5000/$i:$i; 
     done
 }
 
-function startPrivateRegistry() {
-    docker run \
-        -d \
-        -p 5000:5000 \
-        -v "$AD_NIMBUS_DIR"/registry-dev:/registry-dev \
-        --name=adnimbus_registry \
-        -e STORAGE_PATH=/registry-dev \
-        registry:2.0
+function startadnimbusregistry() {
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh start
 }
 
 function loadregistry {
-    cdad
-    for imageTar in $currentServices
-    do
-        d load -i registrySaves/$imageTar 
-    done
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
 }
 
 function saveregistry() {
-    cdad
-    for svc in $currentServices
-    do 
-        d save -o registrySaves/$svc.tar asteere/$svc:$svc
-    done
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveregistry
 }
 
-export currentServices="consul devutils netlocation confd nginx"
+function clearregistry {
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh clearregistry
+}
 
 sourceadnimbusenvironment
 
@@ -151,5 +155,5 @@ then
     export LESS="-q -i-i -e -F -X -R"
 fi
 
-PATH=$PATH:"$AD_NIMBUS_DIR/bin"
+PATH=$PATH:"$adNimbusDir/bin"
 
