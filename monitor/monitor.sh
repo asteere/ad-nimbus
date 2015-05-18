@@ -446,6 +446,9 @@ function runOtherChecks() {
         echo The number of consul nodes $numConsulNodes equals the number of etcd nodes $numEtcdNodes
     fi
 
+    # Check that the consul nodes haven't splintered
+    echo
+
     # Check that there is a raft leader
     echo
     leader=`getConsulLeader`
@@ -498,15 +501,30 @@ function runOtherChecks() {
 
     echo 
     echo List nodes running a given service
-    for svc in nginx netlocation
+    for svc in nginx netlocation consul
     do
+        expectedNum=1
+        if test "$svc" == "consul"
+        then
+            expectedNum=$numEtcdNodes
+        fi
+
         echo $svc: 
+        numSvcs=`getNumberServices $svc`
+        if test "$numSvcs" -lt "$expectedNum"
+        then
+            echo Critical: There are only $numSvcs fleetctl $svc services running. Expected $expectedNum
+            fleetctl list-units -fields=unit --no-legend | grep $svc 
+        fi
+
+        echo Consul reports the following services
         getNodesInService $svc
         echo
 
-        if test `fleetctl | grep $svc | wc -l` -lt 1
+        # Consul will return an empty array "[]" or two characters if the service isn't known to consul
+        if test `getNodesInService $svc | wc -m` -lt 3
         then
-            echo Warning: There are no $svc services running
+            echo Critical: There are no $svc services running known to consul
         fi
     done
 

@@ -46,8 +46,8 @@ http {
             index index.html;
         }
 
-        location /webcontent {
-            root /opt/WebContent;
+        location ~* /WebContent {
+            root /opt;
 
             index index.html;
         }

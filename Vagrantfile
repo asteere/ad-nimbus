@@ -137,9 +137,9 @@ Vagrant.configure("2") do |config|
             config.vm.synced_folder ".", "/home/core/share", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
 
             # Load the WebContent Research project if available
-            $webContentDir = ENV['webContentDir']
-            if Dir.exists?($webContentDir)
-                config.vm.synced_folder $webContentDir, "/home/core/WebContent", 
+            webContentDir = ENV['webContentDir']
+            if Dir.exists?(webContentDir)
+                config.vm.synced_folder webContentDir, "/home/core/WebContent", 
                     id: "WebContent", :nfs => true, :mount_options => ['nolock,vers=3,udp']
             end
 

@@ -20,6 +20,8 @@ function setup() {
         nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
         nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
     fi
+    
+    dockerCmd="nginx -c $nginxConfFile"
 
     set +a
 
@@ -40,14 +42,22 @@ function startDocker() {
     fi
 
     /usr/bin/docker run \
-        --name=${nginxDockerTag}_${instance} \
+        --name=${nginxDockerTag}_${instance} $interactive \
         --cidfile=${nginxCoreosCidFile} \
-        --rm=true "$webContentVol" \
+        --rm=true $webContentVol \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
-        nginx -c "$nginxConfFile"
+        $dockerCmd
+}
+
+function startDockerBash() {
+    dockerCmd="/bin/bash $*"
+
+    interactive="-it"
+
+    startDocker
 }
 
 function runCmd() {

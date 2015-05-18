@@ -51,7 +51,8 @@ function d() {
 function vup() {
     cdad
     echo `date`: Creating cluster from Vagrantfile in folder `pwd`
-    VAGRANT_LOG=info vagrant up 2>&1 | tee /tmp/vup.log
+    #VAGRANT_LOG=info 
+    vagrant up 2>&1 | tee /tmp/vup.log
     date
 }
 
@@ -232,7 +233,21 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-function findMappedPorts() {
+function checkhostwebcontent() {
+    hostIpAddr=`findHostIpAddr`
+
+    nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
+    nginxHostName=`ipAddrToMachineName $nginxIpAddr`
+    coreosNginxPorts=`findmappedports $nginxGuestOsPort $nginxHostName`
+
+    for port in $coreosNginxPorts
+    do
+        checkwebcontent $anIpAddr $port
+        echo
+    done
+}
+
+function findmappedports() {
     nginxGuestOsPortArg=$1
 
     if test "$2" == ""
@@ -253,8 +268,12 @@ function ipAddrToMachineName() {
     echo $1 | sed 's/.*\([0-9]\)$/core-0\1/'
 }
 
+function findHostIpAddr() {
+    ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'
+}
+
 function checkhostnetlocation() {
-    hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
+    hostIpAddr=`findHostIpAddr`
 
     # No args - find the nginx coreos hostname and then the nginx port that has been forwarded on that machine. 
     # 1 arg - user specified the nginx coreos port, find all the forwarded ports for that port. 
@@ -265,13 +284,13 @@ function checkhostnetlocation() {
     0)
         nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
         nginxHostName=`ipAddrToMachineName $nginxIpAddr`
-        coreosNginxPorts=`findMappedPorts $nginxGuestOsPort $nginxHostName`
+        coreosNginxPorts=`findmappedports $nginxGuestOsPort $nginxHostName`
         ;;
     1)
-        coreosNginxPorts=`findMappedPorts $1`
+        coreosNginxPorts=`findmappedports $1`
         ;;
     2)
-        coreosNginxPorts=`findMappedPorts $2`
+        coreosNginxPorts=`findmappedports $2`
         hostIpAddr=$1
         ;;
     esac
@@ -353,7 +372,7 @@ fi
 # Or, define webContentDir separately.
 if test -d "$HOME/Research/WebContent"
 then
-    export webContentDir="~/Research/WebContent"
+    export webContentDir="$HOME/Research/WebContent"
 fi
 
 
