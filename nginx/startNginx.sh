@@ -11,15 +11,16 @@ function setup() {
     nginxDir=/opt/nginx
     nginxConfFile="$nginxDir/nginx.conf"
 
-    if test -d "/home/core/share"
-    then
-        . /home/core/share/adNimbusEnvironment
+    webContentDir=/opt/WebContent
 
-        nginxCoreosDir=""$adNimbusDir"/nginx"
-        nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
-        nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
-        nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
-    fi
+    . /home/core/share/adNimbusEnvironment
+
+    nginxCoreosDir="$adNimbusDir/nginx"
+    nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
+    nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
+    nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
+
+    webContentCoreosDir="/home/core/WebContent"
     
     dockerCmd="nginx -c $nginxConfFile"
 
@@ -36,15 +37,15 @@ function startDocker() {
 
     echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
 
-    if test -d "$HOME/WebContent"
+    if test -d "$webContentCoreosDir"
     then
-        webContentVol="--volume=$HOME/WebContent:/opt/WebContent"
+        webContentVolArg="--volume=$webContentCoreosDir:$webContentDir"
     fi
 
     /usr/bin/docker run \
         --name=${nginxDockerTag}_${instance} $interactive \
         --cidfile=${nginxCoreosCidFile} \
-        --rm=true $webContentVol \
+        --rm=true $webContentVolArg \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
@@ -62,7 +63,8 @@ function startDockerBash() {
 
 function runCmd() {
     cmd=$1
-    /usr/bin/docker exec nginx_1 nginx -s $cmd -c $nginxConfFile
+
+    /usr/bin/docker exec ${nginxService}_$instance $nginxService -s $cmd -c $nginxConfFile
 }
 
 function reload() {
@@ -71,11 +73,9 @@ function reload() {
 
 # TODO: Is this needed?
 function sendSignal() {
-    echo Sending $1 to nginx
-    runCmd stop
+    echo Sending $1 to $nginxService
 
-    # TODO: This may be overkill
-    docker kill -s $1 
+    runCmd $1
 }
 
 function waitForNginxConf() {
@@ -97,6 +97,10 @@ function start() {
     waitForNginxConf
 
     startDocker
+}
+
+function stop() {
+    runCmd stop
 }
 
 while getopts "ad" opt; do
