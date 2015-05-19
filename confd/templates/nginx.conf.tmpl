@@ -40,14 +40,15 @@ http {
 
         server_name raptor.com www.raptor.com;
 
-        location /consul-check {
+        location ^~ /consul-check {
             root /opt/nginx;
 
             index index.html;
         }
 
-        location ~* /WebContent {
-            root /opt;
+        # TODO: Change this once we have support for v1 or v2 raptor services
+        location ~* \.(png|jpg|html|exe|css|js|json|mp4|obv|webm|wmv)$ {
+            root /opt/WebContent;
 
             index index.html;
         }

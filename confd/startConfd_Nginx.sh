@@ -52,9 +52,9 @@ function stop() {
 
 }
 
-set -x
-
 setup
+
+set -x
 
 if [[ `type -t $functionName` == "function" ]]
 then

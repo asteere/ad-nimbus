@@ -57,6 +57,5 @@ $update_channel='stable'
 # Customize VMs
 $vm_gui = false
 
-# Used to be 1024 but 5 cores is killing my machine if left up overnight
-$vm_memory = 512
+$vm_memory = 1024
 $vm_cpus = 1

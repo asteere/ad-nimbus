@@ -2,8 +2,6 @@
 
 echo `basename $0` args:$*:
 
-set -x
-
 function setup() {
     set -a
     . /etc/environment
@@ -102,6 +100,8 @@ function start() {
 function stop() {
     runCmd stop
 }
+
+set -x 
 
 while getopts "ad" opt; do
   case "$opt" in

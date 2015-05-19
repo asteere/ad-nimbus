@@ -2,8 +2,6 @@
 
 echo `basename $0` args:$*:
 
-set -x
-
 function setup() {
     set -a
     . /etc/environment
@@ -49,6 +47,8 @@ functionName=$1
 instance=$2
 
 setup
+
+set -x
 
 if [[ `type -t $functionName` == "function" ]]
 then

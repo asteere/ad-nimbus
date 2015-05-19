@@ -13,9 +13,6 @@ criticalFailuresHighWaterMark=5
 # How long (seconds) w/o critical errors before shutting down another service
 errorFreePeriod=30
 
-minNumInstances=1
-maxNumInstances=3
-
 percentCpuSuccess=10
 percentCpuWarning=20
 # Anything above percentCpuWarning is considered a critical issue
