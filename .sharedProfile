@@ -40,7 +40,7 @@ function runDate() {
 }
 
 function checkwebcontent() {
-    url=/WebContent/GuidedHelp/Modem-Motorola-SBG6580-Hopper913/GuidedContentUnit.html
+    url=/GuidedHelp/Modem-Motorola-SBG6580-Hopper913/GuidedContentUnit.html
 
     runCurl $url $1 $2
 }

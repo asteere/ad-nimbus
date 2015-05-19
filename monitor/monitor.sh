@@ -274,6 +274,24 @@ function addNewFailedService() {
     done
 }
 
+# Always call this function before using minNumberInstances and maxNumberInstances
+function updateNumberInstances() {
+    serviceType=$1
+    
+    serviceRootName=${serviceType}Root
+
+    # Kudos: indirect referencing: http://www.tldp.org/LDP/abs/html/ivr.html
+    eval serviceRootValue=\$$serviceRootName
+
+    minVarName=min${serviceRootValue}Services
+
+    # Kudos: double parantheses: http://www.tldp.org/LDP/abs/html/dblparens.html
+    minNumberInstances=$((minVarName))
+
+    maxVarName=max${serviceRootValue}Services
+    maxNumberInstances=$((maxVarName))
+}
+
 function updateCriticalFailureList() {
     currentlyFailedServices=$1
 
@@ -289,6 +307,8 @@ function updateCriticalFailureList() {
 
         #echo $svcIndex:${criticalFailures[$svcIndex]}
         count=${criticalFailures[$svcIndex]}
+
+        updateNumberInstances $serviceType
         
         if [[ $currentlyFailedServices == *$svcIndex* ]] 
         then
@@ -296,13 +316,13 @@ function updateCriticalFailureList() {
             criticalFailures[$svcIndex]=$((++count))
             numNetLocationInstances=`getNumberLoadedActiveRunningServices $serviceType`
             echo "${criticalFailures[$svcIndex]}" -gt "$criticalFailuresHighWaterMark" -a \
-                "$numNetLocationInstances" -lt "$maxNumInstances"
+                "$numNetLocationInstances" -lt "$maxNumberInstances"
             if test "${criticalFailures[$svcIndex]}" -gt "$criticalFailuresHighWaterMark" 
             then
                 # Reset the counter to let the service run awhile and see if the problem has cleared or will clear up
                 unset criticalFailures[$svcIndex]
 
-                if test "$numNetLocationInstances" -lt "$maxNumInstances"
+                if test "$numNetLocationInstances" -lt "$maxNumberInstances"
                 then
                     startService $svcIndex
                 fi
@@ -313,7 +333,7 @@ function updateCriticalFailureList() {
                 echo Remove $svcIndex criticality count
                 unset criticalFailures[$svcIndex]
                 # TODO: Let the quiet period determine services to stop
-                #if test "$numNetLocationInstances" -gt "$minNumInstances"
+                #if test "$numNetLocationInstances" -gt "$minNumberInstances"
                 #then
                 #    stopService $svcIndex
                 #fi
@@ -345,7 +365,7 @@ function handleCriticalHealthChecks() {
 
     updateCriticalFailureList "$currentlyFailedServices"
 
-    stopServicesIfErrorFree
+    stopServicesIfErrorFree $serviceType
 
     numNetLocationInstances=`getNumberLoadedActiveRunningServices $serviceType`
     echo Number of $serviceType services: $numNetLocationInstances
@@ -357,6 +377,8 @@ function resetClock() {
 }
 
 function stopServicesIfErrorFree() {
+    serviceType=$1
+
     # If the number of dataCenterNetLocationFailures == 0 and more than X amount of time has passed, stop another service   
     if test "$dataCenterNetLocationFailures" -gt 0 
     then
@@ -371,8 +393,9 @@ function stopServicesIfErrorFree() {
     currentTime=$(date +%s)
     elapsedTime=$((currentTime - clockStart))
 
+    updateNumberInstances $serviceType
     numRunningServices=`getNumberLoadedActiveRunningServices $serviceType`
-    if test "$elapsedTime" -gt "$errorFreePeriod" -a "$numRunningServices" -gt "$minNumInstances"
+    if test "$elapsedTime" -gt "$errorFreePeriod" -a "$numRunningServices" -gt "$minNumberInstances"
     then
         stopService $serviceType
         resetClock
@@ -380,8 +403,7 @@ function stopServicesIfErrorFree() {
 
     # Only harvest in times of error-free operation.
     # TODO: This may need to be revisited if we were to run out of resources
-    harvestStoppedServices
-
+    harvestStoppedServices $serviceType
 }
 
 function debugOutput() {
@@ -568,16 +590,11 @@ function runChecks() {
 }
 
 function harvestStoppedServices() {
-    # TODO: Remove once this becomes stable
-    #echo harvestStoppedServices
-    #echo '============='
-    #fleetctl list-units -fields=unit,load,active,sub --no-legend
-    #echo '++++++++++++++'
-    #fleetctl list-units -fields=unit,load,active,sub --no-legend | grep 'loaded\sinactive\sdead' | awk '{print $1}'
-    #echo '--------------'
+    serviceType=$1
 
     fleetctl destroy `fleetctl list-units -fields=unit,load,active,sub --no-legend | \
         grep -e 'loaded\sfailed\sfailed' -e 'loaded\sinactive\sdead' | \
+        grep $serviceType | \
         awk '{print $1}'`
 }
 
