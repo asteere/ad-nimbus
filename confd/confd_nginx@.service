@@ -35,7 +35,8 @@ ExecStartPost=/home/core/share/monitor/monitor.sh registerNginxService %i ${CORE
 
 ExecStart=/home/core/share/confd/startConfd_Nginx.sh start %i
 
-ExecStopPost=/${adNimbusDir}/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
+ExecStopPost=/home/core/share/monitor/monitor.sh unregisterNginxService %i ${COREOS_PUBLIC_IPV4}
+ExecStopPost=/home/core/share/confd/startConfd_Nginx.sh stop %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i

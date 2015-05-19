@@ -10,16 +10,15 @@ function setup() {
     . /home/core/share/adNimbusEnvironment
     set +a
 
-    trap 'sendSignal stop' TERM
-    trap 'sendSignal quit' QUIT
-    trap 'sendSignal reload' HUP
-    trap 'sendSignal reopen' USR1
+    trap 'sendSignal SIGTERM' TERM
+    trap 'sendSignal SIGQUIT' QUIT
+    trap 'sendSignal USR1' USR1
 }
 
 # TODO: Is this needed?
 function sendSignal() {
-    echo Sending $1 to nginx
-    docker kill -s $1 
+    echo Sending $1 to $confdService
+    /usr/bin/docker kill -s SIGTERM ${confdService}_$instance
 }
 
 function start() {
@@ -40,6 +39,10 @@ function start() {
         -watch=true \
         -interval=${confdCheckInterval} \
         -node=${COREOS_PUBLIC_IPV4}:${consulHttpPort}
+}
+
+function stop() {
+    sendSignal SIGTERM
 }
 
 functionName=$1

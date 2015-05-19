@@ -37,12 +37,27 @@ function cleanup() {
     cd "$origDir"
 }
 
+function start() {
+    cleanup
+
+    "$adNimbusDir"/confd/startConfd.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startConfd.log &
+
+    "$adNimbusDir"/nginx/startNginx.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startNginx.log 
+}
+
+function stop() {
+    "$adNimbusDir"/confd/startConfd.sh stop $instance 2>&1 | tee -a "$adNimbusDir"/monitor/tmp/startConfd.log 
+
+    "$adNimbusDir"/nginx/startNginx.sh stop $instance 2>&1 | tee -a "$adNimbusDir"/monitor/tmp/startNginx.log 
+
+}
+
 set -x
 
 setup
 
-cleanup
-
-"$adNimbusDir"/confd/startConfd.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startConfd.log &
-
-"$adNimbusDir"/nginx/startNginx.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startNginx.log 
+if [[ `type -t $functionName` == "function" ]]
+then
+    ${functionName} $*
+    exit 0
+fi
