@@ -23,7 +23,7 @@ TimeoutStartSec=0
 # TODO: When things become stable "enough" don't remove the image every time
 ExecStartPre=-/usr/bin/docker rm -f ${consulDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker load -i ${adNimbusDir}/registrySaves/${consulService}.tar
+ExecStartPre=/usr/bin/docker load -i ${adNimbusDir}/registrySaves/${consulService}.tar.gz
 ExecStartPre=/usr/bin/docker images
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}
 

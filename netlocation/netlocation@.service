@@ -21,7 +21,7 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
-ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${netLocationService}.tar
+ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${netLocationService}.tar.gz
 ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag}
 ExecStartPre=/usr/bin/docker ps -a
 

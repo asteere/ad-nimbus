@@ -2,6 +2,8 @@
 
 #set -x
 
+echo Warning: `basename $0` has not been used in awhile. Check for bugs.
+
 function setup() {
     set -a 
 
@@ -25,10 +27,12 @@ function cdad() {
 function load {
     for imageTar in $currentContainers
     do
-        if test "`$myDocker images | grep $imageTar`" == ""
+        imageTar="$adNimbusDir/registrySaves/$svc.tar.gz"
+        imageTarGz="${imageTar}.gz"
+        if test "`$myDocker images | grep $svc`" == ""
         then
-            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$adNimbusDir"/registrySaves/${imageTar}.tar
-            $myDocker load -i "$adNimbusDir"/registrySaves/${imageTar}.tar
+            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$imageTarGz"
+            $myDocker load -i "$imageTarGz"
         fi
     done
     
@@ -37,9 +41,12 @@ function load {
 
 function save() {
     cdad
+
     for svc in $currentContainers
     do 
-        $myDocker save -o registrySaves/$svc.tar $DOCKER_REGISTRY/$svc:$svc
+        imageTar="$adNimbusDir/registrySaves/$svc.tar"
+        $myDocker save -o $imageTar $DOCKER_REGISTRY/$svc:$svc
+        gzip $imageTar
     done
 
     $myDocker images
@@ -60,7 +67,7 @@ function clear {
     $myDocker images
 }
 
-function start() { 
+function startDocker() { 
     # Bind to only the internal VM to prevent the registry port becoming generally available
     $myDocker run \
         --rm \
@@ -71,9 +78,9 @@ function start() {
 }
 
 function start() {
-    loadadnimbusregistry
+    load
 
-    startadnimbusregistry
+    startDocker
 }
 
 setup

@@ -110,8 +110,13 @@ function buildcontainer() {
 
     dockerTag=$DOCKER_REGISTRY/$svc:$svc
 
-    runDocker load -s registrySaves/$svc.tar
-    
+    svcTar="adNimbusDir/registrySaves/$svc.tar"
+    svcTarGz="$svcTar.gz"
+    if test -f "$svcTar"
+    then
+        runDocker load -s $svcTarGz
+    fi
+
     # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
     rundocker build --tag $dockerTag $svc 
     if test ! $? == 0
@@ -119,7 +124,8 @@ function buildcontainer() {
         return
     fi
 
-    rundocker save -o registrySaves/$svc.tar $dockerTag
+    rundocker save -o $svcTar $dockerTag
+    gzip $svcTar
 
     rundocker push $dockerTag
 
