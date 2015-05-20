@@ -102,24 +102,26 @@ function buildnetlocation() {
 }
 
 function buildcontainer() {
+    svc=$1
+
     cdad
 
-    echo Building docker container $1
+    echo Building docker container $svc
 
-    # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
-    rundocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
+    dockerTag=$DOCKER_REGISTRY/$svc:$svc
+
+    runDocker load -s registrySaves/$svc.tar
+    
+    # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
+    rundocker build --tag $dockerTag $svc 
     if test ! $? == 0
     then
         return
     fi
 
-    #dlogin 
-    if test ! $? == 0
-    then
-        return
-    fi
+    rundocker save -o registrySaves/$svc.tar $dockerTag
 
-    rundocker push $DOCKER_REGISTRY/"$1":$1
+    rundocker push $dockerTag
 
     cd -
 

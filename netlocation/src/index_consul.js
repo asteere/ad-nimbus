@@ -24,9 +24,18 @@ var app = express();
 
 // Define routes.
 app.get('/', function(request, response) {
+    msg = "Error: better path needs to be defined. path=" + request.path;
+
+    console.error(msg);
+
+    response.status(500).send(msg);
+});
+
+app.get('/api/v1/netlocation/*', function(request, response) {
     // Get IP address for lookup. First check query params, use request IP if
     // query param not specified.
-    var ipAddress = request.query.ipAddress;
+    console.log("path=" + request.path);
+    var ipAddress = request.path.split('/').pop();;
     console.log('Request ipAddress: ' + ipAddress);
     if (!ipAddress) ipAddress = request.ip;
     console.log('Request ipAddress: ' + ipAddress);
