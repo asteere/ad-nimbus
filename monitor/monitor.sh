@@ -114,7 +114,7 @@ function registerNetLocationService() {
     port=$3
 
     # Use canned IP address so that all the fields are returned
-    url="http://$serviceIpAddr:$port?ipAddress=198.243.23.131"
+    url="http://$serviceIpAddr:$port${netLocationTestUrl}"
     
     registerService netlocation $instance $serviceIpAddr $port $url
 }

@@ -46,9 +46,7 @@ function checkwebcontent() {
 }
 
 function checknetlocation() {
-    url="?ipAddress=198.243.23.131"
-
-    runCurl $url $1 $2
+    runCurl $netLocationTestUrl $1 $2
 }
 
 function runCurl() {
