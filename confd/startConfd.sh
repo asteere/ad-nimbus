@@ -32,8 +32,7 @@ function start() {
         /etc/confd/confd \
         -backend=${consulService} \
         -confdir=${confdDir} \
-        -debug=true \
-        -verbose=true \
+        --log-level=debug \
         -watch=true \
         -interval=${confdCheckInterval} \
         -node=${COREOS_PUBLIC_IPV4}:${consulHttpPort}
@@ -44,7 +43,10 @@ function stop() {
 }
 
 functionName=$1
-instance=$2
+shift 1
+
+instance=$1
+shift 1
 
 setup
 

@@ -46,7 +46,7 @@ tail -f nginx/nginx_access.log nginx/nginx_error.log
 
 # Use the consul web api to validate the nodes, services, key/values and health checks are correct.
 
-# Create a hacked failure situation
+# Create a hacked failure situation. In a CoreOS window run the following:
 forceFailures.sh 
 
 # 4.0 Watch the number of netlocations go from 3 to 1 using the commands above
