@@ -150,18 +150,6 @@ function startadnimbusregistry() {
     "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh start
 }
 
-function loadregistry {
-    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh loadregistry
-}
-
-function saveregistry() {
-    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveregistry
-}
-
-function clearregistry {
-    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh clearregistry
-}
-
 sourceadnimbusenvironment
 
 if [ ! -z "$PS1" ]

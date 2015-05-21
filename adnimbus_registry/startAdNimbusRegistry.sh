@@ -14,6 +14,19 @@ function setup() {
 
     . /etc/environment
     . /home/core/share/adNimbusEnvironment
+    
+    if [ -z $PS1 ]
+    then
+        . /home/core/share/.coreosProfile
+    fi
+
+    registrySavesDir="$adNimbusDir/registrySaves"
+    if test ! -d "$registrySavesDir"
+    then
+        mkdir -p "$registrySavesDir"
+    fi
+
+    timestampFile="$registrySavesDir/.startTar"
 
     set +a
 }
@@ -22,7 +35,7 @@ function cdad() {
     cd "$adNimbusDir"
 }
 
-function load {
+function loadImage() {
     svcsToLoad=$1
     if test "$svcsToLoad" == ""
     then
@@ -31,9 +44,16 @@ function load {
 
     for svc in $svcsToLoad
     do
-        imageTarGz="$adNimbusDir/registrySaves/$svc.tar.gz"
-        if test "`$myDocker images | grep $svc`" == ""
+        imageTarGz="$registrySavesDir/$svc.tar.gz"
+        if test "`$myDocker images | grep $svc`" != ""
         then
+            continue
+        fi
+
+        if test ! -f "$imageTarGz"
+        then
+            pullImage $$DOCKER_REGISTRY/$svc:$svc
+        else
             echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$imageTarGz"
             $myDocker load -i "$imageTarGz"
         fi
@@ -43,75 +63,144 @@ function load {
     $myDocker images
 }
 
-function save() {
-    svcsToSave=$1
-    if test "$svcsToSave" == ""
+function startPre() {
+    # TODO: Why does starting an export not display any ports?
+    # For now, use docker load 
+    loadImage $* 
+}
+
+function createTarFile() {
+    imageTar=$1
+
+    if test -f "$timestampFile" -a "$imageTar" -nt "$timestampFile"  
     then
-        svcsToSave=$currentContainers
+        echo false
+    fi
+    echo true
+}
+
+function saveImage() {
+    svcsToSave=$1
+    if test "$svcsToSave" == "" -o "$svcsToSave" == "all"
+    then
+        svcsToSave=`$myDocker ps | awk '{print $NF}' | grep -v NAMES`
+        touch "$timestampFile" 
     fi
 
-    for svc in $svcsToSave
+    for svc_instance in $svcsToSave
     do 
-        imageTar="$adNimbusDir/registrySaves/$svc.tar"
-        $myDocker save -o $imageTar $DOCKER_REGISTRY/$svc:$svc
-        gzip $imageTar
+        svc=`echo $svc_instance | sed 's/_.*//'`
+        imageTar="$registrySavesDir/${svc}.tar"
+
+        if test "`createTarFile $imageTar`" == "true"
+        then
+            image=$DOCKER_REGISTRY/$svc:$svc
+            echo `date`: $myDocker save -o $imageTar $image
+            $myDocker save -o $imageTar $image
+            gzip -f $imageTar
+        fi
     done
+
+    rm -f "$timestampFile" 
 
     echo
     ls -l "$adNimbusDir"/registrySaves
 }
 
-function import {
+function pullImage() {
+    image=$1
+
+    echo 'Pulling from dockerhub. Did you forget to save/export the containers after fstartall finished?'
+    echo $myDocker pull $image
+    $myDocker pull $image
+}
+
+function saveAllImages() {
+    ipRoot=`getIpRoot`
+
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
+    do 
+        ipAddr=${ipRoot}.10$i
+        ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveImage all
+    done
+}
+
+
+function importContainer() {
     svcsToImport=$1
     if test "$svcsToImport" == ""
     then
         svcsToImport=$currentContainers
     fi
 
-    # TODO: Can we get by with the assumption of there always being an instance 1
-    instance=1
-
     for svc in $svcsToImport
     do
-        imageTarGz="$adNimbusDir/registrySaves/${svc}_export.tar.gz"
+        imageTarGz="$registrySavesDir/${svc}_export.tar.gz"
+        image="$DOCKER_REGISTRY/$svc:$svc"
 
-        echo `date`'('$COREOS_PUBLIC_IPV4'):' cat $imageTarGz '|' $myDocker import - $DOCKER_REGISTRY/$svc:$svc
-        cat $imageTarGz | $myDocker import - $DOCKER_REGISTRY/$svc:$svc
+        if test ! -f "$imageTarGz"
+        then
+            pullImage $image
+        else
+            echo `date`'('$COREOS_PUBLIC_IPV4'):' cat $imageTarGz '|' $myDocker import - $image
+            cat $imageTarGz | $myDocker import - $image
+        fi
     done
     
     echo
     $myDocker images
 }
 
-function export {
+function exportContainer() {
     svcsToExport=$1
-    if test "$svcsToExport" == ""
+    if test "$svcsToExport" == "" -o "$svcsToExport" == "all"
     then
-        svcsToExport=$currentContainers
+        svcsToExport=`$myDocker ps | awk '{print $NF}' | grep -v NAMES`
+        touch "$timestampFile"
     fi
 
-    # TODO: Can we get by with the assumption of there always being an instance 1
-    instance=1
-
-    for svc in $svcsToExport
+    for svc_instance in $svcsToExport
     do
-        imageTar="$adNimbusDir/registrySaves/${svc}_export.tar"
-        if test "`$myDocker ps | grep $svc`" == ""
+        svc=`echo $svc_instance | sed 's/_.*//'`
+        imageTar="$registrySavesDir/${svc}_export.tar"
+
+        if test "`createTarFile $imageTar`" == "true"
         then
-            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker export ${svc}_$instance '>' "$imageTar"
-            $myDocker export ${svc}_$instance > "$imageTar"
-            gzip $imageTar
+            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker export $svc_instance '>' "$imageTar"
+            $myDocker export $svc_instance > "$imageTar"
+            gzip -f $imageTar
         fi
     done
-    
+   
+    rm -f "$timestampFile" 
+
     echo
-    ls -l "$adNimbusDir"/registrySaves
+    ls -lt "$adNimbusDir"/registrySaves
 }
 
-function clear {
+function exportAllContainers() {
+    ipRoot=`getIpRoot`
+
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
+    do 
+        ipAddr=${ipRoot}.10$i
+        ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh exportContainer all
+    done
+}
+
+function clearImages() {
     imagesToClear=$1
     if test "$imagesToClear" == ""
     then
+        containersToClear=`$myDocker ps | grep -v 'IMAGE' | awk '{print $1}'`
+        if test "$containersToClear" != ""
+        then
+            $myDocker rm -f $containersToClear
+            $myDocker ps -a
+        fi
+
         imagesToClear=`$myDocker images | grep -v 'IMAGE ID' | awk '{print $3}'`
     fi
 
@@ -136,7 +225,7 @@ function startDocker() {
 }
 
 function start() {
-    import adnimbus_registry
+    importContainer adnimbus_registry
 
     startDocker
 }
@@ -153,7 +242,6 @@ functionName=$1
 shift 1
 
 instance=$1
-
 if test "$instance" == ""
 then
     instance=1
@@ -166,5 +254,5 @@ then
     exit 0
 fi
 
-echo `basename $0` '[load | start | all ]' instance
+echo `basename $0` 'functionName instance'
 
