@@ -176,6 +176,7 @@ function exportContainer() {
 
         if test "`doWeCreateTarFile $imageTar`" == "true"
         then
+            $myDocker commit $svc_instance $DOCKER_REGISTRY/$svc:$svc
             echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker export $svc_instance '>' "$imageTar"
             $myDocker export $svc_instance > "$imageTar"
             gzip -f $imageTar
@@ -202,9 +203,15 @@ function exportAllContainers() {
     listRegistrySaves
 }
 
+function listDockerImages() {
+    echo
+    echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker images
+    $myDocker images
+}
+
 function clearImages() {
     imagesToClear=$1
-    if test "$imagesToClear" == ""
+    if test "$imagesToClear" == "" -o "$imagesToClear" == "all"
     then
         containersToClear=`$myDocker ps | grep -v 'IMAGE' | awk '{print $1}'`
         if test "$containersToClear" != ""
@@ -219,12 +226,24 @@ function clearImages() {
     for imageId in $imagesToClear
     do
         echo $svc
+        echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker rmi -f $imageId
         $myDocker rmi -f $imageId
     done
-    
-    echo
-    $myDocker images
+
+    listDockerImages
 }
+
+function clearAllImages() {
+    ipRoot=`getIpRoot`
+
+    instanceRange={1..$numInstances}
+    for i in `eval echo $instanceRange`
+    do 
+        ipAddr=${ipRoot}.10$i
+        ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh clearImages all
+    done
+}
+
 
 function startDocker() { 
     # Bind to only the internal VM to prevent the registry port becoming generally available

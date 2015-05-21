@@ -75,7 +75,7 @@ function createNetLocationConsulValue() {
             netLocationConsulValue="${COREOS_PUBLIC_IPV4}:$netLocationGuestOsPort"
             break
         fi
-        sleep 2
+        sleep 5
     done
 }
 
@@ -128,6 +128,15 @@ function registerNetLocation() {
     setKeyValue $netLocationConsulKey $netLocationConsulValue
 
     registerService $netLocationGuestOsPort
+}
+
+function stop() {
+    if test "$instance" == ""
+    then
+        instance=$1
+    fi
+
+    docker kill -s KILL ${netlocationService}_$instance
 }
 
 if test "$1" == "-d"

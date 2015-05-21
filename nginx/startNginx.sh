@@ -99,6 +99,13 @@ function start() {
 
 function stop() {
     runCmd stop
+
+    if test "$instance" == ""
+    then
+        instance=$1
+    fi
+
+    docker kill -s KILL ${nginxService}_$instance
 }
 
 set -x 
