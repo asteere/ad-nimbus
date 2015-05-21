@@ -69,14 +69,23 @@ function startPre() {
     loadImage $* 
 }
 
-function createTarFile() {
+function doWeCreateTarFile() {
     imageTar=$1
 
-    if test -f "$timestampFile" -a "$imageTar" -nt "$timestampFile"  
+    if test -f "$timestampFile" -a "$imageTar.gz" -nt "$timestampFile"  
     then
         echo false
+    else
+        echo true
     fi
-    echo true
+}
+
+function pullImage() {
+    image=$1
+
+    echo 'Pulling from dockerhub. Did you forget to save/export the containers after fstartall finished?'
+    echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker pull $image
+    $myDocker pull $image
 }
 
 function saveImage() {
@@ -84,7 +93,6 @@ function saveImage() {
     if test "$svcsToSave" == "" -o "$svcsToSave" == "all"
     then
         svcsToSave=`$myDocker ps | awk '{print $NF}' | grep -v NAMES`
-        touch "$timestampFile" 
     fi
 
     for svc_instance in $svcsToSave
@@ -92,7 +100,7 @@ function saveImage() {
         svc=`echo $svc_instance | sed 's/_.*//'`
         imageTar="$registrySavesDir/${svc}.tar"
 
-        if test "`createTarFile $imageTar`" == "true"
+        if test "`doWeCreateTarFile $imageTar`" == "true"
         then
             image=$DOCKER_REGISTRY/$svc:$svc
             echo `date`: $myDocker save -o $imageTar $image
@@ -101,22 +109,13 @@ function saveImage() {
         fi
     done
 
-    rm -f "$timestampFile" 
-
-    echo
-    ls -l "$adNimbusDir"/registrySaves
-}
-
-function pullImage() {
-    image=$1
-
-    echo 'Pulling from dockerhub. Did you forget to save/export the containers after fstartall finished?'
-    echo $myDocker pull $image
-    $myDocker pull $image
+    listRegistrySaves
 }
 
 function saveAllImages() {
     ipRoot=`getIpRoot`
+
+    touch "$timestampFile" 
 
     instanceRange={1..$numInstances}
     for i in `eval echo $instanceRange`
@@ -124,8 +123,11 @@ function saveAllImages() {
         ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveImage all
     done
-}
 
+    rm -f "$timestampFile" 
+
+    listRegistrySaves
+}
 
 function importContainer() {
     svcsToImport=$1
@@ -152,12 +154,19 @@ function importContainer() {
     $myDocker images
 }
 
+function listRegistrySaves() {
+    if test ! -f "$timestampFile"
+    then
+        echo
+        ls -alt "$adNimbusDir"/registrySaves
+    fi
+}
+
 function exportContainer() {
     svcsToExport=$1
     if test "$svcsToExport" == "" -o "$svcsToExport" == "all"
     then
         svcsToExport=`$myDocker ps | awk '{print $NF}' | grep -v NAMES`
-        touch "$timestampFile"
     fi
 
     for svc_instance in $svcsToExport
@@ -165,22 +174,21 @@ function exportContainer() {
         svc=`echo $svc_instance | sed 's/_.*//'`
         imageTar="$registrySavesDir/${svc}_export.tar"
 
-        if test "`createTarFile $imageTar`" == "true"
+        if test "`doWeCreateTarFile $imageTar`" == "true"
         then
             echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker export $svc_instance '>' "$imageTar"
             $myDocker export $svc_instance > "$imageTar"
             gzip -f $imageTar
         fi
     done
-   
-    rm -f "$timestampFile" 
 
-    echo
-    ls -lt "$adNimbusDir"/registrySaves
+    listRegistrySaves
 }
 
 function exportAllContainers() {
     ipRoot=`getIpRoot`
+
+    touch "$timestampFile"
 
     instanceRange={1..$numInstances}
     for i in `eval echo $instanceRange`
@@ -188,6 +196,10 @@ function exportAllContainers() {
         ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh exportContainer all
     done
+   
+    rm -f "$timestampFile" 
+
+    listRegistrySaves
 }
 
 function clearImages() {

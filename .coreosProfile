@@ -270,10 +270,10 @@ function fstartall() {
     echo
     date
 
-    if test ! -f "$adNimbusDir/registrySaves"
+    if test ! -d "$adNimbusDir/registrySaves"
     then
         echo Saving all containers for faster performance
-       "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveAllContainers
+       "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveAllImages
     fi
 }
 
