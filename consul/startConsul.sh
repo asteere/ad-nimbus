@@ -20,38 +20,42 @@ function sendSignal() {
     fi
 }
 
-trap 'sendSignal TERM' TERM
-trap 'sendSignal INT' INT 
-trap 'sendSignal QUIT' QUIT 
-trap 'sendSignal HUP' HUP
-trap 'sendSignal USR1' USR1
+function setup() {
+    trap 'sendSignal TERM' TERM
+    trap 'sendSignal INT' INT 
+    trap 'sendSignal QUIT' QUIT 
+    trap 'sendSignal HUP' HUP
+    trap 'sendSignal USR1' USR1
 
-if test "$1" == ""
-then
-    echo Usage: `basename $0` consulInstanceNumber
-    exit 1
-fi
-
-set -a
-    
-for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
-do  
-    if test ! -f "$envFile"
+    if test "$1" == ""
     then
-        echo Error: Unable to find envFile $envFile
-        exit $exitCritical
+        echo Usage: `basename $0` instance
+        exit 1
     fi
-    . "$envFile"
-done
 
-instance=$1
-consulServerCfg="$adNimbusDir"/consul/tmp/consulServer.cfg
+    set -a
+        
+    instance=$1
 
-hostname=`uname -n`
+    for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
+    do  
+        if test ! -f "$envFile"
+        then
+            echo Error: Unable to find envFile $envFile
+            exit $exitCritical
+        fi
+        . "$envFile"
+    done
+    hostname=`uname -n`
 
-set +a
+    GOMAXPROCS=8
 
-export GOMAXPROCS=8
+    consulServerCfg="$adNimbusDir"/consul/tmp/consulServer.cfg
+
+    set +a
+}
+
+setup $*
 
 # Get number of coreos instances. This works as long as all machines are running etcd ?servers?
 # 
