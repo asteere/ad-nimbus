@@ -7,7 +7,7 @@ MAINTAINER Andy Steere <andy.steere@troppussoftware.com>
 
 # TODO: Figure out how to get latest from github rather than hardcoding this
 RUN mkdir -p /etc/confd
-RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.8.0/confd-0.8.0-linux-amd64 -o /etc/confd/confd
+RUN curl -L https://github.com/kelseyhightower/confd/releases/download/v0.9.0/confd-0.9.0-linux-amd64 -o /etc/confd/confd
 RUN chmod +x /etc/confd/confd
 
 # Install netcat to allow communication with the nginx container via Unix sockets

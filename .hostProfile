@@ -64,15 +64,6 @@ function vssh() {
     vsh $1
 }
 
-function getlatestcurl() {
-    cdad
-    cd confd
-
-    # TODO: Figure out how to get latest from github rather than hardcoding this
-    curl -L https://github.com/kelseyhightower/confd/releases/download/v0.8.0/confd-0.8.0-linux-amd64 -o confd
-    chmod +x confd
-}
-
 function buildall() {
     buildconfd
     buildnginx
@@ -110,7 +101,7 @@ function buildcontainer() {
 
     dockerTag=$DOCKER_REGISTRY/$svc:$svc
 
-    svcTar="adNimbusDir/registrySaves/$svc.tar"
+    svcTar="$adNimbusDir/registrySaves/$svc.tar"
     svcTarGz="$svcTar.gz"
     if test -f "$svcTar"
     then
