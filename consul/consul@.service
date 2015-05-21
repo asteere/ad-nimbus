@@ -23,9 +23,8 @@ TimeoutStartSec=0
 # TODO: When things become stable "enough" don't remove the image every time
 ExecStartPre=-/usr/bin/docker rm -f ${consulDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker load -i ${adNimbusDir}/registrySaves/${consulService}.tar.gz
+ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${consulService}
 ExecStartPre=/usr/bin/docker images
-ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}
 
 # TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
 # TODO: How do we get additional servers to join the consul cluster 

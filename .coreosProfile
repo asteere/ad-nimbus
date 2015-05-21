@@ -97,6 +97,13 @@ function fjournal() {
         shift 1
     fi
 
+    if [[ "$1" == "-"* ]]
+    then
+        linesArg=`echo $1 | sed 's/-/-lines=/'`
+        shift 1
+    fi
+
+
     svc=`fleetctl list-units -fields=unit -no-legend | grep $1`
 
     f journal $followArg $linesArg $svc
@@ -262,6 +269,12 @@ function fstartall() {
 
     echo
     date
+
+    if test ! -f "$adNimbusDir/registrySaves"
+    then
+        echo Saving all containers for faster performance
+       "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveAllContainers
+    fi
 }
 
 function waitforalladnimbus_registry() {
@@ -505,34 +518,6 @@ function dockerbash() {
     echo NFS share $adNimbusDir will be located on /opt/share
 
     docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
-}
-
-function timeloadcoreosdockertar() {
-    date
-
-    loadcoreosdockertar
-
-    while "`jobs 2>&1`" != ""
-    do
-        jobs
-        echo
-        sleep 3
-    done
-
-    date
-}
-
-function loadcoreosdockertar() {
-    ipRoot=`getIpRoot`
-
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
-    do 
-        ipAddr=${ipRoot}.10$i
-        (ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh load) &
-    done
-
-    wait
 }
 
 if test -d "/home/core/share"

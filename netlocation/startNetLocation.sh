@@ -5,8 +5,11 @@
 # Set the netlocation consul key
 # Upon termination remove the consul key, send the signal to docker
 
+echo "==================== `basename $0` started args:$*: ======================="
+
 function setup() {
-    echo in setup
+    echo `basename $0` in setup
+
     trap 'cleanup TERM' TERM
     trap 'cleanup INT' INT 
     trap 'cleanup QUIT' QUIT 
@@ -85,6 +88,7 @@ function registerService() {
 function start() {
     # From: https://github.com/coreos/fleet/issues/612
     #    -p 49170:8080 \
+    # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.
     /usr/bin/docker run \
         --name=${containerName} \
         --rm=true \
@@ -132,22 +136,17 @@ then
     shift 1
 fi
 
-usage="Usage: `basename $0` functionName netLocationInstanceNumber"
-if test "$#" -ne "2"
-then
-    echo $usage
-    exit 1
-fi
+functionName=$1
+shift 1
+
+instance=$1
+containerName=${netLocationDockerTag}_$instance 
 
 setup
 
-functionName=$1
-instance=$2
-containerName=${netLocationDockerTag}_$instance 
-
 if [[ `type -t $functionName` == "function" ]]
 then
-    ${functionName} 
+    ${functionName} $*
     exit 0
 fi
 

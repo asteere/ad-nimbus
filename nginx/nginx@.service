@@ -24,8 +24,7 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${nginxService}.tar.gz
-ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag}
+ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${nginxService}
 
 ExecStartPre=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PUBLIC_IPV4}
 
