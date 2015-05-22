@@ -107,7 +107,7 @@ function stop() {
     docker kill -s KILL ${nginxService}_$instance
 }
 
-set -x 
+#set -x 
 
 while getopts "ad" opt; do
   case "$opt" in
