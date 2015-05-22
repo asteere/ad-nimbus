@@ -34,7 +34,7 @@ mywatch.sh -n .5 "flu | grep netlocation"
 fjournal -f monitor@1.service
 
 # Watch confd update nginx/nginx.conf. When netlocation creates a consul key, confd will update the nginx.conf file.
-tail -f monitor/tmp/startConfd.log
+tail -f $adNimbusTmp/startConfd.log
 
 # Create a constant stream of netlocation requests from the host
 mywatch.sh -n 1 checkhostnetlocation

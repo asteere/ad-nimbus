@@ -230,7 +230,8 @@ function fstartall() {
 
     drmf
 
-    rm -f "$adNimbusDir"/monitor/tmp/*.log
+    mkdir -p "$adNimbusTmp"
+    rm -rf "$adNimbusTmp"/*
 
     echo `date`: "++++++++++++++++++++++ Starting services+++++++++++++++++++++++++++"
 

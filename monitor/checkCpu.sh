@@ -17,8 +17,10 @@ function updateMonitorDir() {
     if test -d "/home/core/share/monitor"
     then
         monitorDir=/home/core/share/monitor
+        tmpDir=/home/core/share/tmp
     else
         monitorDir=/opt/monitor
+        tmpDir=/opt/tmp
     fi
 }
 
@@ -61,10 +63,9 @@ echo Process information: $processInfo
 pCpu=$(echo $processInfo | awk '{printf("%.0f\n", $1);}')
 echo Percent CPU for $processName is $pCpu
 
-cpuCfgFile="${monitorDir}/tmp/${serviceId}.cfg"
+cpuCfgFile="${tmpDir}/internal/${serviceId}.cfg"
 date
 echo Looking for $cpuCfgFile
-#ls -l ${monitorDir}/tmp
 if test -f "$cpuCfgFile"
 then
     oldPCpu=$pCpu

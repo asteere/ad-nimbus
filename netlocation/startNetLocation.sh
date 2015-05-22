@@ -93,7 +93,8 @@ function start() {
         --name=${containerName} \
         --rm=true \
         -P \
-        -v "$adNimbusDir"/${netLocationService}/src:/src \
+        --volume="$adNimbusDir"/${netLocationService}/src:/src \
+        --volume="$adNimbusTmp":${tmpDir} \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
         /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance
 }

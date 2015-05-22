@@ -15,8 +15,8 @@ function setup() {
 
     nginxCoreosDir="$adNimbusDir/nginx"
     nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
-    nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
-    nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
+    nginxCoreosCidFile="$adNimbusTmp/nginx.cid"
+    nginxCoreosIpAddrFile="$adNimbusTmp/nginx.ipaddr"
 
     webContentCoreosDir="/home/core/WebContent"
     
@@ -31,8 +31,6 @@ function setup() {
 }
 
 function startDocker() {
-    rm -f "$nginxCoreosCidFile" "$nginxCoreosIpAddrFile"
-
     echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
 
     if test -d "$webContentCoreosDir"
@@ -46,6 +44,7 @@ function startDocker() {
         --rm=true $webContentVolArg \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
+        --volume="$adNimbusTmp":${tmpDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
         $dockerCmd

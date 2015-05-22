@@ -67,7 +67,9 @@ app.get('/api/v1/netlocation/*', function(request, response) {
                 appendIsp(geoData, ispData);
             }
 
-            var path = __dirname + "/tmp/netlocation@" + instance + ".service_" + hostAddress + ".cfg";
+            // HACK: look for the file for this service that indicates how long the response should be delayed
+            // HACK: This hack creates an external test failure since if delays the response time
+            var path = "/opt/tmp/external/netlocation@" + instance + ".service_" + hostAddress + ".cfg";
             console.log("Attempting to read file: " + path);
             var delay = 0;
             try {

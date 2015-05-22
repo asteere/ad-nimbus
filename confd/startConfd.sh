@@ -16,7 +16,7 @@ function setup() {
 # TODO: Is this needed?
 function sendSignal() {
     echo Sending $1 to $confdService
-    /usr/bin/docker kill -s SIGTERM ${confdService}_$instance
+    /usr/bin/docker kill -s $1 ${confdService}_$instance
 }
 
 function start() {
@@ -25,9 +25,10 @@ function start() {
         --rm=true \
         -e "HOST_IP=${COREOS_PUBLIC_IPV4}" \
         -p ${COREOS_PUBLIC_IPV4}:${confdGuestOsPort}:${confdContainerPort} \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        -v "$adNimbusDir"/${confdService}:${confdDir} \
-        -v "$adNimbusDir"/${nginxService}:${nginxDir} \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        --volume="$adNimbusDir"/${confdService}:${confdDir} \
+        --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
+        --volume="$adNimbusTmp":${tmpDir} \
         ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} \
         /etc/confd/confd \
         -backend=${consulService} \
