@@ -1,8 +1,9 @@
 #!/bin/bash 
 
-# Provide access to the variables that the services use
 
-export curlOptions='-s -L'
+function getIpRoot() {
+    echo $COREOS_PUBLIC_IPV4 | sed 's/\(.*\)\.[0-9]*$/\1/'
+}
 
 function setup() {
     set -a
@@ -14,6 +15,13 @@ function setup() {
             . "$envFile"
         fi
     done 
+
+    # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
+    ipRoot=`getIpRoot`
+    consulIpAddr=${ipRoot}.10$instance
+
+    curlOptions='-s -L'
+
     set +a
 
     rm -f "$adNimbusTmp"/checkCpu*
@@ -598,9 +606,6 @@ function harvestStoppedServices() {
         awk '{print $1}'`
 }
 
-# TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
-export consulIpAddr=172.17.8.101
-
 runAll=false
 
 resetClock
@@ -619,6 +624,12 @@ shift $((OPTIND-1))
 
 functionName=$1
 shift 1
+
+instance=$2
+if test "$instance" == ""
+then
+    instance=1
+fi
 
 if test "$functionName" == "start"
 then

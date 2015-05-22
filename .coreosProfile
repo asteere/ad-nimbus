@@ -45,12 +45,14 @@ function ssh() {
 }
 
 function checkconsulmembers() {
+    ipRoot=`getIpRoot`
+
     cdad
     instanceRange='{1..'$numInstances'}'
     for i in `eval echo $instanceRange`
     do
-        echo "$adNimbusDir"/consul/consul members -rpc-addr=172.17.8.10$i:8400
-        "$adNimbusDir"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        echo "$adNimbusDir"/consul/consul members -rpc-addr=${ipRoot}.10$i:8400
+        "$adNimbusDir"/consul/consul members -rpc-addr=${ipRoot}.10$i:8400
         if test "$?" == 0 -a "$1" != "all"
         then
             break
@@ -59,8 +61,10 @@ function checkconsulmembers() {
 }
 
 function joinconsulmembers() {
-    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
-    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    ipRoot=`getIpRoot`
+
+    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo ${ipRoot}.10{1..$numInstances}`
+    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo ${ipRoot}.10{1..$numInstances}`
 }
 
 function fstartadnimbus_registry() {
@@ -521,6 +525,13 @@ function dockerbash() {
     docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
 
+if test "$HOME" != "/home/core"
+then
+    mkdir -p /home/core
+    echo Creating linke from /home/core/share to `pwd`. If this is not the ad-nimbus root, please create the correct link.
+    ln -s `pwd` /home/core/share
+fi
+
 if test -d "/home/core/share"
 then
     export adNimbusDir=/home/core/share
@@ -563,4 +574,7 @@ then
     set -a 
     . /etc/environment
     set +a
+    
+    # Setup the tmp volume for use by containers
+    mkdir -p tmp
 fi

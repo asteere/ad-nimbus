@@ -53,6 +53,9 @@ function setup() {
     consulServerCfg="$adNimbusTmp"/consulServer.cfg
 
     set +a
+
+    # Consul needs this for preserving data across reboots
+    mkdir -p foo/consul/consul.d/{bootstrap,client,server}
 }
 
 setup $*
@@ -79,15 +82,12 @@ case $numServers in
 3|4)
     bootstrapExpect=3
     ;;
-5)
+5|*)
     bootstrapExpect=5
     ;;
 esac
 
 echo etcd reported $numServers servers: $clusterPrivateIpAddrs. Setting bootstrap-expect to $bootstrapExpect.
-
-# TODO: Override results while in initial development
-numServers=2
 
 # Get number instances of consul running
 # TODO: Start the right number of consul agents and servers based on cluster size
@@ -139,7 +139,7 @@ uiDirArg="-ui-dir ${consulDir}/ui"
 
 # TODO: do we want to always remove all the data. Probably only when we start the cluster the first time
 # TODO: Do we want a common data area? Initially, there were problems that seemed to be related to this.
-consulDataDir=/tmp/data
+consulDataDir="$adNimbusTmp"/data
 rm -rf ${consulDataDir}
 dataDirArg="-data-dir ${consulDataDir}"
 

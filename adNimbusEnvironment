@@ -44,7 +44,6 @@ nginxService=nginx
 nginxDockerTag=nginx
 nginxGuestOsPort=49160
 nginxContainerPort=80
-nginxIpAddress=172.17.8.101
 nginxDir=/opt/nginx
 nginxRoot=Nginx
 minNginxServices=1
