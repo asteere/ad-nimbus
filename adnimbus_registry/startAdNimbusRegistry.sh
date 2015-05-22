@@ -251,7 +251,7 @@ function startDocker() {
         --rm \
         --name=${adNimbusRegistryService}_$instance \
         -p ${COREOS_PUBLIC_IPV4}:${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
-        -v $adNimbusDir/registry-dev:/registry-dev \
+        --volume=$adNimbusDir/registry-dev:/registry-dev \
         ${DOCKER_REGISTRY}/${adNimbusRegistryService}:${adNimbusRegistryDockerTag}
 }
 

@@ -16,7 +16,7 @@ function setup() {
     done 
     set +a
 
-    rm -f "$adNimbusDir"/monitor/tmp/checkCpu*
+    rm -f "$adNimbusTmp"/checkCpu*
 }
 
 function runCurlGet() {
@@ -73,7 +73,7 @@ function createServiceJsonFile() {
 
     jsonFile=/tmp/$service$instance.json
 
-    outputFile=$monitorDir/tmp/${serviceId}_$$.log
+    outputFile=$tmpDir/${serviceId}_$$.log
 
     echo '{
         "ID": "'$serviceId'",

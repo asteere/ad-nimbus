@@ -104,12 +104,6 @@ function sourceadnimbusenvironment() {
     set +a
 }
 
-#function updateadnimbusenvironment() {
-#    sed 's/REPLACE_ME/'$MY_DOCKER_REGISTRY'/' "$adNimbusDir"/adNimbusEnvironment.tmpl > "$adNimbusDir"/adNimbusEnvironment; 
-#
-#    sourceadnimbusenvironment
-#}
-
 function createtar() {
     cd "$adNimbusDir"/..
 

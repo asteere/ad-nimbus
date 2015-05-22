@@ -50,7 +50,7 @@ function setup() {
 
     GOMAXPROCS=8
 
-    consulServerCfg="$adNimbusDir"/consul/tmp/consulServer.cfg
+    consulServerCfg="$adNimbusTmp"/consulServer.cfg
 
     set +a
 }
@@ -123,7 +123,7 @@ else
             fi
         else
             sleep 2
-            if test $ctr >= 60
+            if test "$ctr" -gt 60
             then
                 echo Error: No $consulServerCfg file found with the consul server\'s IP address, exiting
                 exit 1 
@@ -138,6 +138,7 @@ nodeArg="-node $hostname"
 uiDirArg="-ui-dir ${consulDir}/ui"
 
 # TODO: do we want to always remove all the data. Probably only when we start the cluster the first time
+# TODO: Do we want a common data area? Initially, there were problems that seemed to be related to this.
 consulDataDir=/tmp/data
 rm -rf ${consulDataDir}
 dataDirArg="-data-dir ${consulDataDir}"
@@ -189,6 +190,7 @@ dockerImage="${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}"
     --volume="$adNimbusDir"/${consulService}:${consulDir} \
     --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
     --volume="$adNimbusDir"/${monitorService}:${monitorDir} \
+    --volume="$adNimbusTmp":${tmpDir} \
     ${dockerImage} \
     ${consulDir}/${consulService} \
     agent $serverArg $advertiseArg $bindArg $clientArg $retryJoinArg \

@@ -28,11 +28,10 @@ function cleanup() {
     origDir=`pwd`
 
     # The first time confd & nginx runs there will be no nginx.conf. Test this use case when starting all services
-    cd "$adNimbusDir"/nginx; 
-    rm -f nginx.conf nginx.error.log nginx.access.log nginx.cid
-
-    cd "$adNimbusDir"/monitor/tmp/
-    rm -f startConfd.log startNginx.log
+    cd "$adNimbusTmp"
+    rm -f startConfd.log startNginx.log nginx.error.log nginx.access.log nginx.cid
+    
+    rm -f "$adNimbusDir/nginx/nginx.conf"
 
     cd "$origDir"
 }
@@ -40,16 +39,15 @@ function cleanup() {
 function start() {
     cleanup
 
-    "$adNimbusDir"/confd/startConfd.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startConfd.log &
+    "$adNimbusDir"/confd/startConfd.sh start $instance 2>&1 | tee "$adNimbusTmp"/startConfd.log &
 
-    "$adNimbusDir"/nginx/startNginx.sh start $instance 2>&1 | tee "$adNimbusDir"/monitor/tmp/startNginx.log 
+    "$adNimbusDir"/nginx/startNginx.sh start $instance 2>&1 | tee "$adNimbusTmp"/startNginx.log 
 }
 
 function stop() {
-    "$adNimbusDir"/confd/startConfd.sh stop $instance 2>&1 | tee -a "$adNimbusDir"/monitor/tmp/startConfd.log 
+    "$adNimbusDir"/confd/startConfd.sh stop $instance 2>&1 | tee -a "$adNimbusTmp"/startConfd.log 
 
-    "$adNimbusDir"/nginx/startNginx.sh stop $instance 2>&1 | tee -a "$adNimbusDir"/monitor/tmp/startNginx.log 
-
+    "$adNimbusDir"/nginx/startNginx.sh stop $instance 2>&1 | tee -a "$adNimbusTmp"/startNginx.log 
 }
 
 setup

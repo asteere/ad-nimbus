@@ -12,10 +12,12 @@ function findMachineRunningService() {
 if test -d /opt/nginx
 then
     nginxDir=/opt/nginx
+    tmpDir=/opt/tmp
 else
     nginxDir=/home/core/share/nginx
+    tmpDir=/home/core/share/tmp
 fi
-nginxCidFile="$nginxDir"/nginx.cid
+nginxCidFile="$tmpDir"/nginx.cid
 
 if test ! -f "$nginxCidFile"
 then
