@@ -5,7 +5,7 @@
 
 daemon off;
 
-error_log /opt/nginx/nginx_error.log debug;
+error_log /opt/tmp/nginx_error.log debug;
 
 events {
     # TODO: should we be using 1024 as 4096 might be overkill
@@ -33,15 +33,22 @@ http {
     }
 
     server {
-        access_log /opt/nginx/nginx_access.log upstreamlog;
+        access_log /opt/tmp/nginx_access.log upstreamlog;
 
         # ports nginx server is listen to
         listen 80;
 
         server_name raptor.com www.raptor.com;
 
-        location /consul-check {
+        location ^~ /consul-check {
             root /opt/nginx;
+
+            index index.html;
+        }
+
+        # TODO: Change this once we have support for v1 or v2 raptor services
+        location ~* \.(png|jpg|html|exe|css|js|json|mp4|obv|webm|wmv)$ {
+            root /opt/WebContent;
 
             index index.html;
         }

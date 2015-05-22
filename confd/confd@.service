@@ -22,8 +22,7 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/usr/bin/docker load -i /${adNimbusDir}/registrySaves/${confdService}.tar
-ExecStartPre=/usr/bin/docker pull ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag}
+ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${confdService}
 
 ExecStart=/home/core/share/confd/startConfd.sh start %i
 

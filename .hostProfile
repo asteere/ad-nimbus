@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Host .profile
 # Everything to do with using vagrant and building docker containers
 
@@ -62,15 +64,6 @@ function vssh() {
     vsh $1
 }
 
-function getlatestcurl() {
-    cdad
-    cd confd
-
-    # TODO: Figure out how to get latest from github rather than hardcoding this
-    curl -L https://github.com/kelseyhightower/confd/releases/download/v0.8.0/confd-0.8.0-linux-amd64 -o confd
-    chmod +x confd
-}
-
 function buildall() {
     buildconfd
     buildnginx
@@ -100,24 +93,32 @@ function buildnetlocation() {
 }
 
 function buildcontainer() {
+    svc=$1
+
     cdad
 
-    echo Building docker container $1
+    echo Building docker container $svc
 
-    # this will result in two repositories $DOCKER_REGISTRY/$1:latest and $1:latest containing collections of images
-    rundocker build --tag $DOCKER_REGISTRY/"$1":$1 $1 
+    dockerTag=$DOCKER_REGISTRY/$svc:$svc
+
+    svcTar="$adNimbusDir/registrySaves/$svc.tar"
+    svcTarGz="$svcTar.gz"
+    if test -f "$svcTar"
+    then
+        runDocker load -s $svcTarGz
+    fi
+
+    # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
+    rundocker build --tag $dockerTag $svc 
     if test ! $? == 0
     then
         return
     fi
 
-    #dlogin 
-    if test ! $? == 0
-    then
-        return
-    fi
+    rundocker save -o $svcTar $dockerTag
+    gzip $svcTar
 
-    rundocker push $DOCKER_REGISTRY/"$1":$1
+    rundocker push $dockerTag
 
     cd -
 
@@ -231,7 +232,21 @@ function dlogin() {
     docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PWD
 }
 
-function findMappedPorts() {
+function checkhostwebcontent() {
+    hostIpAddr=`findHostIpAddr`
+
+    nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
+    nginxHostName=`ipAddrToMachineName $nginxIpAddr`
+    coreosNginxPorts=`findmappedports $nginxGuestOsPort $nginxHostName`
+
+    for port in $coreosNginxPorts
+    do
+        checkwebcontent $anIpAddr $port
+        echo
+    done
+}
+
+function findmappedports() {
     nginxGuestOsPortArg=$1
 
     if test "$2" == ""
@@ -252,8 +267,12 @@ function ipAddrToMachineName() {
     echo $1 | sed 's/.*\([0-9]\)$/core-0\1/'
 }
 
+function findHostIpAddr() {
+    ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'
+}
+
 function checkhostnetlocation() {
-    hostIpAddr=`ip addr | grep 'inet ' | grep -v -e 127.0 -e 172.17 | sed -e 's/.*inet //' -e 's/\/.*//'`
+    hostIpAddr=`findHostIpAddr`
 
     # No args - find the nginx coreos hostname and then the nginx port that has been forwarded on that machine. 
     # 1 arg - user specified the nginx coreos port, find all the forwarded ports for that port. 
@@ -264,13 +283,13 @@ function checkhostnetlocation() {
     0)
         nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
         nginxHostName=`ipAddrToMachineName $nginxIpAddr`
-        coreosNginxPorts=`findMappedPorts $nginxGuestOsPort $nginxHostName`
+        coreosNginxPorts=`findmappedports $nginxGuestOsPort $nginxHostName`
         ;;
     1)
-        coreosNginxPorts=`findMappedPorts $1`
+        coreosNginxPorts=`findmappedports $1`
         ;;
     2)
-        coreosNginxPorts=`findMappedPorts $2`
+        coreosNginxPorts=`findmappedports $2`
         hostIpAddr=$1
         ;;
     esac
@@ -346,6 +365,13 @@ vagrantInsecureKey=insecure_private_key
 if test -f "$VAGRANT_HOME"/insecure_private_key
 then
     cp "$VAGRANT_HOME"/insecure_private_key .
+fi
+
+# If you want to make the WebContent Research available clone the repo into ~/Research/WebContent. 
+# Or, define webContentDir separately.
+if test -d "$HOME/Research/WebContent"
+then
+    export webContentDir="$HOME/Research/WebContent"
 fi
 
 

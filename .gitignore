@@ -35,18 +35,9 @@ netlocation/src/netlocation@*.service_*.cfg
 # confd is updating nginx.conf every time a netlocation service is added or subtracted
 nginx/nginx.conf
 nginx/.nginx.conf*
-nginx/nginx.cid
-nginx/nginx.ipaddr
-
-# Ignore the error logs
-nginx/nginx_access.log
-nginx/nginx_error.log
 
 # Not sure why nfs is creating these
 */.nfs*
-
-# TODO: Is there a better place to write the consul data for consistency over reboots?
-consul/data/*
 
 # Scribble area for monitor logs, demo config information, etc
 **/tmp

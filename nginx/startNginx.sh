@@ -2,8 +2,6 @@
 
 echo `basename $0` args:$*:
 
-set -x
-
 function setup() {
     set -a
     . /etc/environment
@@ -11,15 +9,18 @@ function setup() {
     nginxDir=/opt/nginx
     nginxConfFile="$nginxDir/nginx.conf"
 
-    if test -d "/home/core/share"
-    then
-        . /home/core/share/adNimbusEnvironment
+    webContentDir=/opt/WebContent
 
-        nginxCoreosDir=""$adNimbusDir"/nginx"
-        nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
-        nginxCoreosCidFile="$nginxCoreosDir/nginx.cid"
-        nginxCoreosIpAddrFile="$nginxCoreosDir/nginx.ipaddr"
-    fi
+    . /home/core/share/adNimbusEnvironment
+
+    nginxCoreosDir="$adNimbusDir/nginx"
+    nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"
+    nginxCoreosCidFile="$adNimbusTmp/nginx.cid"
+    nginxCoreosIpAddrFile="$adNimbusTmp/nginx.ipaddr"
+
+    webContentCoreosDir="/home/core/WebContent"
+    
+    dockerCmd="nginx -c $nginxConfFile"
 
     set +a
 
@@ -30,24 +31,37 @@ function setup() {
 }
 
 function startDocker() {
-    rm -f "$nginxCoreosCidFile" "$nginxCoreosIpAddrFile"
-
     echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
 
+    if test -d "$webContentCoreosDir"
+    then
+        webContentVolArg="--volume=$webContentCoreosDir:$webContentDir"
+    fi
+
     /usr/bin/docker run \
-        --name=${nginxDockerTag}_${instance} \
+        --name=${nginxDockerTag}_${instance} $interactive \
         --cidfile=${nginxCoreosCidFile} \
-        --rm=true \
+        --rm=true $webContentVolArg \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
+        --volume="$adNimbusTmp":${tmpDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
         ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
-        nginx -c "$nginxConfFile"
+        $dockerCmd
+}
+
+function startDockerBash() {
+    dockerCmd="/bin/bash $*"
+
+    interactive="-it"
+
+    startDocker
 }
 
 function runCmd() {
     cmd=$1
-    /usr/bin/docker exec nginx_1 nginx -s $cmd -c $nginxConfFile
+
+    /usr/bin/docker exec ${nginxService}_$instance $nginxService -s $cmd -c $nginxConfFile
 }
 
 function reload() {
@@ -56,11 +70,9 @@ function reload() {
 
 # TODO: Is this needed?
 function sendSignal() {
-    echo Sending $1 to nginx
-    runCmd stop
+    echo Sending $1 to $nginxService
 
-    # TODO: This may be overkill
-    docker kill -s $1 
+    runCmd $1
 }
 
 function waitForNginxConf() {
@@ -83,6 +95,19 @@ function start() {
 
     startDocker
 }
+
+function stop() {
+    runCmd stop
+
+    if test "$instance" == ""
+    then
+        instance=$1
+    fi
+
+    docker kill -s KILL ${nginxService}_$instance
+}
+
+set -x 
 
 while getopts "ad" opt; do
   case "$opt" in
