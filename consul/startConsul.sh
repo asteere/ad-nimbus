@@ -95,9 +95,9 @@ dataCenterArg="-dc superiorDataCenter"
 
 serverArg=-server
 
-#advertiseArg="-advertise=$COREOS_PUBLIC_IPV4"
-bindArg="-bind=$COREOS_PUBLIC_IPV4"
-clientArg="-client=$COREOS_PUBLIC_IPV4"
+#advertiseArg="-advertise=$COREOS_PRIVATE_IPV4"
+bindArg="-bind=$COREOS_PRIVATE_IPV4"
+clientArg="-client=$COREOS_PRIVATE_IPV4"
 
 # TODO: figure out how to get the IP address of the first consul so everybody can join it
 
@@ -107,7 +107,7 @@ clientArg="-client=$COREOS_PUBLIC_IPV4"
 retryJoinArg=""
 if test "$instance" = "1"
 then
-    echo $COREOS_PUBLIC_IPV4 > "$consulServerCfg"
+    echo $COREOS_PRIVATE_IPV4 > "$consulServerCfg"
 else
     for ctr in {1..120}
     do
@@ -169,15 +169,15 @@ dockerImage="${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}"
 #dockerImage=progrium/consul
 #    --rm=true \
 #    --hostname=$hostname \
-#    --publish ${COREOS_PUBLIC_IPV4}:8300:8300 \
-#    --publish ${COREOS_PUBLIC_IPV4}:8301:8301 \
-#    --publish ${COREOS_PUBLIC_IPV4}:8301:8301/udp \
-#    --publish ${COREOS_PUBLIC_IPV4}:8302:8302 \
-#    --publish ${COREOS_PUBLIC_IPV4}:8302:8302/udp \
-#    --publish ${COREOS_PUBLIC_IPV4}:8400:8400 \
-#    --publish ${COREOS_PUBLIC_IPV4}:8500:8500 \
-#    --publish ${COREOS_PUBLIC_IPV4}:53:53/udp \
-#    --env "HOST_IP=${COREOS_PUBLIC_IPV4}" \
+#    --publish ${COREOS_PRIVATE_IPV4}:8300:8300 \
+#    --publish ${COREOS_PRIVATE_IPV4}:8301:8301 \
+#    --publish ${COREOS_PRIVATE_IPV4}:8301:8301/udp \
+#    --publish ${COREOS_PRIVATE_IPV4}:8302:8302 \
+#    --publish ${COREOS_PRIVATE_IPV4}:8302:8302/udp \
+#    --publish ${COREOS_PRIVATE_IPV4}:8400:8400 \
+#    --publish ${COREOS_PRIVATE_IPV4}:8500:8500 \
+#    --publish ${COREOS_PRIVATE_IPV4}:53:53/udp \
+#    --env "HOST_IP=${COREOS_PRIVATE_IPV4}" \
 
 # Uncomment when running from the command line
 #/usr/bin/docker rm -f ${consulDockerTag} > /dev/null 2>&1

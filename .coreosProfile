@@ -60,8 +60,8 @@ function checkconsulmembers() {
 function joinconsulmembers() {
     ipAddrs=`getIpAddrsInCluster`
 
-    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 $ipAddrs
-    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 $ipAddrs
+    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PRIVATE_IPV4}:8400 $ipAddrs
+    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PRIVATE_IPV4}:8400 $ipAddrs
 }
 
 function fstartadnimbus_registry() {
@@ -522,10 +522,10 @@ function dockerbash() {
     docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
 
-if test "$HOME" != "/home/core"
+if test "$HOME" != "/home/core" -a ! -d "/Users"
 then
     mkdir -p /home/core
-    echo Creating linke from /home/core/share to `pwd`. If this is not the ad-nimbus root, please create the correct link.
+    echo Creating link from /home/core/share to `pwd`. If this is not the ad-nimbus root, please create the correct link.
     ln -s `pwd` /home/core/share
 fi
 
