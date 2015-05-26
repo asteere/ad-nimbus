@@ -31,10 +31,6 @@ function setup() {
     set +a
 }
 
-function cdad() {
-    cd "$adNimbusDir"
-}
-
 function loadImage() {
     svcsToLoad=$1
     if test "$svcsToLoad" == ""
@@ -103,7 +99,7 @@ function saveImage() {
         if test "`doWeCreateTarFile $imageTar`" == "true"
         then
             image=$DOCKER_REGISTRY/$svc:$svc
-            echo `date`: $myDocker save -o $imageTar $image
+            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker save -o $imageTar $image
             $myDocker save -o $imageTar $image
             gzip -f $imageTar
         fi
@@ -113,14 +109,10 @@ function saveImage() {
 }
 
 function saveAllImages() {
-    ipRoot=`getIpRoot`
-
     touch "$timestampFile" 
 
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveImage all
     done
 
@@ -187,14 +179,10 @@ function exportContainer() {
 }
 
 function exportAllContainers() {
-    ipRoot=`getIpRoot`
-
     touch "$timestampFile"
 
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh exportContainer all
     done
    
@@ -234,12 +222,8 @@ function clearImages() {
 }
 
 function clearAllImages() {
-    ipRoot=`getIpRoot`
-
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh clearImages all
     done
 }

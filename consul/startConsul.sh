@@ -55,7 +55,7 @@ function setup() {
     set +a
 
     # Consul needs this for preserving data across reboots
-    mkdir -p foo/consul/consul.d/{bootstrap,client,server}
+    mkdir -p "$adNimbusDir"/consul/consul.d/{bootstrap,client,server}
 }
 
 setup $*

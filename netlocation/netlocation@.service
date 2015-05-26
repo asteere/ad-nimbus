@@ -32,9 +32,3 @@ ExecStop=/home/core/share/netlocation/startNetlocation.sh cleanup %i
 
 #Restart=always
 
-[X-Fleet]
-#MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
-
-#Conflicts=monitor@1.service
-#Conflicts=nginx@1.service
-#Conflicts=confd@1.service

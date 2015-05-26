@@ -1,8 +1,8 @@
 #!/bin/bash 
 
 
-function getIpRoot() {
-    echo $COREOS_PUBLIC_IPV4 | sed 's/\(.*\)\.[0-9]*$/\1/'
+function getIpAddrsInCluster() {
+    fleetctl list-machines -fields=ip --no-legend
 }
 
 function setup() {
@@ -17,8 +17,7 @@ function setup() {
     done 
 
     # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
-    ipRoot=`getIpRoot`
-    consulIpAddr=${ipRoot}.10$instance
+    consulIpAddr=`getIpAddrsInCluster | awk '{print $1}'`
 
     curlOptions='-s -L'
 
@@ -33,13 +32,9 @@ function runCurlGet() {
 }
 
 function runCurlPut() {
-    useIpAddr=$consulIpAddr
-    if test "$1" != ""
-    then
-        useIpAddr=$1
-    fi
-
+    useIpAddr=$1
     url=$2
+
     dataFileArg=""
     if test "$3" != ""
     then
@@ -476,8 +471,7 @@ function runOtherChecks() {
         echo The number of consul nodes $numConsulNodes equals the number of etcd nodes $numEtcdNodes
     fi
 
-    # Check that the consul nodes haven't splintered
-    echo
+    # TODO: Check that the consul nodes haven't splintered
 
     # Check that there is a raft leader
     echo
