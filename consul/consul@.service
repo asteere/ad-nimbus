@@ -27,7 +27,7 @@ ExecStartPre=/usr/bin/docker images
 
 # TODO: Do we want to use "-bind"? At this point, 4/9/15, can't guarantee that a particular IP address will be available
 # TODO: How do we get additional servers to join the consul cluster 
-ExecStart=/home/core/share/consul/startConsul.sh %i
+ExecStart=/home/core/share/consul/startConsul.sh start %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${consulDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a
