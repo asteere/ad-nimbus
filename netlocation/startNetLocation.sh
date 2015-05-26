@@ -39,7 +39,7 @@ function setKeyValue() {
     key=$1
     value=$2
 
-    /usr/bin/curl -v -s -X PUT -d $value http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${key}
+    /usr/bin/curl -v -s -X PUT -d $value http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
     
     dumpConsulKeys
 }
@@ -47,17 +47,17 @@ function setKeyValue() {
 function removeKeyValue() {
     key=$1
 
-    /usr/bin/curl -v -s -X DELETE http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv${key}
+    /usr/bin/curl -v -s -X DELETE http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
 
     dumpConsulKeys
 }
 
 function dumpConsulKeys() {
-    /usr/bin/curl -v -s -L -X GET http://${COREOS_PUBLIC_IPV4}:${consulHttpPort}/v1/kv/?recurse
+    /usr/bin/curl -v -s -L -X GET http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv/?recurse
 }
 
 function createNetLocationConsulKey() {
-    netLocationConsulKey=`echo ${netLocationKey}/${COREOS_PUBLIC_IPV4}/$instance`
+    netLocationConsulKey=`echo ${netLocationKey}/${COREOS_PRIVATE_IPV4}/$instance`
 }
 
 function createNetLocationConsulValue() {
@@ -72,7 +72,7 @@ function createNetLocationConsulValue() {
 
         if test "$netLocationGuestOsPort" != ""
         then
-            netLocationConsulValue="${COREOS_PUBLIC_IPV4}:$netLocationGuestOsPort"
+            netLocationConsulValue="${COREOS_PRIVATE_IPV4}:$netLocationGuestOsPort"
             break
         fi
         sleep 5
@@ -82,21 +82,35 @@ function createNetLocationConsulValue() {
 function registerService() {
     port=$1
 
-    "$adNimbusDir"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PUBLIC_IPV4} $port
+    "$adNimbusDir"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PRIVATE_IPV4} $port
 }
 
-function start() {
+function startDocker() {
     # From: https://github.com/coreos/fleet/issues/612
     #    -p 49170:8080 \
     # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.
     /usr/bin/docker run \
-        --name=${containerName} \
+        --name=${containerName} $interactive \
         --rm=true \
         -P \
         --volume="$adNimbusDir"/${netLocationService}/src:/src \
         --volume="$adNimbusTmp":${tmpDir} \
         ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
-        /src/startNpm.sh ${COREOS_PUBLIC_IPV4} $instance
+        $dockerCmd
+}
+
+function start() {
+    dockerCmd="/src/startNpm.sh ${COREOS_PRIVATE_IPV4} $instance"
+
+    startDocker
+}
+
+function startDockerBash() {
+    dockerCmd="/bin/bash $*"
+
+    interactive="-it"
+
+    startDocker
 }
 
 function cleanup() {
@@ -118,7 +132,7 @@ function cleanup() {
 
     removeKeyValue $netLocationConsulKey
 
-    "$adNimbusDir"/monitor/monitor.sh unregisterNetLocationService $instance ${COREOS_PUBLIC_IPV4}
+    "$adNimbusDir"/monitor/monitor.sh unregisterNetLocationService $instance ${COREOS_PRIVATE_IPV4}
 }
 
 function registerNetLocation() {

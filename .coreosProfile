@@ -46,11 +46,10 @@ function ssh() {
 
 function checkconsulmembers() {
     cdad
-    instanceRange='{1..'$numInstances'}'
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do
-        echo "$adNimbusDir"/consul/consul members -rpc-addr=172.17.8.10$i:8400
-        "$adNimbusDir"/consul/consul members -rpc-addr=172.17.8.10$i:8400
+        echo "$adNimbusDir"/consul/consul members -rpc-addr=$ipAddr:8400
+        "$adNimbusDir"/consul/consul members -rpc-addr=$ipAddr:8400
         if test "$?" == 0 -a "$1" != "all"
         then
             break
@@ -59,8 +58,10 @@ function checkconsulmembers() {
 }
 
 function joinconsulmembers() {
-    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
-    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PUBLIC_IPV4}:8400 `eval echo 172.17.8.10{1..$numInstances}`
+    ipAddrs=`getIpAddrsInCluster`
+
+    echo "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PRIVATE_IPV4}:8400 $ipAddrs
+    "$adNimbusDir"/consul/consul join -rpc-addr=${COREOS_PRIVATE_IPV4}:8400 $ipAddrs
 }
 
 function fstartadnimbus_registry() {
@@ -79,6 +80,10 @@ function etctree() {
         echo -n $key=
         etcdctl get $key
     done
+}
+
+function fj() {
+    fjournal $*
 }
 
 function fjournal() {
@@ -487,19 +492,15 @@ function fshutdown() {
     flu
 }
 
-function getIpRoot() {
-    echo $COREOS_PUBLIC_IPV4 | sed 's/\(.*\)\.[0-9]*$/\1/'
+function getIpAddrsInCluster() {
+    fleetctl list-machines -fields=ip --no-legend
 }
 
 function drmf() {
-    ipRoot=`getIpRoot`
-
     # Remove the raptor docker containers from each coreos. On clean shutdown or first time startup
     # there are no docker containers to remove
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         echo Checking for docker containers on $ipAddr
         dockerContainers=`ssh $ipAddr docker ps -a 2>&1 | \
             grep -v -e 'list of known hosts' -e NAMES | \
@@ -520,6 +521,13 @@ function dockerbash() {
 
     docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
+
+if test "$HOME" != "/home/core" -a ! -d "/Users"
+then
+    mkdir -p /home/core
+    echo Creating link from /home/core/share to `pwd`. If this is not the ad-nimbus root, please create the correct link.
+    ln -s `pwd` /home/core/share
+fi
 
 if test -d "/home/core/share"
 then
@@ -563,4 +571,7 @@ then
     set -a 
     . /etc/environment
     set +a
+    
+    # Setup the tmp volume for use by containers
+    mkdir -p tmp
 fi

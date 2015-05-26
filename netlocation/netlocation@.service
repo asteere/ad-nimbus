@@ -13,7 +13,6 @@ After=docker.service
 # work correctly.
 KillMode=none
 
-# Allow access to COREOS_PUBLIC_IPV4 and CORESOS_PRIVATE_IPV4 amongst other variables
 EnvironmentFile=/etc/environment
 EnvironmentFile=/home/core/share/adNimbusEnvironment
 
@@ -32,9 +31,3 @@ ExecStop=/home/core/share/netlocation/startNetlocation.sh cleanup %i
 
 #Restart=always
 
-[X-Fleet]
-#MachineMetadata=172.17.8.101=${COREOS_PUBLIC_IPV4}
-
-#Conflicts=monitor@1.service
-#Conflicts=nginx@1.service
-#Conflicts=confd@1.service

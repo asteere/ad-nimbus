@@ -1,0 +1,58 @@
+DOCKER_REGISTRY=asteere
+currentContainers="consul netlocation confd nginx" 
+#adnimbus_registry"
+
+adNimbusDir=/home/core/share
+
+# shared tmp folder on coreos and docker
+adNimbusTmp=/home/core/share/tmp
+tmpDir=/opt/tmp
+
+# etcd
+etcdPort=4001
+
+# Use port numbers so the different types of services have their own cluster of numbers
+# confd 
+confdService=confd
+confdDockerTag=confd
+confdGuestOsPort=49190
+confdContainerPort=80
+confdDir=/opt/consul
+confdCheckInterval=2
+
+# consul 
+consulService=consul
+consulDockerTag=consul
+consulHttpPort=8500
+consulDnsPort=8600
+consulDir=/opt/consul
+
+# netLocation
+netLocationService=netlocation
+netLocationDockerTag=netlocation
+netLocationKey=/raptor/netlocation
+# netLocationGuestOsPort is mapped to a random port to allow multiple netlocations running on the same coreos
+netLocationContainerPort=8080
+netLocationDir=/opt/netlocation
+netLocationTestUrl=/api/v1/netLocation/198.243.23.131
+netlocationRoot=NetLocation
+minNetLocationServices=1
+maxNetLocationServices=3
+
+# nginx
+nginxService=nginx
+nginxDockerTag=nginx
+nginxGuestOsPort=49160
+nginxContainerPort=80
+nginxDir=/opt/nginx
+nginxRoot=Nginx
+minNginxServices=1
+maxNginxServices=1
+
+# monitor environment variables are in monitor/monitorEnvironment
+
+# adnimbus_registry
+adNimbusRegistryService=adnimbus_registry
+adNimbusRegistryDockerTag=adnimbus_registry
+adNimbusRegistryGuestOsPort=5000
+adNimbusRegistryContainerPort=5000

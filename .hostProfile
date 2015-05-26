@@ -235,7 +235,7 @@ function dlogin() {
 function checkhostwebcontent() {
     hostIpAddr=`findHostIpAddr`
 
-    nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
+    nginxIpAddr=`cat "$adNimbusTmp"/nginx.ipaddr`
     nginxHostName=`ipAddrToMachineName $nginxIpAddr`
     coreosNginxPorts=`findmappedports $nginxGuestOsPort $nginxHostName`
 
@@ -281,7 +281,7 @@ function checkhostnetlocation() {
     #   Useful to try other netlocation from other machines
     case "$#" in
     0)
-        nginxIpAddr=`cat "$adNimbusDir"/nginx/nginx.ipaddr`
+        nginxIpAddr=`cat "$adNimbusTmp"/nginx.ipaddr`
         nginxHostName=`ipAddrToMachineName $nginxIpAddr`
         coreosNginxPorts=`findmappedports $nginxGuestOsPort $nginxHostName`
         ;;
@@ -304,6 +304,11 @@ function checkhostnetlocation() {
     done
 }
 
+function resetAdNimbusDir() {
+    export adNimbusDir="$VAGRANT_CWD"
+    export adNimbusTmp="$adNimbusDir/tmp"
+}
+
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
@@ -317,11 +322,11 @@ fi
 if test ! -d "$VAGRANT_CWD"
 then
     echo The environment variable "$VAGRANT_CWD" does not point to a valid folder, please set VAGRANT_CWD to your ad-nimbus folder and resource this .profile
-    echo export VAGRANT_CWD=$VAGRANT_CWD
+    echo export VAGRANT_CWD="$VAGRANT_CWD"
     echo Exiting.
     return
 else
-    export adNimbusDir=$VAGRANT_CWD
+    resetAdNimbusDir
 fi
 
 maxMindFolder="$adNimbusDir/netlocation/src/data/maxMind"
@@ -357,6 +362,9 @@ export VAGRANT_DOTFILE_PATH="$adNimbusDir/.vagrant"
 
 # Pull in the common functions, etc.
 . "$adNimbusDir"/.sharedProfile
+
+# Sourcing the adNimbusEnvironment will overwrite these variables
+resetAdNimbusDir
 
 cdad
 

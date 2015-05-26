@@ -19,12 +19,12 @@ function sendSignal() {
     /usr/bin/docker kill -s $1 ${confdService}_$instance
 }
 
+# TODO: Is this needed: -e "HOST_IP=${COREOS_PUBLIC_IPV4}" \
 function start() {
     /usr/bin/docker run \
         --name=${confdDockerTag}_${instance} \
         --rm=true \
-        -e "HOST_IP=${COREOS_PUBLIC_IPV4}" \
-        -p ${COREOS_PUBLIC_IPV4}:${confdGuestOsPort}:${confdContainerPort} \
+        -p ${COREOS_PRIVATE_IPV4}:${confdGuestOsPort}:${confdContainerPort} \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${confdService}:${confdDir} \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
@@ -36,7 +36,7 @@ function start() {
         --log-level=debug \
         -watch=true \
         -interval=${confdCheckInterval} \
-        -node=${COREOS_PUBLIC_IPV4}:${consulHttpPort}
+        -node=${COREOS_PRIVATE_IPV4}:${consulHttpPort}
 }
 
 function stop() {

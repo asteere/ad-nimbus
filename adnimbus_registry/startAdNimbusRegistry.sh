@@ -31,10 +31,6 @@ function setup() {
     set +a
 }
 
-function cdad() {
-    cd "$adNimbusDir"
-}
-
 function loadImage() {
     svcsToLoad=$1
     if test "$svcsToLoad" == ""
@@ -54,7 +50,7 @@ function loadImage() {
         then
             pullImage $$DOCKER_REGISTRY/$svc:$svc
         else
-            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker load -i "$imageTarGz"
+            echo `date`'('$COREOS_PRIVATE_IPV4'):' $myDocker load -i "$imageTarGz"
             $myDocker load -i "$imageTarGz"
         fi
     done
@@ -84,7 +80,7 @@ function pullImage() {
     image=$1
 
     echo 'Pulling from dockerhub. Did you forget to save/export the containers after fstartall finished?'
-    echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker pull $image
+    echo `date`'('$COREOS_PRIVATE_IPV4'):' $myDocker pull $image
     $myDocker pull $image
 }
 
@@ -103,7 +99,7 @@ function saveImage() {
         if test "`doWeCreateTarFile $imageTar`" == "true"
         then
             image=$DOCKER_REGISTRY/$svc:$svc
-            echo `date`: $myDocker save -o $imageTar $image
+            echo `date`'('$COREOS_PRIVATE_IPV4'):' $myDocker save -o $imageTar $image
             $myDocker save -o $imageTar $image
             gzip -f $imageTar
         fi
@@ -113,14 +109,10 @@ function saveImage() {
 }
 
 function saveAllImages() {
-    ipRoot=`getIpRoot`
-
     touch "$timestampFile" 
 
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveImage all
     done
 
@@ -145,7 +137,7 @@ function importContainer() {
         then
             pullImage $image
         else
-            echo `date`'('$COREOS_PUBLIC_IPV4'):' cat $imageTarGz '|' $myDocker import - $image
+            echo `date`'('$COREOS_PRIVATE_IPV4'):' cat $imageTarGz '|' $myDocker import - $image
             cat $imageTarGz | $myDocker import - $image
         fi
     done
@@ -177,7 +169,7 @@ function exportContainer() {
         if test "`doWeCreateTarFile $imageTar`" == "true"
         then
             $myDocker commit $svc_instance $DOCKER_REGISTRY/$svc:$svc
-            echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker export $svc_instance '>' "$imageTar"
+            echo `date`'('$COREOS_PRIVATE_IPV4'):' $myDocker export $svc_instance '>' "$imageTar"
             $myDocker export $svc_instance > "$imageTar"
             gzip -f $imageTar
         fi
@@ -187,14 +179,10 @@ function exportContainer() {
 }
 
 function exportAllContainers() {
-    ipRoot=`getIpRoot`
-
     touch "$timestampFile"
 
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh exportContainer all
     done
    
@@ -205,7 +193,7 @@ function exportAllContainers() {
 
 function listDockerImages() {
     echo
-    echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker images
+    echo `date`'('$COREOS_PRIVATE_IPV4'):' $myDocker images
     $myDocker images
 }
 
@@ -226,7 +214,7 @@ function clearImages() {
     for imageId in $imagesToClear
     do
         echo $svc
-        echo `date`'('$COREOS_PUBLIC_IPV4'):' $myDocker rmi -f $imageId
+        echo `date`'('$COREOS_PRIVATE_IPV4'):' $myDocker rmi -f $imageId
         $myDocker rmi -f $imageId
     done
 
@@ -234,12 +222,8 @@ function clearImages() {
 }
 
 function clearAllImages() {
-    ipRoot=`getIpRoot`
-
-    instanceRange={1..$numInstances}
-    for i in `eval echo $instanceRange`
+    for ipAddr in `getIpAddrsInCluster`
     do 
-        ipAddr=${ipRoot}.10$i
         ssh $ipAddr "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh clearImages all
     done
 }
@@ -250,7 +234,7 @@ function startDocker() {
     $myDocker run \
         --rm \
         --name=${adNimbusRegistryService}_$instance \
-        -p ${COREOS_PUBLIC_IPV4}:${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
+        -p ${COREOS_PRIVATE_IPV4}:${adNimbusRegistryGuestOsPort}:${adNimbusRegistryContainerPort} \
         --volume=$adNimbusDir/registry-dev:/registry-dev \
         ${DOCKER_REGISTRY}/${adNimbusRegistryService}:${adNimbusRegistryDockerTag}
 }

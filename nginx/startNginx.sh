@@ -31,7 +31,7 @@ function setup() {
 }
 
 function startDocker() {
-    echo ${COREOS_PUBLIC_IPV4} > "$nginxCoreosIpAddrFile"
+    echo ${COREOS_PRIVATE_IPV4} > "$nginxCoreosIpAddrFile"
 
     if test -d "$webContentCoreosDir"
     then
@@ -107,7 +107,7 @@ function stop() {
     docker kill -s KILL ${nginxService}_$instance
 }
 
-set -x 
+#set -x 
 
 while getopts "ad" opt; do
   case "$opt" in

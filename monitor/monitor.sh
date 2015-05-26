@@ -1,8 +1,9 @@
 #!/bin/bash 
 
-# Provide access to the variables that the services use
 
-export curlOptions='-s -L'
+function getIpAddrsInCluster() {
+    fleetctl list-machines -fields=ip --no-legend
+}
 
 function setup() {
     set -a
@@ -14,6 +15,12 @@ function setup() {
             . "$envFile"
         fi
     done 
+
+    # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
+    consulIpAddr=`getIpAddrsInCluster | awk '{print $1}'`
+
+    curlOptions='-s -L'
+
     set +a
 
     rm -f "$adNimbusTmp"/checkCpu*
@@ -25,13 +32,9 @@ function runCurlGet() {
 }
 
 function runCurlPut() {
-    useIpAddr=$consulIpAddr
-    if test "$1" != ""
-    then
-        useIpAddr=$1
-    fi
-
+    useIpAddr=$1
     url=$2
+
     dataFileArg=""
     if test "$3" != ""
     then
@@ -468,8 +471,7 @@ function runOtherChecks() {
         echo The number of consul nodes $numConsulNodes equals the number of etcd nodes $numEtcdNodes
     fi
 
-    # Check that the consul nodes haven't splintered
-    echo
+    # TODO: Check that the consul nodes haven't splintered
 
     # Check that there is a raft leader
     echo
@@ -598,9 +600,6 @@ function harvestStoppedServices() {
         awk '{print $1}'`
 }
 
-# TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
-export consulIpAddr=172.17.8.101
-
 runAll=false
 
 resetClock
@@ -619,6 +618,12 @@ shift $((OPTIND-1))
 
 functionName=$1
 shift 1
+
+instance=$2
+if test "$instance" == ""
+then
+    instance=1
+fi
 
 if test "$functionName" == "start"
 then
