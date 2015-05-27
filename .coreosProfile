@@ -564,7 +564,7 @@ then
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
-export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
+export numInstances=`grep '$num_instances=' "$adNimbusDir/config.rb" | sed 's/.*=//'`
 
 if test -f /etc/environment
 then

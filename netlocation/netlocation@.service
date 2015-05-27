@@ -23,11 +23,11 @@ ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
 ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${netLocationService}
 ExecStartPre=/usr/bin/docker ps -a
 
-ExecStart=/home/core/share/netlocation/startNetlocation.sh start %i
+ExecStart=/home/core/share/netlocation/startNetLocation.sh start %i
 
-ExecStartPost=/home/core/share/netlocation/startNetlocation.sh registerNetLocation %i
+ExecStartPost=/home/core/share/netlocation/startNetLocation.sh registerNetLocation %i
 
-ExecStop=/home/core/share/netlocation/startNetlocation.sh cleanup %i
+ExecStop=/home/core/share/netlocation/startNetLocation.sh cleanup %i
 
 #Restart=always
 

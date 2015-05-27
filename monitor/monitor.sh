@@ -17,7 +17,7 @@ function setup() {
     done 
 
     # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
-    consulIpAddr=`getIpAddrsInCluster | awk '{print $1}'`
+    consulIpAddr=`getIpAddrsInCluster | head -1`
 
     curlOptions='-s -L'
 
