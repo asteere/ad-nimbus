@@ -120,7 +120,7 @@ function buildcontainer() {
 
     rundocker push $dockerTag
 
-    cd -
+    cd - > /dev/null
 
 }
 
@@ -307,6 +307,22 @@ function checkhostnetlocation() {
 function resetAdNimbusDir() {
     export adNimbusDir="$VAGRANT_CWD"
     export adNimbusTmp="$adNimbusDir/tmp"
+}
+
+function cptoawsesb() {
+    clitoawsesb cp --recursive 
+}
+
+function synctoawsesb() {
+    clitoawsesb sync --delete
+}
+
+function clitoawsesb() {
+    cmd=$1
+    opt1=$2
+
+    # This was helpful: http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+    aws s3 $cmd $adNimbusDir s3://ad-nimbus-bucket/ad-nimbus $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
 }
 
 if test "$VAGRANT_CWD" == ""
