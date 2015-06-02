@@ -55,7 +55,7 @@ write_files:
       restrict 127.0.0.1
       restrict [::1]
   - path: /home/core/.bash_profile
-    permissions: 0644
+    permissions: 644
     owner: core
     content: |
       #!/bin/bash
@@ -64,3 +64,11 @@ write_files:
       then
            . ~/share/.coreosProfile
       fi
+  - path: /root/.passwd-3fs
+    permissions: 600
+    owner: root
+    content: |
+      $AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY
+runcmd:
+    - mkdir -p /tmp/cache
+    - mkdir -p /tmp/s3mnt/ad-nimbus-bucket

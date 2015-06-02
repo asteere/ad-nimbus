@@ -106,9 +106,9 @@ function start() {
 }
 
 function startDockerBash() {
-    dockerCmd="/bin/bash $*"
+    dockerCmd="bash $*"
 
-    interactive="-it"
+    interactive="-it --privileged"
 
     startDocker
 }
@@ -164,6 +164,10 @@ functionName=$1
 shift 1
 
 instance=$1
+if test "$instance" == ""
+then
+    instance=1
+fi
 containerName=${netLocationDockerTag}_$instance 
 
 setup
