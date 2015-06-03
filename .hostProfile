@@ -51,8 +51,21 @@ function d() {
 function vup() {
     cdad
     echo `date`: Creating cluster from Vagrantfile in folder `pwd`
-    #VAGRANT_LOG=info 
-    vagrant up 2>&1 | tee /tmp/vup.log
+
+    case "$1" in
+    info|debug|warn|error)
+        dbgLevel=$1
+        export VAGRANT_LOG=$dbgLevel;
+        shift 1
+        ;;
+    *)
+        ;;
+    esac
+
+    vagrant up $* 2>&1 | tee /tmp/vup.log
+
+    unset VAGRANT_LOG
+
     date
 }
 

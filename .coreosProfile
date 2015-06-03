@@ -566,6 +566,9 @@ fi
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
 export numInstances=`grep '$num_instances=' "$adNimbusDir/config.rb" | sed 's/.*=//'`
 
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$adNimbusDir/s3fs/lib64"
+PATH=$PATH:"$adNimbusDir/s3fs"
+
 if test -f /etc/environment
 then
     set -a 
