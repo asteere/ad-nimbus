@@ -1,5 +1,4 @@
-#!/bin/bash 
-
+#! /bin/bash 
 
 function getIpAddrsInCluster() {
     fleetctl list-machines -fields=ip --no-legend
@@ -655,5 +654,5 @@ then
     exit 0
 fi
 
-return 2>/dev/null || echo Usage: `basename $0` '[start|stop]' && exit 1
+return 2>/dev/null || echo Usage: `basename $0` 'functionName functionArgs' && exit 1
 

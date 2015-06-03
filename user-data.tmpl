@@ -33,23 +33,6 @@ coreos:
 
       [Install]
       WantedBy=sockets.target
-  - name: s3fs.service
-    command: start
-    enable: true
-    content: |
-      [Unit]
-      Description=mount S3 ad-nimbus bucket
-
-      [Service]
-      Type=oneshot
-
-      ExecStartPre=/usr/bin/mkdir -p /tmp/s3fs_cache
-      ExecStartPre=/usr/bin/chmod 777 /tmp/s3fs_cache
-      ExecStartPre=/usr/bin/mkdir -p /tmp/s3fs_mnt
-      ExecStartPre=/usr/bin/chmod 777 /tmp/s3fs_mnt
-      ExecStart=/home/core/share/s3fs/startS3fs.sh start
-      ExecStartPost=/usr/bin/ls -l /tmp/s3fs_mnt
-
 # Note: write_files is executed before the coreos section
 write_files:
   - path: /etc/ntp.conf
@@ -82,8 +65,3 @@ write_files:
       then
            . ~/share/.coreosProfile
       fi
-  - path: /root/.passwd-3fs
-    permissions: 600
-    owner: root
-    content: |
-      $AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY

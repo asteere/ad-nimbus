@@ -12,12 +12,6 @@ if File.exists?('user-data.tmpl') && ( ARGV[0].eql?('up') )
   data = YAML.load(IO.readlines('user-data.tmpl')[1..-1].join)
   data['coreos']['etcd']['discovery'] = token
 
-  # Adding the newline causes this entry to be a YAML block
-  passwdContents = ENV['AWS_ACCESS_KEY_ID'] + ":" + ENV['AWS_SECRET_ACCESS_KEY'] + "\n";
-
-  passwd3fsFileHash = data['write_files'].find{|hash| hash["path"] == "/root/.passwd-3fs"};
-  passwd3fsFileHash["content"] = passwdContents;
-
   yaml = YAML.dump(data)
   File.open('user-data', 'w') { |file| file.write("#cloud-config\n\n#{yaml}") }
 end
