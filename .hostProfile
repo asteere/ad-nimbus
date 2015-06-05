@@ -411,4 +411,9 @@ then
     export webContentDir="$HOME/Research/WebContent"
 fi
 
+if test -x `which aws`
+then
+    complete -C aws_completer aws
+fi
+
 

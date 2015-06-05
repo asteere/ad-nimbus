@@ -550,17 +550,21 @@ then
     }
 fi
 
-ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
-if test ! $? == 0
-then
-    # if this gets read in by .bashrc there can't be any output
-    ssh-add insecure_private_key > /dev/null 2>&1
-fi
-
 # Setup fleetctl status
 if test "$SSH_AUTH_SOCK" == ""
 then
     eval $(ssh-agent)
+fi
+
+insecurePrivateKeyFile="$adNimbusDir/insecure_private_key"
+if test -f "$insecurePrivateKeyFile" 
+then
+    ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
+    if test ! $? == 0
+    then
+        # if this gets read in by .bashrc there can't be any output
+        ssh-add "$insecurePrivateKey" > /dev/null 2>&1
+    fi
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
