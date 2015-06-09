@@ -109,11 +109,15 @@ function createtar() {
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log --exclude consul/data --exclude '.vagrant' \
-        --exclude '.git' --exclude src --exclude=.vagrant.d \
-        --exclude nginx/.nginx.conf* --exclude registrySaves --exclude registry-dev \
-        --exclude nginx/nginx_error.log --exclude nginx/nginx_access.log --exclude tmp \
-        $daProject
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+        --exclude='.vagrant' \
+        --exclude=.vagrant.d \
+        --exclude='.git' \
+        --exclude=nginx/.nginx.conf* \
+        --exclude=registrySaves \
+        --exclude=registry-dev \
+        --exclude=tmp \
+        $daProject ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
 
     pwd
     ls -l $gzFile

@@ -338,6 +338,49 @@ function clitoawsesb() {
     aws s3 $cmd $adNimbusDir s3://ad-nimbus-bucket/ad-nimbus $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
 }
 
+function awsupdateuserdata() {
+    numInstances=3
+    newToken=`curl -L -s https://discovery.etcd.io/new?size=$numInstances`
+    echo Using discovery token $newToken
+    sed "s|https://discovery.etcd.io/.*|$newToken|" user-data.tmpl > user-data-aws
+}
+
+function awsstartcluster() {
+    awsupdateuserdata
+
+    imageId=ami-a51b2395 # ami-b1251d81
+    numInstances=3
+    aws ec2 run-instances --image-id $imageId --count $numInstances --instance-type t2.micro --key-name AdNimbusUsWest2 --security-groups AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 --user-data "file://$adNimbusDir/user-data-aws"
+
+    if test $? != 0
+    then
+        exit $?
+    fi
+
+    sleep 5
+
+    awsgetclusteripaddress
+}
+
+function awsgetclusteripaddress() {
+    aws ec2 describe-instances | grep PublicIpAddress | sed -e 's/.*": "/ssh core@/' -e 's/",//'
+}
+
+function awscreatesecuritygroup() {
+    aws ec2 create-security-group --group-name "AdNimbusSecurityGroup" 
+}
+
+function awsterminatecluster() {
+    instanceIds=`aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" | \
+         grep InstanceId | sed -e 's/.*": "//' -e 's/",//'`
+
+    for instanceId in $instanceIds
+    do
+        aws ec2 terminate-instances --instance-ids $instanceIds
+    done
+
+}
+
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
@@ -414,6 +457,14 @@ fi
 if test -x `which aws`
 then
     complete -C aws_completer aws
+fi
+
+which go 2>&1 > /dev/null
+if test "$?" == "0"
+then
+    export GOPATH="$adNimbusDir/netlocation-go"
+    export GOROOT=/usr/local/opt/go/libexec/bin
+    PATH=$PATH:$GOPATH/bin:$GOROOT
 fi
 
 
