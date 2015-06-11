@@ -338,17 +338,53 @@ function clitoawsesb() {
     aws s3 $cmd $adNimbusDir s3://ad-nimbus-bucket/ad-nimbus $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
 }
 
+function getimageid() {
+    export imageId=ami-a51b2395 # ami-b1251d81
+}
+
+function awsvalidatetemplate() {
+    templateFile=$1
+    if test "$1" == ""
+    then
+        echo Error: Missing full path to template file
+        templateFile=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json
+    fi
+    aws cloudformation validate-template --template-body file://$templateFile
+}
+
+function awscreatestack() {
+    if test "$1" == ""
+    then
+        echo Error: Usage: awscreatestack takeNumber 
+        return 1
+    fi
+    stackName="AdNimbus-Take"$1"-CoreOS-stable"
+    getimageid
+    newToken=`curl -s https://discovery.etcd.io/new`
+    
+    stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
+    sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' ${stackTemplate}.tmpl > $stackTemplate
+    echo diff ${stackTemplate}.tmpl $stackTemplate
+    diff ${stackTemplate}.tmpl $stackTemplate
+    echo
+    awsvalidatetemplate $stackTemplate
+    echo
+    echo aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate
+    aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate 
+    # TODO: Is this option useful: --generate-cli-skeleton 
+}
+
 function awsupdateuserdata() {
     numInstances=3
     newToken=`curl -L -s https://discovery.etcd.io/new?size=$numInstances`
     echo Using discovery token $newToken
-    sed "s|https://discovery.etcd.io/.*|$newToken|" user-data.tmpl > user-data-aws
+    sed "s|https://discovery.etcd.io/.*|$newToken|" user-data.tmpl > aws/user-data-aws
 }
 
 function awsstartcluster() {
     awsupdateuserdata
 
-    imageId=ami-a51b2395 # ami-b1251d81
+    getimageid
     numInstances=3
     aws ec2 run-instances --image-id $imageId --count $numInstances --instance-type t2.micro --key-name AdNimbusUsWest2 --security-groups AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 --user-data "file://$adNimbusDir/user-data-aws"
 
