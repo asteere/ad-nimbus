@@ -35,7 +35,7 @@ coreos:
 # Note: write_files is executed before the coreos section
 write_files:
   - path: /etc/ntp.conf
-    permissions: 0644
+    permissions: 644
     owner: root
     content: |
       # Allow for large adjustments in time

@@ -19,10 +19,6 @@ EnvironmentFile=/home/core/share/adNimbusEnvironment
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStartPre=-/usr/bin/docker rm -f ${netLocationDockerTag}_%i
-ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${netLocationService}
-ExecStartPre=/usr/bin/docker ps -a
-
 ExecStart=/home/core/share/netlocation/startNetLocation.sh start %i
 
 ExecStartPost=/home/core/share/netlocation/startNetLocation.sh registerNetLocation %i

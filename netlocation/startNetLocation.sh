@@ -85,7 +85,29 @@ function registerService() {
     "$adNimbusDir"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PRIVATE_IPV4} $port
 }
 
+function loadContainer() {
+    /usr/bin/docker rm -f ${containerName}
+    /home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${netLocationService}
+    /usr/bin/docker ps -a
+}
+
 function startDocker() {
+    loadContainer
+
+    if test "$UseGo" == ""
+    then
+        startDockerNodeJs
+    else
+        startDockerGo 
+    fi
+}
+
+function startDockerGo() {
+    echo "IMPLMENT ME"
+}
+
+function startDockerNodeJs() {
+
     # From: https://github.com/coreos/fleet/issues/612
     #    -p 49170:8080 \
     # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.

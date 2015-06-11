@@ -18,7 +18,7 @@
     "CoreOSServerLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId" : "ami-a51b2395",
+        "ImageId" : "ami-63497253",
         "InstanceType": "t2.micro",
         "KeyName": "AdNimbusUsWest2",
         "SecurityGroups": ["AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5"],
@@ -30,7 +30,7 @@
                 "  update:\n",
                 "    reboot-strategy: 'off'\n",
                 "  etcd:\n",
-                "    discovery: https://discovery.etcd.io/9164888c9791bbfa95365d7fc23c3743\n",
+                "    discovery: https://discovery.etcd.io/6ecd92eff4a01a5816f6c088500bc899\n",
                 "    addr: $private_ipv4:4001\n",
                 "    peer-addr: $private_ipv4:7001\n",
                 "    peer-election-timeout: 2000\n",
