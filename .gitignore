@@ -43,4 +43,6 @@ nginx/.nginx.conf*
 registrySaves
 registry-dev
 
+# temporary files used by aws scripts
 aws/stackName
+aws/imageIdFile
