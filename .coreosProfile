@@ -566,14 +566,12 @@ then
   /usr/bin/tty > /dev/null && ssh-add
 fi
 
-if test -f "~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem" 
+if test -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
 then
-    ssh-add -L | grep AdNimbusPrivateIPKeyPairUsWest2 2>&1 > /dev/null
-    if test ! $? == 0
-    then
-        # if this gets read in by .bashrc there can't be any output
-        echo ssh-add "~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem" > /dev/null 2>&1
-    fi
+    # TODO: Are we adding this too many times?
+    # if this gets read in by .bashrc there can't be any output
+    ssh-add "~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem" > /dev/null 2>&1
+    ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'

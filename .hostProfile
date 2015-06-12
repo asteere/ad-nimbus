@@ -339,15 +339,39 @@ function clitoawsesb() {
 }
 
 function awssetup() {
-    export imageId=ami-e73a01d7
+    imageIdFile="$adNimbusDir/aws/imageIdFile"
+    
+    # us-west2 coreos HVM image: ami-c5162ef5 
+    export imageId=`cat $imageIdFile`
+
     export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
-    stackNameFile=$adNimbusDir/aws/stackName
+
+    export stackNameFile=$adNimbusDir/aws/stackName
     if test ! -f "$stackNameFile"
     then
         timestamp=`date +"%Y%m%d-%H%M"`
         echo "AdNimbus-${imageId}-${timestamp}-CoreOS-stable" > "$stackNameFile"
     fi 
     export stackName=`cat $stackNameFile`
+}
+
+function awscreateimage() {
+    if test "$1" == ""
+    then
+        echo Error: To take the image, I need the private ip address of the instance
+        return 1
+    fi
+
+    awssetup
+
+    instanceId=`aws ec2 describe-instances --filters "Name=private-ip-address,Values=$1" | \
+        grep InstanceId | \
+        sed -e 's/.*: "//' -e 's/",//'`
+
+    timestamp=`date +"%Y%m%d-%H%M"`
+    aws ec2 create-image --instance-id $instanceId --name "AdNimbus_${timestamp}" --description "TBD" | tee /tmp/imageId
+
+    grep ImageId /tmp/imageId | sed -e 's/.*: "//' -e 's/"//' > "$imageIdFile"
 }
 
 function awsvalidatetemplate() {
@@ -361,7 +385,7 @@ function awsvalidatetemplate() {
 }
 
 function awscreatestack() {
-    rm -f "$adNimbusDir/aws/stackName"
+    rm -f "$stackNameFile"
 
     awssetup
 
@@ -393,7 +417,7 @@ function awscreatestack() {
     awsdescribeinstances
 
     echo
-    awsgetipaddresses
+    mywatch.sh -n 2 awsgetipaddresses
 }
 
 function awsdeletestack() {
@@ -453,7 +477,26 @@ function awsdescribeinstances() {
 }
 
 function awsgetipaddresses() {
-    awsdescribeinstances | grep PublicIpAddress | sed -e 's/.*": "/ssh core@/' -e 's/",//'
+    awsdescribeinstances | grep PublicIpAddress | sed -e 's/.*": "//' -e 's/",//'
+}
+
+function awsopenssh() {
+    rm -f /tmp/ssh_*
+    for awsIpAddr in `awsgetipaddresses`
+    do  
+        sshScript=/tmp/ssh_$awsIpAddr
+        printf '#! /bin/bash\n    ssh core@'$awsIpAddr' -t \n bash -l\n' > $sshScript
+        chmod +x $sshScript
+        open -a Terminal.app $sshScript
+    done
+}
+
+function awsscpadnimbus() {
+    tarFile="`ls -t $adNimbusDir/../ad*tar.gz | head -1`"
+    for awsIpAddr in `awsgetipaddresses` 
+    do 
+        scp "$tarFile" core@$awsIpAddr:/home/core
+    done
 }
 
 function awscreatesecuritygroup() {
@@ -483,6 +526,7 @@ function awscreatetar() {
         --exclude=registrySaves \
         --exclude=registry-dev \
         --exclude=netlocation/go \
+        --exclude=netlocation/src/node_modules \
         --exclude=tmp \
         $daProject ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
 
