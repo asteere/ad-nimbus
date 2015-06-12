@@ -550,20 +550,29 @@ then
     }
 fi
 
+# Setup ssh
+# http://docstore.mik.ua/orelly/networking_2ndEd/ssh/ch06_03.htm
 # Setup fleetctl status
-if test "$SSH_AUTH_SOCK" == ""
+trap '
+  test -n "$SSH_AGENT_PID"  && eval `ssh-agent -k` ;
+  test -n "$SSH2_AGENT_PID" && kill $SSH2_AGENT_PID
+' 0
+
+# If no agent is running and we have a terminal, run ssh-agent and ssh-add.
+# (For SSH2, change this to use SSH2_AUTH_SOCK, ssh-agent2 and ssh-add2.)
+if [ "$SSH_AUTH_SOCK" = "" ]
 then
-    eval $(ssh-agent)
+  eval `ssh-agent`
+  /usr/bin/tty > /dev/null && ssh-add
 fi
 
-insecurePrivateKeyFile="$adNimbusDir/insecure_private_key"
-if test -f "$insecurePrivateKeyFile" 
+if test -f "~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem" 
 then
-    ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
+    ssh-add -L | grep AdNimbusPrivateIPKeyPairUsWest2 2>&1 > /dev/null
     if test ! $? == 0
     then
         # if this gets read in by .bashrc there can't be any output
-        ssh-add "$insecurePrivateKey" > /dev/null 2>&1
+        echo ssh-add "~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem" > /dev/null 2>&1
     fi
 fi
 

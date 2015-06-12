@@ -38,9 +38,9 @@ def vm_cpus
 end
 
 Vagrant.configure("2") do |config|
-    # always use Vagrants insecure key
+    # TODO: Get insert_key = true (default) to work
     config.ssh.insert_key = false
-    config.ssh.forward_agent = true;
+    config.ssh.forward_agent = true
 
     config.vm.box = "coreos-%s" % $update_channel
 

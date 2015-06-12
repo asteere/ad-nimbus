@@ -42,3 +42,5 @@ nginx/.nginx.conf*
 # Docker registry for this project
 registrySaves
 registry-dev
+
+aws/stackName

@@ -8,10 +8,7 @@ sudo rm -rf /etc/machine-id
 sudo rm -rf /var/lib/etcd/*
 sudo rm -rf /run/systemd/system/etcd.service.d
 sudo rm -rf /run/systemd/system/fleet.service.d
-
-ssh-agent
 ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys
-ssh-add ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
 
 echo Save the image
 

@@ -341,14 +341,13 @@ function clitoawsesb() {
 function awssetup() {
     export imageId=ami-e73a01d7
     export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
-    if test ! -f "$adNimbusDir/aws/stackName"
+    stackNameFile=$adNimbusDir/aws/stackName
+    if test ! -f "$stackNameFile"
     then
         timestamp=`date +"%Y%m%d-%H%M"`
-        export stackName="AdNimbus-${imageId}-${timestamp}-CoreOS-stable"
-        cat $stackName > "$adNimbusDir/aws/stackName
-    fi
-    export stackName="AdNimbus-${imageId}-CoreOS-stable"
-
+        echo "AdNimbus-${imageId}-${timestamp}-CoreOS-stable" > "$stackNameFile"
+    fi 
+    export stackName=`cat $stackNameFile`
 }
 
 function awsvalidatetemplate() {
@@ -554,7 +553,6 @@ resetAdNimbusDir
 cdad
 
 # Make vagrant's key accessible to coreos 
-vagrantInsecureKey=insecure_private_key
 if test -f "$VAGRANT_HOME"/insecure_private_key
 then
     cp "$VAGRANT_HOME"/insecure_private_key .

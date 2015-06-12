@@ -94,7 +94,7 @@ function loadContainer() {
 function startDocker() {
     loadContainer
 
-    if test "$UseGo" == ""
+    if test "$usenetlocationgo" == ""
     then
         startDockerNodeJs
     else
