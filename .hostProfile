@@ -338,8 +338,17 @@ function clitoawsesb() {
     aws s3 $cmd $adNimbusDir s3://ad-nimbus-bucket/ad-nimbus $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
 }
 
-function getimageid() {
-    export imageId=ami-a51b2395 # ami-b1251d81
+function awssetup() {
+    export imageId=ami-e73a01d7
+    export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
+    if test ! -f "$adNimbusDir/aws/stackName"
+    then
+        timestamp=`date +"%Y%m%d-%H%M"`
+        export stackName="AdNimbus-${imageId}-${timestamp}-CoreOS-stable"
+        cat $stackName > "$adNimbusDir/aws/stackName
+    fi
+    export stackName="AdNimbus-${imageId}-CoreOS-stable"
+
 }
 
 function awsvalidatetemplate() {
@@ -353,25 +362,66 @@ function awsvalidatetemplate() {
 }
 
 function awscreatestack() {
-    if test "$1" == ""
-    then
-        echo Error: Usage: awscreatestack takeNumber 
-        return 1
-    fi
-    stackName="AdNimbus-Take"$1"-CoreOS-stable"
-    getimageid
+    rm -f "$adNimbusDir/aws/stackName"
+
+    awssetup
+
     newToken=`curl -s https://discovery.etcd.io/new`
-    
+   
+    allowSshFrom=`curl -s ifconfig.me`/32
+    echo Is IpAddress $allowSshFrom in the security group $securityGroup, otherwise ssh will get \"Connection refused\"
+
     stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
-    sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' ${stackTemplate}.tmpl > $stackTemplate
-    echo diff ${stackTemplate}.tmpl $stackTemplate
-    diff ${stackTemplate}.tmpl $stackTemplate
+    sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' \
+        -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' \
+        ${stackTemplate}.tmpl > $stackTemplate
+
+    #echo diff ${stackTemplate}.tmpl $stackTemplate
+    #diff ${stackTemplate}.tmpl $stackTemplate
+
     echo
     awsvalidatetemplate $stackTemplate
     echo
     echo aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate
     aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate 
     # TODO: Is this option useful: --generate-cli-skeleton 
+    if test "$?" != "0"
+    then
+        return 1
+    fi
+
+    echo
+    awsdescribeinstances
+
+    echo
+    awsgetipaddresses
+}
+
+function awsdeletestack() {
+    awssetup
+
+    #stackId=`awsdescribestack | grep StackId | sed -e "s/.*$stackName.//" -e 's/",//'`
+    echo aws cloudformation delete-stack --stack-name $stackName
+    aws cloudformation delete-stack --stack-name $stackName
+
+    awsdescribeinstances
+}
+
+function awsdescribestack() {
+    awssetup
+
+    aws cloudformation describe-stacks --stack-name $stackName
+}
+
+
+function awsdescribestackevents() {
+    awssetup
+
+    aws cloudformation describe-stack-events --stack-name $stackName
+}
+
+function awsliststacks() {
+    aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
 }
 
 function awsupdateuserdata() {
@@ -382,11 +432,12 @@ function awsupdateuserdata() {
 }
 
 function awsstartcluster() {
+    awssetup
+
     awsupdateuserdata
 
-    getimageid
     numInstances=3
-    aws ec2 run-instances --image-id $imageId --count $numInstances --instance-type t2.micro --key-name AdNimbusUsWest2 --security-groups AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 --user-data "file://$adNimbusDir/user-data-aws"
+    aws ec2 run-instances --image-id $imageId --count $numInstances --instance-type t2.micro --key-name AdNimbusUsWest2 --security-groups $securityGroup --user-data "file://$adNimbusDir/aws/user-data-aws"
 
     if test $? != 0
     then
@@ -395,11 +446,15 @@ function awsstartcluster() {
 
     sleep 5
 
-    awsgetclusteripaddress
+    awsgetipaddresses
 }
 
-function awsgetclusteripaddress() {
-    aws ec2 describe-instances | grep PublicIpAddress | sed -e 's/.*": "/ssh core@/' -e 's/",//'
+function awsdescribeinstances() {
+    aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" 
+}
+
+function awsgetipaddresses() {
+    awsdescribeinstances | grep PublicIpAddress | sed -e 's/.*": "/ssh core@/' -e 's/",//'
 }
 
 function awscreatesecuritygroup() {
@@ -407,8 +462,7 @@ function awscreatesecuritygroup() {
 }
 
 function awsterminatecluster() {
-    instanceIds=`aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" | \
-         grep InstanceId | sed -e 's/.*": "//' -e 's/",//'`
+    instanceIds=`awsdescribeinstances | grep InstanceId | sed -e 's/.*": "//' -e 's/",//'`
 
     for instanceId in $instanceIds
     do
@@ -416,6 +470,29 @@ function awsterminatecluster() {
     done
 
 }
+
+function awscreatetar() {
+    cd "$adNimbusDir"/..
+
+    daProject=ad-nimbus
+    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+        --exclude='.vagrant' \
+        --exclude=.vagrant.d \
+        --exclude='.git' \
+        --exclude=nginx/.nginx.conf* \
+        --exclude=registrySaves \
+        --exclude=registry-dev \
+        --exclude=netlocation/go \
+        --exclude=tmp \
+        $daProject ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
+
+    pwd
+    ls -l $gzFile
+
+    cd -
+}
+
 
 if test "$VAGRANT_CWD" == ""
 then

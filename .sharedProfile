@@ -117,7 +117,7 @@ function createtar() {
         --exclude=registrySaves \
         --exclude=registry-dev \
         --exclude=tmp \
-        $daProject ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
+        $daProject 
 
     pwd
     ls -l $gzFile

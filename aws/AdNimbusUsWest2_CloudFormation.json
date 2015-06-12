@@ -18,7 +18,7 @@
     "CoreOSServerLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId" : "ami-a51b2395",
+        "ImageId" : "ami-e73a01d7",
         "InstanceType": "t2.micro",
         "KeyName": "AdNimbusUsWest2",
         "SecurityGroups": ["AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5"],
@@ -30,7 +30,7 @@
                 "  update:\n",
                 "    reboot-strategy: 'off'\n",
                 "  etcd:\n",
-                "    discovery: https://discovery.etcd.io/9164888c9791bbfa95365d7fc23c3743\n",
+                "    discovery: https://discovery.etcd.io/b28a611b0518945bd08bad915a03c6b3\n",
                 "    addr: $private_ipv4:4001\n",
                 "    peer-addr: $private_ipv4:7001\n",
                 "    peer-election-timeout: 2000\n",
@@ -83,7 +83,10 @@
                 "      if test -f ~/share/.coreosProfile\n",
                 "      then\n",
                 "           . ~/share/.coreosProfile\n",
-                "      fi\n"
+                "      fi\n\n",
+                "      ssh-agent;\n",
+                "      ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys;\n",
+                "      ssh-add ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem;\n"
             ] ]
           }
         }
