@@ -24,7 +24,9 @@
 # Custome TCP Rule: 1024-65535 with Source - security group id
 # Custome UDP Rule: 8000-8500 with Source - security group id
 
-# Create the adnimbus tar and put it on the image
+# On the Mac: Create the adnimbus tar and put it on all the running images
+awscreatetar
+awsscpadnimbus
 
 # For each instance ip address listed above
 # ssh into each instance, copy and paste the following commands
@@ -35,11 +37,17 @@ rm -rf Users
 . share/.coreosProfile
 cd ~/.ssh 
 ssh-keygen -y -f AdNimbusPrivateIPKeyPairUsWest2.pem >> authorized_keys 
+
+# Stop services and remove files to simulate a pre-first-time boot so coreos will create the right files
 sudo systemctl stop fleet
 sudo systemctl stop etcd
 sudo rm -r /etc/machine-id
 sudo rm -r /var/lib/etcd/*
 sudo rm -r /run/systemd/system/etcd.service.d
 sudo rm -r /run/systemd/system/fleet.service.d
-echo Save the image
-echo To shutdown the instances, delete the Auto Scaling Group defined for this stack. Otherwise, more instances will be created.
+
+# From the Mac: Save the image
+awscreateimage
+
+# To shutdown the instances, delete the Auto Scaling Group defined for this stack. Otherwise, more instances will be created.
+awsdeletestack

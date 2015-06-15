@@ -358,7 +358,7 @@ function awssetup() {
 function awscreateimage() {
     if test "$1" == ""
     then
-        echo Error: To take the image, I need the private ip address of the instance
+        echo Error: To create the image, I need the private ip address of the instance
         return 1
     fi
 
@@ -389,21 +389,33 @@ function awscreatestack() {
 
     awssetup
 
-    newToken=`curl -s https://discovery.etcd.io/new`
-   
     allowSshFrom=`curl -s ifconfig.me`/32
-    echo Is IpAddress $allowSshFrom in the security group $securityGroup, otherwise ssh will get \"Connection refused\"
+    echo If ssh to public IP address gets \"Connection refused\", is $allowSshFrom in the security group $securityGroup 
+
+    echo
+    newToken=`curl -s https://discovery.etcd.io/new`
+    echo newToken $newToken
+    curlNewToken $newToken
 
     stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
     sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' \
         -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' \
         ${stackTemplate}.tmpl > $stackTemplate
 
-    #echo diff ${stackTemplate}.tmpl $stackTemplate
-    #diff ${stackTemplate}.tmpl $stackTemplate
+    echo
+    echo diff ${stackTemplate}.tmpl $stackTemplate
+    diff ${stackTemplate}.tmpl $stackTemplate
 
     echo
     awsvalidatetemplate $stackTemplate
+
+    grep "$newToken" $stackTemplate 2>&1 > /dev/null
+    if test "$?" != 0
+    then
+        echo Error: new token insertion failed
+        return 1
+    fi
+
     echo
     echo aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate
     aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate 
@@ -417,17 +429,31 @@ function awscreatestack() {
     awsdescribeinstances
 
     echo
-    mywatch.sh -n 2 awsgetipaddresses
+    mywatch.sh -g -n 2 awsgetipaddresses
+
+    awsgetipaddresses
+
+    curlNewToken $newToken
+}
+
+function curlNewToken() {
+    curl -s "$1" | jq "."
 }
 
 function awsdeletestack() {
     awssetup
 
+    if  test "$1" != ""
+    then
+        stackName=$1
+    else
+        awssetup
+        rm -f $"stackNameFile"
+    fi
+
     #stackId=`awsdescribestack | grep StackId | sed -e "s/.*$stackName.//" -e 's/",//'`
     echo aws cloudformation delete-stack --stack-name $stackName
     aws cloudformation delete-stack --stack-name $stackName
-
-    awsdescribeinstances
 }
 
 function awsdescribestack() {
@@ -478,6 +504,10 @@ function awsdescribeinstances() {
 
 function awsgetipaddresses() {
     awsdescribeinstances | grep PublicIpAddress | sed -e 's/.*": "//' -e 's/",//'
+}
+
+function awsgetprivateipaddresses() {
+    awsdescribeinstances | grep '"PrivateIpAddress": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' | sort -u
 }
 
 function awsopenssh() {
