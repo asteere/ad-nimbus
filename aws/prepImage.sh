@@ -30,7 +30,7 @@ awsscpadnimbus
 
 # For each instance ip address listed above
 # ssh into each instance, copy and paste the following commands
-tar zxvf ad-nimbus*tar.gz
+tar zxvf aws_ad-nimbus*tar.gz
 mv ad-nimbus share 
 mv Users/troppus/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem ~/.ssh 
 rm -rf Users

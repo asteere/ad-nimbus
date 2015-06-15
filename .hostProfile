@@ -384,13 +384,17 @@ function awsvalidatetemplate() {
     aws cloudformation validate-template --template-body file://$templateFile
 }
 
+function myip() {
+    curl -s ifconfig.me
+}
+
 function awscreatestack() {
     rm -f "$stackNameFile"
 
     awssetup
 
-    allowSshFrom=`curl -s ifconfig.me`/32
-    echo If ssh to public IP address gets \"Connection refused\", is $allowSshFrom in the security group $securityGroup 
+    allowSshFrom=`myip/32`
+    echo If ssh to public IP address gets \"Connection refused\", is $allowSshFrom in the security group $securityGroup inbound rules
 
     echo
     newToken=`curl -s https://discovery.etcd.io/new`
@@ -507,7 +511,7 @@ function awsgetipaddresses() {
 }
 
 function awsgetprivateipaddresses() {
-    awsdescribeinstances | grep '"PrivateIpAddress": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' | sort -u
+    awsdescribeinstances | grep '"PrivateIpAddress": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' 
 }
 
 function awsopenssh() {
@@ -522,7 +526,7 @@ function awsopenssh() {
 }
 
 function awsscpadnimbus() {
-    tarFile="`ls -t $adNimbusDir/../ad*tar.gz | head -1`"
+    tarFile="`ls -t $adNimbusDir/../aws_*tar.gz | head -1`"
     for awsIpAddr in `awsgetipaddresses` 
     do 
         scp "$tarFile" core@$awsIpAddr:/home/core
@@ -547,7 +551,7 @@ function awscreatetar() {
     cd "$adNimbusDir"/..
 
     daProject=ad-nimbus
-    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    gzFile=aws_${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
     tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
         --exclude='.vagrant' \
         --exclude=.vagrant.d \
@@ -627,9 +631,17 @@ resetAdNimbusDir
 cdad
 
 # Make vagrant's key accessible to coreos 
-if test -f "$VAGRANT_HOME"/insecure_private_key
+# TODO: Is this needed with port forwarding?
+if test "$VAGRANT_HOME"/insecure_private_key -nt "$adNimbusDir"/insecure_private_key
 then
-    cp "$VAGRANT_HOME"/insecure_private_key .
+    cp "$VAGRANT_HOME"/insecure_private_key "$adNimbusDir"
+fi
+
+# Port forwarding should have been setup. This means that identities known to the host machine are known to the guests.
+ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
+if test "$?" != 0
+then
+    ssh-add "$VAGRANT_HOME"/insecure_private_key
 fi
 
 # If you want to make the WebContent Research available clone the repo into ~/Research/WebContent. 
