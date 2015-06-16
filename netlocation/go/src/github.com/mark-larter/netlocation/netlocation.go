@@ -31,7 +31,7 @@ func main() {
 	// Start http server.
 	fmt.Println("Starting http server")
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":49160", nil)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {

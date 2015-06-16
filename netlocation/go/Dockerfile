@@ -1,6 +1,10 @@
-FROM golang:1.3-onbuild
+FROM centos
 
-MAINTAINER someone@echostar.com
+MAINTAINER mark.larter@echostar.com
 
+COPY ./bin /netlocation/bin
+COPY ./data /data
+
+CMD ["/netlocation/bin/netlocation"]
 
 

@@ -1,0 +1,5 @@
+# Stuff for Docker to ignore
+Dockerfile
+.dockerignore
+pkg/darwin_amd64
+src
