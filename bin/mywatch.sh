@@ -24,6 +24,6 @@ cmd=`basename $0`
 Usage="$cmd watchArguments scriptFunctionAlias arguments"
 
 #set -x
-echo $*
+#echo $*
 
 watch $*

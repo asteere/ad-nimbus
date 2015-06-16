@@ -104,27 +104,6 @@ function sourceadnimbusenvironment() {
     set +a
 }
 
-function createtar() {
-    cd "$adNimbusDir"/..
-
-    daProject=ad-nimbus
-    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
-        --exclude='.vagrant' \
-        --exclude=.vagrant.d \
-        --exclude='.git' \
-        --exclude=nginx/.nginx.conf* \
-        --exclude=registrySaves \
-        --exclude=registry-dev \
-        --exclude=tmp \
-        $daProject 
-
-    pwd
-    ls -l $gzFile
-
-    cd -
-}
-
 function removenginxconftempfiles() {
     echo Removing confd created '.nginx.conf*' temp files
 

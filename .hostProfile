@@ -339,14 +339,11 @@ function clitoawsesb() {
 }
 
 function awssetup() {
-    imageIdFile="$adNimbusDir/aws/imageIdFile"
-    
     # us-west2 coreos HVM image: ami-c5162ef5 
     export imageId=`cat $imageIdFile`
 
     export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
 
-    export stackNameFile=$adNimbusDir/aws/stackName
     if test ! -f "$stackNameFile"
     then
         timestamp=`date +"%Y%m%d-%H%M"`
@@ -389,11 +386,33 @@ function myip() {
 }
 
 function awscreatestack() {
-    rm -f "$stackNameFile"
+    # Args: imageId numInstances
+    if test ! -f "$stackNameFile"
+    then
+        rm "$stackNameFile"
+        if test "$?" != 0
+        then
+            echo Error: Unable to delete file $stackNameFile
+            return 1
+        fi
+    fi
+
+    if [[ "$1" == "ami-"* ]]
+    then
+        echo $1 > "$imageIdFile"
+        shift 1
+    fi
+
+    if [[ "$1" == [0-9]* ]]
+    then
+        numInstances=$1
+    else
+        numInstances=3
+    fi
 
     awssetup
 
-    allowSshFrom=`myip/32`
+    allowSshFrom=`myip`/32
     echo If ssh to public IP address gets \"Connection refused\", is $allowSshFrom in the security group $securityGroup inbound rules
 
     echo
@@ -404,6 +423,7 @@ function awscreatestack() {
     stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
     sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' \
         -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' \
+        -e 's/\(.*DesiredCapacity.: .\)./\1'$numInstances'/' \
         ${stackTemplate}.tmpl > $stackTemplate
 
     echo
@@ -547,6 +567,7 @@ function awsterminatecluster() {
 
 }
 
+# Use this function when you want to create a tar file of the artifacts needed for an aws image
 function awscreatetar() {
     cd "$adNimbusDir"/..
 
@@ -570,6 +591,29 @@ function awscreatetar() {
     cd -
 }
 
+# Use this function when you want to create a tar file of the useful source code
+function createtar() {
+    cd "$adNimbusDir"/..
+
+    daProject=ad-nimbus
+    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+        --exclude='.vagrant' \
+        --exclude=.vagrant.d \
+        --exclude='.git' \
+        --exclude=nginx/.nginx.conf* \
+        --exclude=registrySaves \
+        --exclude=registry-dev \
+        --exclude=tmp \
+        --exclude=netlocation/src/node_modules \
+        --exclude=netlocation/src/maxMind \
+        $daProject 
+
+    pwd
+    ls -l $gzFile
+
+    cd -
+}
 
 if test "$VAGRANT_CWD" == ""
 then
@@ -590,6 +634,10 @@ then
 else
     resetAdNimbusDir
 fi
+
+# AWS folders
+export imageIdFile="$adNimbusDir/aws/imageIdFile"
+export stackNameFile=$adNimbusDir/aws/stackName
 
 maxMindFolder="$adNimbusDir/netlocation/src/data/maxMind"
 for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
