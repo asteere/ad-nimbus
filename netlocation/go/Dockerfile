@@ -1,6 +1,6 @@
-FROM centos
+FROM asteere/empty:empty
 
-MAINTAINER mark.larter@echostar.com
+MAINTAINER drink.kooldaid@echostar.com
 
 COPY ./bin /netlocation/bin
 COPY ./data /data
