@@ -18,7 +18,7 @@ ls –l bin
 # Create the scratch or empty container
 tar cv --files-from /dev/null | docker import - asteere/empty:empty
 
-# Build the scratch or empty container and add statically linked netlocation.go
+# Build the empty container and add statically linked netlocation.go
 docker build -t asteere/netlocation-go:netlocation-go .
 
 # Save the docker image to a tar file so that Vagrant can see it or you can scp it to AWS

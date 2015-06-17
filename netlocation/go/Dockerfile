@@ -1,6 +1,6 @@
 FROM asteere/empty:empty
 
-MAINTAINER drink.kooldaid@echostar.com
+MAINTAINER drink.koolaid@echostar.com
 
 COPY ./bin /netlocation/bin
 COPY ./data /data
