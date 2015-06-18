@@ -689,7 +689,7 @@ fi
 ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
 if test "$?" != 0
 then
-    ssh-add "$VAGRANT_HOME"/insecure_private_key
+    ssh-add "$VAGRANT_HOME"/insecure_private_key 2>&1 > /dev/null
 fi
 
 # If you want to make the WebContent Research available clone the repo into ~/Research/WebContent. 

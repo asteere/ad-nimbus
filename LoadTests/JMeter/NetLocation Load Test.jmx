@@ -27,6 +27,16 @@
             <stringProp name="Argument.value"></stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
+          <elementProp name="numThreads" elementType="Argument">
+            <stringProp name="Argument.name">numThreads</stringProp>
+            <stringProp name="Argument.value">1</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="numLoops" elementType="Argument">
+            <stringProp name="Argument.name">numLoops</stringProp>
+            <stringProp name="Argument.value">2</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
         </collectionProp>
       </elementProp>
       <stringProp name="TestPlan.user_define_classpath"></stringProp>
@@ -36,10 +46,10 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">100</stringProp>
+          <stringProp name="LoopController.loops">${numLoops}</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">250</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${numThreads}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
         <longProp name="ThreadGroup.start_time">1422653874000</longProp>
         <longProp name="ThreadGroup.end_time">1422653874000</longProp>
         <boolProp name="ThreadGroup.scheduler">false</boolProp>

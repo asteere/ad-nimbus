@@ -1,12 +1,15 @@
 #! /bin/bash
 
+# Note: Conversion error com.thoughtworks.xstream.converters.ConversionException: is generally due to missing jmeter plugin libs
+# From: http://stackoverflow.com/questions/25759977/conversion-error-when-opening-jmx-file-from-jmeter-2-7-in-jmeter-2-11
+
 os=`uname -s`
 if test "$os" = "Darwin"
 then
-    JMETER_HOME=/usr/local/Cellar/jmeter/2.12/libexec
+    JMETER_HOME=/usr/local/Cellar/jmeter/2.13/libexec
     JMETER_TESTS="$VAGRANT_CWD/LoadTests/JMeter"
 else
-    JMETER_HOME=/d/3rdparty/apache-jmeter-2.12
+    JMETER_HOME=/d/3rdparty/apache-jmeter-2.13
     JMETER_TESTS=/d/raptor/Automation/JMeter/913_LoadTests
 fi
 
@@ -23,6 +26,7 @@ else
     export JMETER_EXEC=jmeter
     export TEST_FILE="${JMETER_TESTS}"/NetLocation\ Load\ Test.jmx 
     # -Jremote_hosts=127.0.0.1,10.188.189.136
-    "${JMETER_HOME}/bin/${JMETER_EXEC}" -t "${TEST_FILE}" $* 2>&1 > jmeterSummaryResults.log & 
+    export JVM_ARGS="-Djava.rmi.server.hostname=localhost"
+    "${JMETER_HOME}/bin/${JMETER_EXEC}" -p jmeter.properties -Jserver.rmi.localport=50000 -Jclient.rmi.localport=60000 -Jremote_hosts=172.17.8.101 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeterSummaryResults.log & 
 fi
 
