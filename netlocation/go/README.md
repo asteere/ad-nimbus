@@ -13,7 +13,7 @@ cd netlocation/go
 docker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" -v "$PWD":/go -w /go golang:1.3-onbuild go install -a -ldflags '-a' github.com/mark-larter/netlocation
 
 # Validate that there is a new location
-ls –l bin
+ls l bin
 
 # Create the scratch or empty container
 tar cv --files-from /dev/null | docker import - asteere/empty:empty
