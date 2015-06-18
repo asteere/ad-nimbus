@@ -27,6 +27,6 @@ else
     export TEST_FILE="${JMETER_TESTS}"/NetLocation\ Load\ Test.jmx 
     # -Jremote_hosts=127.0.0.1,10.188.189.136
     export JVM_ARGS="-Djava.rmi.server.hostname=localhost"
-    "${JMETER_HOME}/bin/${JMETER_EXEC}" -p jmeter.properties -Jserver.rmi.localport=50000 -Jclient.rmi.localport=60000 -Jremote_hosts=172.17.8.101 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeterSummaryResults.log & 
+    "${JMETER_HOME}/bin/${JMETER_EXEC}" -Jserver.rmi.localport=50000 -Jclient.rmi.localport=60000 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeter_client_SummaryResults.log & 
 fi
 

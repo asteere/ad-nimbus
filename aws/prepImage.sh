@@ -30,6 +30,7 @@ sudo rm -r /etc/machine-id
 sudo rm -r /var/lib/etcd/*
 sudo rm -r /run/systemd/system/etcd.service.d
 sudo rm -r /run/systemd/system/fleet.service.d
+rm aws_ad-nimbus*tar.gz
 echo awscreateimage `ip addr | grep 'inet ' | grep eth0 | sed 's/.*inet \(.*\)\/.*brd.*/\1/'`
 
 # Copy the awscreateimage output line above and run it on the Mac. The line should look like the following:
