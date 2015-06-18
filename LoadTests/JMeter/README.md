@@ -21,7 +21,7 @@ gzip $adNimbusDir/registrySaves/$imageTag.tar
 # On mac: Make sure that ports 50000 and 1099 are forwarded in the Vagrantfile. 
 # TODO: Allow more than once vagrant instance to run jmeter server by forwarding consecutive ports 5000 and 1099 
 # in Vagrantfile so there is no conflict. Update runServer.sh to know which ports to use.
-v ssh core-01 -- -R 60000:localhost:60000 -o StrictHostKeyChecking=no
+v ssh core-01 -- -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=no
 ./runServer.sh
 
 # On AWS ec2: If you want to run the test suite on one instance with the output dumped to a file in the container
@@ -29,14 +29,16 @@ v ssh core-01 -- -R 60000:localhost:60000 -o StrictHostKeyChecking=no
 # Open port 50000 and 1099 on the instance
 cdad
 awsgetipaddresses
-scp registrySaves/jmeter-0.1.tar.gz core@<publicIpAddress>:/home/core
-ssh <publicIpAddress> -R 60000:localhost:60000 -o StrictHostKeyChecking=no core@<publicIpAddress>
+# For each instance you want to run JMeter
+scp registrySaves/$imageTag.tar.gz core@<publicIpAddress>:/home/core
+ssh -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=no core@<publicIpAddress>
 ./runServer.sh
 
 # Run the client
 # On Mac: 
 cdad
 cd LoadTests/JMeter
-# Update runjmeter.sh to set the public ip addresses of the remote servers
-./runjmeter.sh
+# Create comma separated list of remote JMeter server ip address 
+remoteHosts="-Jremote_hosts=1.2.3.4,5.6.7.8"
+./runjmeter.sh  $remoteHosts
 

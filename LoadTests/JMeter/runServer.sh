@@ -8,9 +8,7 @@ then
     return 1
 fi
 
-echo Did you start the ssh session with reverse tunnelling?
-echo vagrant ssh core-01 -- -R 60000:localhost:60000 -o ServerAliveInterval=60
-echo aws ec2: ssh -R 60000:localhost:60000 -o ServerAliveInterval=60 core@'<awsPublicIpAddress>'
+echo Did you start the ssh session with reverse tunnelling see README.md'?'
 
 # Run JMeter container on Vagrant/AWS coreos instance
 export repo=asteere
