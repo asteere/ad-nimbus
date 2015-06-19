@@ -31,7 +31,7 @@ fi
 # On Coreos/AWS: If you want to run the test suite on one instance with the output dumped to a file in the container
 export SERVER_PORT=1099
 export serverRmiLocalPort=50000
-export dockerPorts="-p $serverRmiLocalPort:$serverRmiLocalPort -p $SERVER_PORT:$SERVER_PORT"
+#export dockerPorts="-p $serverRmiLocalPort:$serverRmiLocalPort -p $SERVER_PORT:$SERVER_PORT"
 export jmeterArgs="-s -Jserver.rmi.localport=$serverRmiLocalPort -Djava.rmi.server.hostname=$COREOS_PUBLIC_IPV4 -Dserver_port=$SERVER_PORT"
 
 docker run $dockerPorts --net=host -e 'JVM-ARGS="-Xms12G -Xmx12G"' -i -t --rm -v $(pwd):/root $containerName bin/jmeter $jmeterArgs -l /root/jmeter_${COREOS_PUBLIC_IPV4}_Samples.log -j /root/jmeter_${COREOS_PUBLIC_IPV4}.log 

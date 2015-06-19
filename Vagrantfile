@@ -116,11 +116,7 @@ Vagrant.configure("2") do |config|
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
 
-            # JMeter server requires the following ports 
-            config.vm.network "forwarded_port", guest: 50000, host: 50000, auto_correct: true
-            config.vm.network "forwarded_port", guest: 1099, host: 1099, auto_correct: true
-
-            # TODO: For load testing purposes, allow the net location servers to be individually queried
+            # TODO: Uncomment if you need to access the net location servers from the host/web
             #config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             ["vmware_fusion", "vmware_workstation"].each do |vmware|

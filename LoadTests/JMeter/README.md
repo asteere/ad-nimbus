@@ -18,9 +18,6 @@ gzip $adNimbusDir/registrySaves/$imageTag.tar
 # To run JMeter in a remote setup
 # 1. Run the server(s)
 # Vagrant
-# On mac: Make sure that ports 50000 and 1099 are forwarded in the Vagrantfile. 
-# TODO: Allow more than once vagrant instance to run jmeter server by forwarding consecutive ports 5000 and 1099 
-# for each instance in the Vagrantfile and udate runServer.sh to know which ports to use.
 v ssh core-01 -- -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=no
 cdad
 cd LoadTests/JMeter
@@ -28,15 +25,17 @@ cd LoadTests/JMeter
 
 # On AWS ec2: If you want to run the test suite on one instance with the output dumped to a file in the container
 # Upload the jmeter tar.gz or push then pull dockerhub
-# Open port 50000 and 1099 on the instance
+# Open port 50000 and 1099 on the instance's security policy
 cdad
 awsgetipaddresses
 
 # For each instance you want to run JMeter
+# The scps are only required if the image doesn't have the latest versions
 scp "$adNimbusDir/registrySaves/$imageTag.tar.gz core@<publicIpAddress>:/home/core
 scp "$adNimbusDir/LoadTests/JMeter/runServer.sh core@<publicIpAddress>:/home/core
+
 ssh -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=no core@<publicIpAddress>
-docker load -i $imageTag.tar.gz
+
 ./runServer.sh
 
 # 2. Run the client
