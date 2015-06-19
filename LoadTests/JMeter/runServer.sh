@@ -36,7 +36,3 @@ export jmeterArgs="-s -Jserver.rmi.localport=$serverRmiLocalPort -Djava.rmi.serv
 
 docker run $dockerPorts --net=host -e 'JVM-ARGS="-Xms12G -Xmx12G"' -i -t --rm -v $(pwd):/root $containerName bin/jmeter $jmeterArgs -l /root/jmeter_${COREOS_PUBLIC_IPV4}_Samples.log -j /root/jmeter_${COREOS_PUBLIC_IPV4}.log 
 
-# Fails: Connection refused: export jmeterArgs="-s -Jserver.rmi.localport=$serverRmiLocalPort -Djava.rmi.server.hostname=$COREOS_PUBLIC_IPV4 -Dserver_port=$SERVER_PORT"
-# Fails: Connection refused: export jmeterArgs="-s -Jserver.rmi.localport=$serverRmiLocalPort -Djava.rmi.server.hostname=localhost -Dserver_port=$SERVER_PORT"
-
-# Fail: docker run --priviledged

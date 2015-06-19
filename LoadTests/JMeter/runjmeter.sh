@@ -31,11 +31,5 @@ else
     # From: https://rolfje.wordpress.com/2012/02/16/distributed-jmeter-through-vpn-and-ssl/
     #export JVM_ARGS="$JVM_ARGS -Djava.rmi.server.hostname=localhost"
 
-set -x
     "${JMETER_HOME}/bin/jmeter" -Djava.rmi.server.hostname=localhost -Jclient.rmi.localport=60000 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeter_client_SummaryResults.log & 
 fi
-
-
-
-    # FAILS: "${JMETER_HOME}/bin/jmeter" -Djava.rmi.server.hostname=localhost -Jclient.rmi.localport=60000 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeter_client_SummaryResults.log & 
-
