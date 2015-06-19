@@ -23,10 +23,19 @@ then
     export JMETER_EXEC=jmeter-server
     "${JMETER_HOME}/bin/${JMETER_EXEC}" &
 else
-    export JMETER_EXEC=jmeter
     export TEST_FILE="${JMETER_TESTS}"/NetLocation\ Load\ Test.jmx 
     # -Jremote_hosts=127.0.0.1,10.188.189.136
-    export JVM_ARGS="-Djava.rmi.server.hostname=localhost"
-    "${JMETER_HOME}/bin/${JMETER_EXEC}" -Jserver.rmi.localport=50000 -Jclient.rmi.localport=60000 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeter_client_SummaryResults.log & 
+
+    # Have jMeter tell the slaves to connect to “localhost:51000″ for delivering their results. 
+    # This of course ends up being tunneled back to your jMeter master machine.
+    # From: https://rolfje.wordpress.com/2012/02/16/distributed-jmeter-through-vpn-and-ssl/
+    #export JVM_ARGS="$JVM_ARGS -Djava.rmi.server.hostname=localhost"
+
+set -x
+    "${JMETER_HOME}/bin/jmeter" -Djava.rmi.server.hostname=localhost -Jclient.rmi.localport=60000 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeter_client_SummaryResults.log & 
 fi
+
+
+
+    # FAILS: "${JMETER_HOME}/bin/jmeter" -Djava.rmi.server.hostname=localhost -Jclient.rmi.localport=60000 -t "${TEST_FILE}" -l jmeter_client_Samples.log -j jmeter_client.log $* 2>&1 > jmeter_client_SummaryResults.log & 
 

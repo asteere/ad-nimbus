@@ -1,5 +1,5 @@
 # Instructions for updating and running JMeter in a container
-# FROM: https://registry.hub.docker.com/u/hauptmedia/jmeter/
+# From: https://registry.hub.docker.com/u/hauptmedia/jmeter/
 
 cdad
 cd LoadTests/JMeter
@@ -16,11 +16,11 @@ docker save -o $adNimbusDir/registrySaves/$imageTag.tar $containerName
 gzip $adNimbusDir/registrySaves/$imageTag.tar
 
 # To run JMeter in a remote setup
-# Run the server(s)
+# 1. Run the server(s)
 # Vagrant
 # On mac: Make sure that ports 50000 and 1099 are forwarded in the Vagrantfile. 
 # TODO: Allow more than once vagrant instance to run jmeter server by forwarding consecutive ports 5000 and 1099 
-# in Vagrantfile so there is no conflict. Update runServer.sh to know which ports to use.
+# for each instance in the Vagrantfile and udate runServer.sh to know which ports to use.
 v ssh core-01 -- -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=no
 ./runServer.sh
 
@@ -29,16 +29,19 @@ v ssh core-01 -- -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHos
 # Open port 50000 and 1099 on the instance
 cdad
 awsgetipaddresses
+
 # For each instance you want to run JMeter
-scp registrySaves/$imageTag.tar.gz core@<publicIpAddress>:/home/core
+scp "$adNimbusDir/registrySaves/$imageTag.tar.gz core@<publicIpAddress>:/home/core
+scp "$adNimbusDir/LoadTests/JMeter/runServer.sh core@<publicIpAddress>:/home/core
 ssh -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=no core@<publicIpAddress>
+docker load -i $imageTag.tar.gz
 ./runServer.sh
 
-# Run the client
+# 2. Run the client
 # On Mac: 
 cdad
 cd LoadTests/JMeter
 # Create comma separated list of remote JMeter server ip address 
-remoteHosts="-Jremote_hosts=1.2.3.4,5.6.7.8"
-./runjmeter.sh  $remoteHosts
+remote_hosts="-Jremote_hosts=1.2.3.4,5.6.7.8"
+./runjmeter.sh  $remote_hosts
 
