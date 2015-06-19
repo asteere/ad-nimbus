@@ -116,7 +116,7 @@ Vagrant.configure("2") do |config|
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
 
-            # JMeter server requires -Jserver.rmi.localport=50000 and -Dserver_port=1099 to be forwarded
+            # JMeter server requires the following ports 
             config.vm.network "forwarded_port", guest: 50000, host: 50000, auto_correct: true
             config.vm.network "forwarded_port", guest: 1099, host: 1099, auto_correct: true
 
