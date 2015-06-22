@@ -18,7 +18,7 @@ function setup() {
 
     set -a
         
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment 
+    for envFile in /etc/environment /home/core/ad-nimbus/adNimbusEnvironment 
     do  
         if test ! -f "$envFile"
         then
@@ -87,7 +87,7 @@ function registerService() {
 
 function loadContainer() {
     /usr/bin/docker rm -f ${containerName}
-    /home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${netLocationService}
+    /home/core/ad-nimbus/adnimbus_registry/startAdNimbusRegistry.sh startPre ${netLocationService}
     /usr/bin/docker ps -a
 }
 

@@ -517,21 +517,21 @@ function drmf() {
 function dockerbash() {
     cdad
 
-    echo NFS share $adNimbusDir will be located on /opt/share
+    echo NFS share $adNimbusDir will be located on /opt/ad-nimbus
 
-    docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
+    docker run -v $adNimbusDir:/opt/ad-nimbus -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
 
 if test "$HOME" != "/home/core" -a ! -d "/Users"
 then
     mkdir -p /home/core
-    echo Creating link from /home/core/share to `pwd`. If this is not the ad-nimbus root, please create the correct link.
-    ln -s `pwd` /home/core/share
+    echo Creating link from /home/core/ad-nimbus to `pwd`. If this is not the ad-nimbus root, please create the correct link.
+    ln -s `pwd` /home/core/ad-nimbus
 fi
 
-if test -d "/home/core/share"
+if test -d "/home/core/ad-nimbus"
 then
-    export adNimbusDir=/home/core/share
+    export adNimbusDir=/home/core/ad-nimbus
 
     . "$adNimbusDir"/.sharedProfile
 

@@ -14,8 +14,8 @@ then
     nginxDir=/opt/nginx
     tmpDir=/opt/tmp
 else
-    nginxDir=/home/core/share/nginx
-    tmpDir=/home/core/share/tmp
+    nginxDir=/home/core/ad-nimbus/nginx
+    tmpDir=/home/core/ad-nimbus/tmp
 fi
 nginxCidFile="$tmpDir"/nginx.cid
 

@@ -17,18 +17,12 @@ RUN yum install -y nginx
 ########################
 # TODO: Copy the WebContent Research project
 #COPY /Users/troppus/Research/WebContent /usr/share/nginx/html
+#######################
 
 RUN rm -v /etc/nginx/conf.d/default.conf
 RUN rm -v /etc/nginx/nginx.conf
-#RUN rm -v /etc/nginx/sites-enabled/default
 
 COPY content /usr/share/nginx/html
-
-# Make these folder accessible by ssh container
-VOLUME /usr/share
-
-EXPOSE 80
-EXPOSE 443
 
 # Don't start nginx, let fleetctl do it on coreos startup
 #CMD ["nginx", "-g", "daemon off;"]

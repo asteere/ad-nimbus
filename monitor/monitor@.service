@@ -4,12 +4,12 @@ Description=Work with consul to monitor services across the clusters. Precursor 
 [Service]
 # Allow access to environment variables.
 EnvironmentFile=/etc/environment
-EnvironmentFile=/home/core/share/adNimbusEnvironment
-EnvironmentFile=/home/core/share/monitor/monitorEnvironment
+EnvironmentFile=/home/core/ad-nimbus/adNimbusEnvironment
+EnvironmentFile=/home/core/ad-nimbus/monitor/monitorEnvironment
 
 User=core
 
-ExecStart=/home/core/share/monitor/monitor.sh start
+ExecStart=/home/core/ad-nimbus/monitor/monitor.sh start
 
-ExecStop=/home/core/share/monitor/monitor.sh stop
+ExecStop=/home/core/ad-nimbus/monitor/monitor.sh stop
 

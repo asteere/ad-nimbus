@@ -13,11 +13,11 @@ function setup() {
     fi
 
     . /etc/environment
-    . /home/core/share/adNimbusEnvironment
+    . /home/core/ad-nimbus/adNimbusEnvironment
     
     if [ -z $PS1 ]
     then
-        . /home/core/share/.coreosProfile
+        . "$adNimbusDir"/.coreosProfile
     fi
 
     registrySavesDir="$adNimbusDir/registrySaves"

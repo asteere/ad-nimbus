@@ -14,10 +14,10 @@ function calcOverallCpuPercent() {
 
 function updateMonitorDir() {
     # Enable the script to be run from coreos and docker
-    if test -d "/home/core/share/monitor"
+    if test -d "/home/core/ad-nimbus/monitor"
     then
-        monitorDir=/home/core/share/monitor
-        tmpDir=/home/core/share/tmp
+        monitorDir=/home/core/ad-nimbus/monitor
+        tmpDir=/home/core/ad-nimbus/tmp
     else
         monitorDir=/opt/monitor
         tmpDir=/opt/tmp

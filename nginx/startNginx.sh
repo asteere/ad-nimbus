@@ -11,7 +11,7 @@ function setup() {
 
     webContentDir=/opt/WebContent
 
-    . /home/core/share/adNimbusEnvironment
+    . /home/core/ad-nimbus/adNimbusEnvironment
 
     nginxCoreosDir="$adNimbusDir/nginx"
     nginxCoreosConfFile="$nginxCoreosDir/nginx.conf"

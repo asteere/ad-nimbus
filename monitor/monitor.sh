@@ -7,7 +7,7 @@ function getIpAddrsInCluster() {
 function setup() {
     set -a
 
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
+    for envFile in /etc/environment /home/core/ad-nimbus/adNimbusEnvironment /home/core/ad-nimbus/monitor/monitorEnvironment
     do
         if test -f "$envFile"
         then

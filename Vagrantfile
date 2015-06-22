@@ -134,7 +134,7 @@ Vagrant.configure("2") do |config|
             end
 
             # Enable NFS for sharing the host machine into the VM.
-            config.vm.synced_folder ".", "/home/core/share", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
+            config.vm.synced_folder ".", "/home/core/ad-nimbus", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
 
             # Load the WebContent Research project if available
             webContentDir = ENV['webContentDir']

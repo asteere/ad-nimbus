@@ -14,16 +14,16 @@ After=docker.service
 KillMode=none
 
 EnvironmentFile=/etc/environment
-EnvironmentFile=/home/core/share/adNimbusEnvironment
+EnvironmentFile=/home/core/ad-nimbus/adNimbusEnvironment
 
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
 
-ExecStart=/home/core/share/netlocation/startNetLocation.sh start %i
+ExecStart=/home/core/ad-nimbus/netlocation/startNetLocation.sh start %i
 
-ExecStartPost=/home/core/share/netlocation/startNetLocation.sh registerNetLocation %i
+ExecStartPost=/home/core/ad-nimbus/netlocation/startNetLocation.sh registerNetLocation %i
 
-ExecStop=/home/core/share/netlocation/startNetLocation.sh cleanup %i
+ExecStop=/home/core/ad-nimbus/netlocation/startNetLocation.sh cleanup %i
 
 #Restart=always
 

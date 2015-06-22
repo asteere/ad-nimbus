@@ -118,7 +118,7 @@ function buildcontainer() {
     svcTarGz="$svcTar.gz"
     if test -f "$svcTar"
     then
-        runDocker load -s $svcTarGz
+        rundocker load -i  svcTarGz
     fi
 
     # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
@@ -129,7 +129,7 @@ function buildcontainer() {
     fi
 
     rundocker save -o $svcTar $dockerTag
-    gzip $svcTar
+    gzip -f $svcTar
 
     rundocker push $dockerTag
 

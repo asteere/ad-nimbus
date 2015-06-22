@@ -5,7 +5,7 @@ echo `basename $0` args:$*:
 function setup() {
     set -a
     . /etc/environment
-    . /home/core/share/adNimbusEnvironment
+    . /home/core/ad-nimbus/adNimbusEnvironment
     set +a
 
     trap 'sendSignal SIGTERM' TERM

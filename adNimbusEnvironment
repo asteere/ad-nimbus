@@ -2,10 +2,11 @@ DOCKER_REGISTRY=asteere
 currentContainers="consul netlocation confd nginx" 
 #adnimbus_registry"
 
-adNimbusDir=/home/core/share
+# Can't use variables in fleetctl ENV files
+adNimbusDir=/home/core/ad-nimbus
 
 # shared tmp folder on coreos and docker
-adNimbusTmp=/home/core/share/tmp
+adNimbusTmp=/home/core/ad-nimbus/tmp
 tmpDir=/opt/tmp
 
 # etcd

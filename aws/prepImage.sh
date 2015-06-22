@@ -15,11 +15,10 @@ awsopenssh
 
 # On the AWS EC2 instance run the following:
 tar zxvf aws_ad-nimbus*tar.gz
-mv ad-nimbus share 
 mv Users/troppus/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem ~/.ssh 
 rm -rf Users
 ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys 
-. share/.coreosProfile
+. ad-nimbus/.coreosProfile
 echo Check if any of the commands fail'?'
 
 # Stop services and remove files to simulate a boot from a first-time image so coreos will create the right files

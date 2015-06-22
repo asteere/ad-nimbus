@@ -80,9 +80,9 @@
                 "    owner: core\n",
                 "    content: |\n",
                 "      #!/bin/bash\n\n",
-                "      if test -f ~/share/.coreosProfile\n",
+                "      if test -f ~/ad-nimbus/.coreosProfile\n",
                 "      then\n",
-                "           . ~/share/.coreosProfile\n",
+                "           . ~/ad-nimbus/.coreosProfile\n",
                 "      fi\n"
             ] ]
           }

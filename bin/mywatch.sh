@@ -11,7 +11,7 @@ function createScript() {
 }
 
 set -a
-if test -d "/home/core/share"
+if test -d "/home/core/ad-nimbus"
 then
     . "$adNimbusDir"/.coreosProfile
 else
