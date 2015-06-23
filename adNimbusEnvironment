@@ -29,6 +29,7 @@ consulDnsPort=8600
 consulDir=/opt/consul
 
 # netLocation
+netLocationImplementation=go
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation

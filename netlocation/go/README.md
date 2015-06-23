@@ -28,6 +28,4 @@ docker save -o $adNimbusDir/registrySaves/netlocation-go.tar asteere/netlocation
 gzip -f $adNimbusDir/registrySaves/netlocation-go.tar
 
 # On a Vagrant or AWS instance
-docker load -i $adNimbusDir/registrySaves/netlocation-go.tar.gz
-
-docker run -p 49160:49160 asteere/netlocation-go:netlocation-go
+"$adNimbusDir/startNetLocation.sh start 1

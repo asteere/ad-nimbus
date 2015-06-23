@@ -21,7 +21,7 @@ insecure_private_key
 
 # TODO: Is npm install of netlocation which requires express and maxmind saving them to netlocation/src/node_modules? 
 # TODO: Is there a better way to get nodejs running without writing node_modules
-netlocation/src/node_modules
+netlocation/nodejs/src/node_modules
 
 # Don't include maxmind stuff until we get our own repository for git and docker
 netlocation/src/data/*

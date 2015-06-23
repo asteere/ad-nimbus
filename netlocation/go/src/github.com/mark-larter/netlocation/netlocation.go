@@ -17,12 +17,12 @@ var dbGeo, dbIsp *maxminddb.Reader
 func main() {
 	// Set up MaxMind databases.
 	var err error
-	dbGeo, err = openDb("data/maxMind/GeoIP2-City.mmdb")
+	dbGeo, err = openDb("/data/maxMind/GeoIP2-City.mmdb")
 	if (err != nil || dbGeo == nil) {
   		log.Panic(err)
 	}
 	defer dbGeo.Close()
-	dbIsp, err = openDb("data/maxMind/GeoIP2-ISP.mmdb")
+	dbIsp, err = openDb("/data/maxMind/GeoIP2-ISP.mmdb")
 	if (err != nil || dbIsp == nil) {
   		log.Panic(err)
 	}
@@ -31,12 +31,13 @@ func main() {
 	// Start http server.
 	fmt.Println("Starting http server")
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":49160", nil)
+	http.ListenAndServe(":8080", nil)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	// Get specified IP address for geo-location lookup.
-	ipAddress := r.URL.Path[1:]
+    slicedUrl := strings.Split(r.URL.Path[1:], "/")
+	ipAddress := slicedUrl[len(slicedUrl)-1]
 
 	// If no IP address specified, get the requestor IP address.
 	if (len(ipAddress) == 0 || len(strings.TrimSpace(ipAddress)) == 0) {
@@ -62,7 +63,7 @@ func openDb(dbPath string) (*maxminddb.Reader, error) {
 }
 
 func getInfo(ipAddress string) (*NetLocation) {
-	fmt.Println(ipAddress)
+	fmt.Println("ipAddress: " + ipAddress)
 	netLocation := &NetLocation{
         IpAddress: ipAddress}
  	ip := net.ParseIP(ipAddress)

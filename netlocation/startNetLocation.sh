@@ -6,7 +6,7 @@
 # Upon termination remove the consul key, send the signal to docker
 
 echo "==================== `basename $0` started args:$*: ======================="
-
+set -x
 function setup() {
     echo `basename $0` in setup
 
@@ -32,6 +32,16 @@ function setup() {
     netLocationConsulValue=-1
     netLocationGuestOsPort=-1
 
+    if test "$netLocationImplementation" == "go"
+    then
+        dockerCmd="/netlocation/bin/netlocation"
+    else
+        dockerCmd="/src/startNpm.sh ${COREOS_PRIVATE_IPV4} $instance"
+    fi
+    svc=${netLocationService}-${netLocationImplementation}
+    dockerImage=$svc:${netLocationDockerTag}-${netLocationImplementation} 
+    dockerRepoImage=${DOCKER_REGISTRY}/$dockerImage
+
     set +a
 }
 
@@ -39,7 +49,7 @@ function setKeyValue() {
     key=$1
     value=$2
 
-    /usr/bin/curl -v -s -X PUT -d $value http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
+    curl -v -s -X PUT -d $value http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
     
     dumpConsulKeys
 }
@@ -47,13 +57,13 @@ function setKeyValue() {
 function removeKeyValue() {
     key=$1
 
-    /usr/bin/curl -v -s -X DELETE http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
+    curl -v -s -X DELETE http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
 
     dumpConsulKeys
 }
 
 function dumpConsulKeys() {
-    /usr/bin/curl -v -s -L -X GET http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv/?recurse
+    curl -v -s -L -X GET http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv/?recurse
 }
 
 function createNetLocationConsulKey() {
@@ -86,45 +96,31 @@ function registerService() {
 }
 
 function loadContainer() {
-    /usr/bin/docker rm -f ${containerName}
-    /home/core/ad-nimbus/adnimbus_registry/startAdNimbusRegistry.sh startPre ${netLocationService}
-    /usr/bin/docker ps -a
-}
-
-function startDocker() {
-    loadContainer
-
-    if test "$usenetlocationgo" == ""
-    then
-        startDockerNodeJs
-    else
-        startDockerGo 
-    fi
-}
-
-function startDockerGo() {
-    echo "IMPLMENT ME"
-}
-
-function startDockerNodeJs() {
-
-    # From: https://github.com/coreos/fleet/issues/612
-    #    -p 49170:8080 \
-    # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.
-    /usr/bin/docker run \
-        --name=${containerName} $interactive \
-        --rm=true \
-        -P \
-        --volume="$adNimbusDir"/${netLocationService}/src:/src \
-        --volume="$adNimbusTmp":${tmpDir} \
-        ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
-        $dockerCmd
+    docker rm -f ${containerName} > /dev/null 2>&1
+    $adNimbusDir/adnimbus_registry/startAdNimbusRegistry.sh startPre $svc
+    docker ps -a
 }
 
 function start() {
-    dockerCmd="/src/startNpm.sh ${COREOS_PRIVATE_IPV4} $instance"
+    loadContainer
 
     startDocker
+}
+
+function startDocker() {
+    # From: https://github.com/coreos/fleet/issues/612
+    #    -p 49170:8080 \
+    # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.
+    docker run \
+        --name=${containerName} $interactive \
+        --rm=true \
+        --expose=$netLocationContainerPort \
+        -P \
+        --volume="$adNimbusDir"/$netLocationService/$netLocationImplementation/src:/src \
+        --volume="$adNimbusDir"/$netLocationService/data:/data \
+        --volume="$adNimbusTmp":${tmpDir} \
+        $dockerRepoImage \
+        $dockerCmd
 }
 
 function startDockerBash() {
@@ -148,7 +144,7 @@ function cleanup() {
 
     docker kill -s $signal $containerName
 
-    docker rm -f ${containerName}
+    docker rm -f $containerName
 
     createNetLocationConsulKey $instance
 
@@ -173,7 +169,7 @@ function stop() {
         instance=$1
     fi
 
-    docker kill -s KILL ${netlocationService}_$instance
+    docker kill -s KILL $containerName
 }
 
 if test "$1" == "-d"
@@ -192,7 +188,7 @@ then
 else
     shift 1
 fi
-containerName=${netLocationDockerTag}_$instance 
+containerName=${netLocationService}_$instance 
 
 setup
 

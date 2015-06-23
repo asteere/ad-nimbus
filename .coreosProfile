@@ -218,7 +218,7 @@ function waitforcoreosdockertar() {
         echo Jobs still running: 
         jobs
         interval=10
-        echo $jobs | grep Stopped 2>&1 > /dev/null
+        echo $jobs | grep -q Stopped
         if test "$?" == 0
         then
             interval=5
@@ -389,7 +389,7 @@ function fstatus() {
             # User fleetctl journal instead
 
             f status $service 2>&1 > /tmp/status.out
-            grep 'Loaded' /tmp/status.out | grep 'not-found' 2>&1 > /dev/null
+            grep 'Loaded' /tmp/status.out | grep -q 'not-found'
             if test $? == 1
             then
                 cat /tmp/status.out
@@ -521,13 +521,6 @@ function dockerbash() {
 
     docker run -v $adNimbusDir:/opt/ad-nimbus -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
 }
-
-if test "$HOME" != "/home/core" -a ! -d "/Users"
-then
-    mkdir -p /home/core
-    echo Creating link from /home/core/ad-nimbus to `pwd`. If this is not the ad-nimbus root, please create the correct link.
-    ln -s `pwd` /home/core/ad-nimbus
-fi
 
 if test -d "/home/core/ad-nimbus"
 then

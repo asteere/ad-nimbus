@@ -1,10 +1,12 @@
 FROM asteere/empty:empty
 
-MAINTAINER drink.koolaid@echostar.com
+MAINTAINER hydrate.with.koolaid@echostar.com
 
 COPY ./bin /netlocation/bin
-COPY ./data /data
 
-CMD ["/netlocation/bin/netlocation"]
+# Don't copy in the proprietary maxmind files because the container will be pushed to dockerhub
+#COPY ./data /data
+
+#CMD ["/netlocation/bin/netlocation"]
 
 

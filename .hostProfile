@@ -78,37 +78,49 @@ function vssh() {
 }
 
 function buildall() {
-    buildconfd
-    buildnginx
-    buildnetlocation
-    buildconsul
-    builddevutils
-}
-
-function builddevutils() {
+    buildcontainer confd
+    buildcontainer nginx
+    buildcontainer netlocation nodejs
+    buildcontainer netlocation go
+    buildcontainer consul
     buildcontainer devutils
 }
 
-function buildconfd() {
-    buildcontainer confd
-}
+function prepnetlocation-go() {
+    emptyContainer=$DOCKER_REGISTRY/empty:empty
+    if test `d images | grep -c $DOCKER_REGISTRY/empty` -eq 0
+    then
+        tar cv --files-from /dev/null | docker import - $emptyContainer
+        docker push $emptyContainer
+    fi
 
-function buildconsul() {
-    buildcontainer consul
-}
-
-function buildnginx() {
-    buildcontainer nginx
-}
-
-function buildnetlocation() {
-    buildcontainer netlocation
+    # Build netlocation statically
+    docker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" \
+        -v "$PWD":/go \
+        -w /go golang:1.4-onbuild \
+        go install -a -installsuffix cgo -ldflags '-s' github.com/mark-larter/netlocation 
 }
 
 function buildcontainer() {
     svc=$1
+    svcDir=$svc
 
+    origDir=$PWD
     cdad
+
+    cd $1
+    if test "$2" != ""
+    then
+        cd $2
+        svc=${1}-${2}
+        if test "$2" == "go"
+        then
+            if ! prepnetlocation-go; then
+                echo Error compiling, exiting
+                return 1
+            fi
+        fi
+    fi
 
     echo Building docker container $svc
 
@@ -116,13 +128,14 @@ function buildcontainer() {
 
     svcTar="$adNimbusDir/registrySaves/$svc.tar"
     svcTarGz="$svcTar.gz"
-    if test -f "$svcTar"
+    if test -f "$svcTarGz"
     then
-        rundocker load -i  svcTarGz
+        rundocker load -i $svcTarGz
     fi
 
     # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
-    rundocker build --tag $dockerTag $svc 
+    # Docker is run from the parent directory of the folder with the Dockerfile
+    rundocker build --tag $dockerTag .
     if test ! $? == 0
     then
         return
@@ -133,8 +146,7 @@ function buildcontainer() {
 
     rundocker push $dockerTag
 
-    cd - > /dev/null
-
+    cd $origDir > /dev/null
 }
 
 function getlistofvms() {
@@ -221,7 +233,7 @@ function setupdocker() {
     then
         b2dstatus=`boot2docker status 2>&1`
         echo boot2docker current status: $b2dstatus
-        echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
+        echo $b2dstatus | grep -q "machine not exist"
         if test $? == 0
         then
             echo boot2docker init
@@ -433,7 +445,7 @@ function awscreatestack() {
     echo
     awsvalidatetemplate $stackTemplate
 
-    grep "$newToken" $stackTemplate 2>&1 > /dev/null
+    grep -q "$newToken" $stackTemplate 
     if test "$?" != 0
     then
         echo Error: new token insertion failed
@@ -577,6 +589,7 @@ function awscreatetar() {
         --exclude='.vagrant' \
         --exclude=.vagrant.d \
         --exclude='.git' \
+        --exclude='.nfs*' \
         --exclude=nginx/.nginx.conf* \
         --exclude=registrySaves \
         --exclude=registry-dev \
@@ -601,12 +614,14 @@ function createtar() {
         --exclude='.vagrant' \
         --exclude=.vagrant.d \
         --exclude='.git' \
+        --exclude='.nfs*' \
         --exclude=nginx/.nginx.conf* \
         --exclude=registrySaves \
         --exclude=registry-dev \
         --exclude=tmp \
-        --exclude=netlocation/src/node_modules \
-        --exclude=netlocation/src/maxMind \
+        --exclude=netlocation/nodejs/src/node_modules \
+        --exclude=netlocation/nodejs/src/data/maxMind \
+        --exclude=netlocation/go/data \
         $daProject 
 
     pwd
@@ -639,7 +654,7 @@ fi
 export imageIdFile="$adNimbusDir/aws/imageIdFile"
 export stackNameFile=$adNimbusDir/aws/stackName
 
-maxMindFolder="$adNimbusDir/netlocation/src/data/maxMind"
+maxMindFolder="$adNimbusDir/netlocation/data/maxMind"
 for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
 do
     if test ! -f "$maxMindFolder/$dataFile" 
@@ -686,7 +701,7 @@ then
 fi
 
 # Port forwarding should have been setup. This means that identities known to the host machine are known to the guests.
-ssh-add -L | grep insecure_private_key > /dev/null 2>&1 
+ssh-add -L | grep -q insecure_private_key
 if test "$?" != 0
 then
     ssh-add "$VAGRANT_HOME"/insecure_private_key > /dev/null 2>&1 
