@@ -10,4 +10,6 @@ Services are folder. Implementations.
 
 Block diagram - Firewall, Load Balancer, Reverse Proxy, Apps
 
+Use docker run --expose and -P rather than EXPOSE in the dockerfile as the two pieces of information are closer together (same start script file).
+
 

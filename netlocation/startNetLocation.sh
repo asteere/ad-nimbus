@@ -36,8 +36,9 @@ function setup() {
     then
         dockerCmd="/netlocation/bin/netlocation"
     else
-        dockerCmd="/src/startNpm.sh ${COREOS_PRIVATE_IPV4} $instance"
+        dockerCmd="/src/startNpm.sh"
     fi
+    dockerCmd="$dockerCmd ${COREOS_PRIVATE_IPV4} $instance"
     svc=${netLocationService}-${netLocationImplementation}
     dockerImage=$svc:${netLocationDockerTag}-${netLocationImplementation} 
     dockerRepoImage=${DOCKER_REGISTRY}/$dockerImage

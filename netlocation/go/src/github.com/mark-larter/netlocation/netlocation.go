@@ -1,6 +1,7 @@
 package main
 
 import (
+    "os"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,6 +9,9 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+    "io/ioutil"
+    "time"
+    "strconv"
 
 	"github.com/oschwald/maxminddb-golang"
 )
@@ -47,7 +51,37 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	netLocation := getInfo(ipAddress)
 	outInfo, _ := json.Marshal(netLocation)
+
+    simulateDelay();
+
 	fmt.Fprint(w, string(outInfo))
+}
+
+func simulateDelay() {
+    fmt.Println(os.Args)
+    hostAddress := os.Args[1]
+    instance := os.Args[2]
+    fmt.Println("Go instance", instance, "is running on", hostAddress)
+    pathArray := []string{"/opt/tmp/external/netlocation@", instance, ".service_", hostAddress, ".cfg"}
+    path := strings.Join(pathArray, "");
+    fmt.Println("Attempting to read file:", path);
+
+    file, err := ioutil.ReadFile(path)
+    if err != nil {
+        return
+    }
+
+    delayString := string(file)
+    delay, err := strconv.Atoi(delayString)
+    if err != nil {
+        fmt.Println(delayString, "is not an integer")
+        return
+    }
+
+    duration := time.Millisecond * time.Duration(delay)
+    fmt.Println("Delay this response by", duration, "mSecs. Date:", time.Now())
+
+    time.Sleep(duration)
 }
 
 func openDb(dbPath string) (*maxminddb.Reader, error) {

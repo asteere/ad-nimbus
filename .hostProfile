@@ -116,7 +116,6 @@ function buildcontainer() {
         if test "$2" == "go"
         then
             if ! prepnetlocation-go; then
-                echo Error compiling, exiting
                 return 1
             fi
         fi
