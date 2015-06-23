@@ -86,7 +86,7 @@ function buildall() {
     buildcontainer devutils
 }
 
-function prepnetlocation-go() {
+function prepnetlocationgo() {
     emptyContainer=$DOCKER_REGISTRY/empty:empty
     if test `d images | grep -c $DOCKER_REGISTRY/empty` -eq 0
     then
@@ -115,7 +115,7 @@ function buildcontainer() {
         svc=${1}-${2}
         if test "$2" == "go"
         then
-            if ! prepnetlocation-go; then
+            if ! prepnetlocationgo; then
                 return 1
             fi
         fi
