@@ -501,15 +501,7 @@ function drmf() {
     for ipAddr in `getIpAddrsInCluster`
     do 
         echo Checking for docker containers on $ipAddr
-        dockerContainers=`ssh $ipAddr docker ps -a 2>&1 | \
-            grep -v -e 'list of known hosts' -e NAMES | \
-            awk '{print $NF}'`
-
-        if test ! "$dockerContainers" == ""
-        then
-            echo Removing docker containers: $dockerContainers on $ipAddr
-            ssh $ipAddr docker rm -f $dockerContainers 
-        fi
+        ssh $ipAddr "docker ps -aq | xargs --no-run-if-empty docker rm -f"
     done
 }
 
