@@ -38,8 +38,8 @@ netLocationContainerPort=8080
 netLocationDir=/opt/netlocation
 netLocationTestUrl=/api/v1/netLocation/198.243.23.131
 netlocationRoot=NetLocation
-minNetLocationServices=1
-maxNetLocationServices=3
+minNetLocationServices=3
+maxNetLocationServices=6
 
 # nginx
 nginxService=nginx

@@ -52,7 +52,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	netLocation := getInfo(ipAddress)
 	outInfo, _ := json.Marshal(netLocation)
 
-    simulateDelay();
+    // simulateDelay();
 
 	fmt.Fprint(w, string(outInfo))
 }
