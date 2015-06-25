@@ -169,7 +169,7 @@ function createnetlocationdatacontainer() {
 
     buildscratchimage
 
-    rundocker ps | grep -q $netLocationDataContainer
+    rundocker ps -a | grep -q $netLocationDataContainer
     if test "$?" == 0
     then
         return 
