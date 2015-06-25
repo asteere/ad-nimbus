@@ -4,8 +4,7 @@
 # Andy's account with a security group that is properly defined.
 # On the Mac: 
 # Create one ec2 instance from the latest us-west-2 HVM coreos image.
-latestAmi=ami-c5162ef5  # latest Ami as of 6/15/2015
-latestAmi=`curl -s https://coreos.com/docs/running-coreos/cloud-providers/ec2/ | sed -e '1,/us-west-2/d' -e '/us-west-1/,$d' | grep launchAmi | tail -1 | sed 's/.*\(ami-.*\)<\/a.*/\1/'`
+latestAmi=ami-5d4d486d  # latest Ami as of 6/25/2015
 awscreatestack $latestAmi 1
 
 # Create the adnimbus tar, scp the tar file on a us-west2 coreos image and ssh to it
@@ -15,6 +14,7 @@ awsopenssh
 
 # On the AWS EC2 instance run the following:
 tar zxvf aws_ad-nimbus*tar.gz
+mv *tar.gz registrySaves
 mv Users/troppus/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem ~/.ssh 
 rm -rf Users
 ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys 

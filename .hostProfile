@@ -339,27 +339,65 @@ function resetAdNimbusDir() {
     export adNimbusTmp="$adNimbusDir/tmp"
 }
 
-function cptoawsesb() {
-    clitoawsesb cp --recursive 
+function awscpmactos3() {
+    awsmactos3 cp --recursive 
 }
 
-function synctoawsesb() {
-    clitoawsesb sync --delete
+function awssyncmactos3() {
+    awsmactos3 sync --delete
 }
 
-function clitoawsesb() {
+function awsmactos3() {
+    if test "$s3bucket" == ""
+    then
+        awssetup
+    fi
+
     cmd=$1
     opt1=$2
 
-    # This was helpful: http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
-    aws s3 $cmd $adNimbusDir s3://ad-nimbus-bucket/ad-nimbus $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
+    awsfiletransfer $cmd $adNimbusDir $s3bucket $opt1
 }
 
+function awscps3toinstance() {
+    awss3toinstance cp --recursive 
+}
+
+function awssyncmactos3() {
+    awss3toinstance sync --delete
+}
+
+function awss3toinstance() {
+    if test "$s3bucket" == ""
+    then
+        awssetup
+    fi
+
+    cmd=$1
+    opt1=$2
+
+    awsfiletransfer $cmd $s3bucket /home/core $opt1
+}
+
+function awsfiletransfer() {
+    cmd=$1
+    fromDir=$2
+    toDir=$3
+    opt1=$4
+
+    # This was helpful: http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+    aws s3 $cmd $fromDir $toDir $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
+}
+
+function awsvariables() {
+    export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
+    export s3bucket=s3://ad-nimbus-bucket/ad-nimbus
+}
+
+# All AWS variables that are dynamic
 function awssetup() {
     # us-west2 coreos HVM image: ami-c5162ef5 
     export imageId=`cat $imageIdFile`
-
-    export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
 
     if test ! -f "$stackNameFile"
     then
@@ -367,6 +405,7 @@ function awssetup() {
         echo "AdNimbus-${imageId}-${timestamp}-CoreOS-stable" > "$stackNameFile"
     fi 
     export stackName=`cat $stackNameFile`
+
 }
 
 function awscreateimage() {
@@ -470,9 +509,9 @@ function awscreatestack() {
     awsdescribeinstances
 
     echo
-    mywatch.sh -g -n 2 awsgetipaddresses
+    mywatch.sh -g -n 2 awsgetpublicipaddresses
 
-    awsgetipaddresses
+    awsgetpublicipaddresses
 
     curlNewToken $newToken
 }
@@ -518,7 +557,7 @@ function awsupdateuserdata() {
     numInstances=3
     newToken=`curl -L -s https://discovery.etcd.io/new?size=$numInstances`
     echo Using discovery token $newToken
-    sed "s|https://discovery.etcd.io/.*|$newToken|" user-data.tmpl > aws/user-data-aws
+    sed "s|https://discovery.etcd.io/.*|$newToken|" "$adNimbusDir"/user-data.tmpl > "$adNimbusDir"/aws/user-data-aws
 }
 
 function awsstartcluster() {
@@ -536,24 +575,29 @@ function awsstartcluster() {
 
     sleep 5
 
-    awsgetipaddresses
+    awsgetpublicipaddresses
 }
 
 function awsdescribeinstances() {
     aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" 
 }
 
-function awsgetipaddresses() {
-    awsdescribeinstances | grep PublicIpAddress | sed -e 's/.*": "//' -e 's/",//'
+function awsgetpublicipaddresses() {
+    awsgetipaddresses "PublicIpAddress"
 }
 
 function awsgetprivateipaddresses() {
-    awsdescribeinstances | grep '"PrivateIpAddress": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' 
+    awsgetipaddresses "PrivateIpAddress"
+}
+
+function awsgetipaddresses() {
+    awsdescribeinstances | grep '"'$1'": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' 
+
 }
 
 function awsopenssh() {
     rm -f /tmp/ssh_*
-    for awsIpAddr in `awsgetipaddresses`
+    for awsIpAddr in `awsgetpublicipaddresses`
     do  
         sshScript=/tmp/ssh_$awsIpAddr
         printf '#! /bin/bash\n    ssh core@'$awsIpAddr' -t \n bash -l\n' > $sshScript
@@ -564,9 +608,16 @@ function awsopenssh() {
 
 function awsscpadnimbus() {
     tarFile="`ls -t $adNimbusDir/../aws_*tar.gz | head -1`"
-    for awsIpAddr in `awsgetipaddresses` 
+    for awsIpAddr in `awsgetpublicipaddresses` 
     do 
+        echo scp "$tarFile" core@$awsIpAddr:/home/core
         scp "$tarFile" core@$awsIpAddr:/home/core
+        for dockerTar in registrySaves/*.gz
+        do
+            dockerTar="$adNimbusDir/$dockerTar"
+            echo scp $dockerTar core@$awsIpAddr:/home/core
+            scp $dockerTar core@$awsIpAddr:/home/core
+        done
     done
 }
 
@@ -593,12 +644,20 @@ function awscreatetar() {
     tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
         --exclude='.vagrant' \
         --exclude=.vagrant.d \
-        --exclude='.git' \
+        --exclude='.git*' \
         --exclude='.nfs*' \
+        --exclude='.*.swp' \
+        --exclude='.DS_Store' \
+        --exclude='.exampleProfile' \
+        --exclude='devutils' \
+        --exclude='docs' \
+        --exclude='aws' \
+        --exclude='insecure_private_key' \
+        --exclude=registrySaves \
         --exclude=nginx/.nginx.conf* \
         --exclude=registry-dev \
         --exclude=netlocation/go \
-        --exclude=netlocation/src/node_modules \
+        --exclude=netlocation/nodejs/src/node_modules \
         --exclude=tmp \
         $daProject ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
 

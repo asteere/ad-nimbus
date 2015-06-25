@@ -46,6 +46,7 @@ registry-dev
 # temporary files used by aws scripts
 aws/stackName
 aws/imageIdFile
+aws/user-data-aws
 
 # Ignore go build artifacts
 netlocation/go/bin

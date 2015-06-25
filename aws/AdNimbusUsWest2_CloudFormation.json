@@ -9,7 +9,7 @@
         "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
         "MinSize": "0",
         "MaxSize": "12",
-        "DesiredCapacity": "3",
+        "DesiredCapacity": "1",
         "Tags": [
             {"Key": "Name", "Value": { "Ref" : "AWS::StackName" }, "PropagateAtLaunch": true}
         ]
@@ -18,7 +18,7 @@
     "CoreOSServerLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId" : "ami-db152feb",
+        "ImageId" : "ami-5d4d486d",
         "InstanceType": "t2.micro",
         "KeyName": "AdNimbusUsWest2",
         "SecurityGroups": ["AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5"],
@@ -30,7 +30,7 @@
                 "  update:\n",
                 "    reboot-strategy: 'off'\n",
                 "  etcd:\n",
-                "    discovery: https://discovery.etcd.io/b4b9a5b0d294cdc141160eaf7d186a4c\n",
+                "    discovery: https://discovery.etcd.io/7a3fb7b9843d73e900dff4fdbe5e8f94\n",
                 "    addr: $private_ipv4:4001\n",
                 "    peer-addr: $private_ipv4:7001\n",
                 "    peer-election-timeout: 2000\n",
@@ -80,9 +80,9 @@
                 "    owner: core\n",
                 "    content: |\n",
                 "      #!/bin/bash\n\n",
-                "      if test -f ~/ad-nimbus/.coreosProfile\n",
+                "      if test -f ~/share/.coreosProfile\n",
                 "      then\n",
-                "           . ~/ad-nimbus/.coreosProfile\n",
+                "           . ~/share/.coreosProfile\n",
                 "      fi\n"
             ] ]
           }
