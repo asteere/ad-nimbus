@@ -78,32 +78,39 @@ function vssh() {
 }
 
 function buildall() {
-    buildcontainer confd
-    buildcontainer nginx
-    buildcontainer netlocation nodejs
-    buildcontainer netlocation go
-    buildcontainer consul
-    buildcontainer devutils
+    deletenetlocationcontainer
+    rundocker rmi `rundocker images | grep $DOCKER_USER | awk '{print $3}'`
+
+    buildimage scratch
+
+    buildimage confd
+    buildimage nginx
+    buildimage netlocation nodejs
+    buildimage netlocation go
+    buildimage consul
+    buildimage devutils
 }
 
 function prepnetlocationgo() {
-    emptyContainer=$DOCKER_REGISTRY/empty:empty
-    if test `d images | grep -c $DOCKER_REGISTRY/empty` -eq 0
-    then
-        tar cv --files-from /dev/null | docker import - $emptyContainer
-        docker push $emptyContainer
-    fi
+    buildscratchimage
 
     # Build netlocation statically
-    docker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" \
+    rundocker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" \
         -v "$PWD":/go \
         -w /go golang:1.4-onbuild \
         go install -a -installsuffix cgo -ldflags '-s' github.com/mark-larter/netlocation 
 }
 
-function buildcontainer() {
+function buildimage() {
     svc=$1
     svcDir=$svc
+
+    # HACK: have all images built from the same function
+    if test "$svc" == "$scratch"
+    then
+        buildscratchimage
+        return
+    fi
 
     origDir=$PWD
     cdad
@@ -123,7 +130,7 @@ function buildcontainer() {
 
     echo Building docker container $svc
 
-    dockerTag=$DOCKER_REGISTRY/$svc:$svc
+    dockerTag=$DOCKER_USER/$svc:$svc
 
     svcTar="$adNimbusDir/registrySaves/$svc.tar"
     svcTarGz="$svcTar.gz"
@@ -132,7 +139,7 @@ function buildcontainer() {
         rundocker load -i $svcTarGz
     fi
 
-    # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
+    # this will result in two repositories $DOCKER_USER/$svc:latest and $svc:latest containing collections of images
     # Docker is run from the parent directory of the folder with the Dockerfile
     rundocker build --tag $dockerTag .
     if test ! $? == 0
@@ -140,8 +147,7 @@ function buildcontainer() {
         return
     fi
 
-    rundocker save -o $svcTar $dockerTag
-    gzip -f $svcTar
+    adnimbus_registry/startAdNimbusRegistry.sh saveImage $svc
 
     rundocker push $dockerTag
 
@@ -590,7 +596,6 @@ function awscreatetar() {
         --exclude='.git' \
         --exclude='.nfs*' \
         --exclude=nginx/.nginx.conf* \
-        --exclude=registrySaves \
         --exclude=registry-dev \
         --exclude=netlocation/go \
         --exclude=netlocation/src/node_modules \
@@ -603,7 +608,7 @@ function awscreatetar() {
     cd -
 }
 
-# Use this function when you want to create a tar file of the useful source code
+# Use this function when you want to create a tar file of the useful source code but not build artifacts
 function createtar() {
     cd "$adNimbusDir"/..
 
@@ -619,7 +624,7 @@ function createtar() {
         --exclude=registry-dev \
         --exclude=tmp \
         --exclude=netlocation/nodejs/src/node_modules \
-        --exclude=netlocation/nodejs/src/data/maxMind \
+        --exclude=netlocation/data \
         --exclude=netlocation/go/data \
         $daProject 
 
@@ -664,20 +669,6 @@ do
         return
     fi
 done
-
-if test "$DOCKER_REGISTRY" == ""
-then
-    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, localhost:5000, etc.)'.
-    echo Exiting
-    return
-fi
-
-if test "$DOCKER_USER" == ""
-then
-    echo Please set and export DOCKER_USER in your ~/.profile to the docker registry user you want to use '(asteere, mark-larter, etc.)'.
-    echo Exiting.
-    return
-fi
 
 # User's .profile or .bash_profile set up correctly, time to get to work
 

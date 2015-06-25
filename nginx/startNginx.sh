@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo `basename $0` args:$*:
+echo '=========================' `basename $0` args:$*: '=========================='
 
 function setup() {
     set -a
@@ -46,7 +46,7 @@ function startDocker() {
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
         --volume="$adNimbusTmp":${tmpDir} \
         -p ${nginxGuestOsPort}:${nginxContainerPort} \
-        ${DOCKER_REGISTRY}/${nginxService}:${nginxDockerTag} \
+        ${DOCKER_USER}/${nginxService}:${nginxDockerTag} \
         $dockerCmd
 }
 

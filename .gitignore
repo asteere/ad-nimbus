@@ -4,7 +4,7 @@
 .*.swp
 
 # TODO: Decide if we want a bin folder of Linux exes to help with debugging
-bin
+bin/
 
 # Discovery token gets updated everytime "vagrant up" or "vagrant reload" occurs. 
 # Use a template file to minimize what gets committed.
@@ -24,7 +24,7 @@ insecure_private_key
 netlocation/nodejs/src/node_modules
 
 # Don't include maxmind stuff until we get our own repository for git and docker
-netlocation/src/data/*
+netlocation/data/*
 
 # Ignore test files for health checks
 netlocation/src/netlocation@*.service_*.cfg
@@ -37,7 +37,7 @@ nginx/.nginx.conf*
 */.nfs*
 
 # Scribble area for monitor logs, demo config information, etc
-**/tmp
+tmp/
 
 # Docker registry for this project
 registrySaves

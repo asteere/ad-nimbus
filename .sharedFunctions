@@ -1,0 +1,180 @@
+#! /bin/bash
+
+# For foolish consistency use lowercase for function names
+
+# MAC need to make sure that boot2docker is running and the environment variables have been set. 
+# Coreos nothing special is needed. Create common way to invoke docker so scripts can be run on both OS.
+if [[ `type -t rundocker` != "function" ]]
+then
+    function rundocker() {
+        docker $*
+    }
+fi
+
+function show() {
+    numLines=`typeset -f $1 | wc -l`
+    if test $numLines -gt 0
+    then
+        typeset -f $1
+        return
+    fi
+
+    which $1 > /dev/null 2>&1
+    if test $? == 0
+    then
+        which $1
+        return
+    fi
+
+    printenv $1
+    if test $? == 0
+    then
+        return
+    fi
+
+    set | grep $1
+    if test "$?" == "0"
+    then
+        return
+    fi
+
+    echo $1 is not a function, environment variable or file in $PATH
+}
+
+function cdad() {
+    cd "$adNimbusDir"
+}
+
+function runDate() {
+    date +%Y/%m/%d_%H:%M:%S
+}
+
+function checkwebcontent() {
+    url=/GuidedHelp/Modem-Motorola-SBG6580-Hopper913/GuidedContentUnit.html
+
+    runCurl $url $1 $2
+}
+
+function checknetlocation() {
+    runCurl $netLocationTestUrl $1 $2
+}
+
+function runCurl() {
+    url=$1
+    
+    case "$#" in 
+    1)
+        which fleetctl 2>&1 > /dev/null
+        if test "$?" == 0
+        then
+            tmpNginxIpAddress=`fleetctl list-units -fields=unit,machine --no-legend | \
+                sed 's/ice.*\//ice /' | \
+                grep nginx | \
+                awk '{print $2}'`
+            tmpNginxGuestOsPort=$nginxGuestOsPort
+        fi
+        ;;
+    2)
+        tmpNginxIpAddress=localhost
+        tmpNginxGuestOsPort=$2
+        ;;
+    3)
+        tmpNginxIpAddress=$2
+        tmpNginxGuestOsPort=$3
+    esac
+
+    # Use a known IP address. If we run curl on this box to nginx on this box we don't have an external IP address
+    # TODO: Do we add the headers to the nodejs code or remove them here?
+    #headers=-H 'Symbi-Authentication: dummy' -H 'Content-Type: application/json' -H 'Accept: application/json' 
+    
+    echo -n "`runDate`: "
+    echo "ipAddr=$tmpNginxIpAddress; port=$tmpNginxGuestOsPort; curl -s -L \"http://\$ipAddr:\$port$url\""
+    curl -s -L "http://$tmpNginxIpAddress:$tmpNginxGuestOsPort$url"
+
+    echo
+}
+
+function sourceadnimbusenvironment() {
+    # Make the fleetctl service variables available to shell scripts
+    set -a
+
+    # TODO: does this break anything if we have these variables defined
+    if test -f /etc/environment
+    then
+        . /etc/environment
+    fi
+
+    if test -f "$adNimbusDir"/adNimbusEnvironment
+    then
+        oldAdNimbusDir="$adNimbusDir"
+        . "$adNimbusDir"/adNimbusEnvironment
+        adNimbusDir="$oldAdNimbusDir"
+    fi
+
+    set +a
+}
+
+function removenginxconftempfiles() {
+    echo Removing confd created '.nginx.conf*' temp files
+
+    # TODO: Are these tmp files still getting created?
+    if test -d "$adNimbusDir/nginx"
+    then
+        (cd "$adNimbusDir"/nginx; for i in {0..9}; do rm -f .nginx.conf${i}*; done)
+    fi
+}
+
+function startadnimbusregistry() {
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh start
+}
+
+# Putting it here but it is expected it will only be used by coreos
+function buildscratchimage() {
+    imageName=$scratch
+    scratchImage=$DOCKER_USER/$imageName:$imageName
+    scratchTar=$imageName.tar
+    scratchTarGz=$scratchTar.gz
+
+    # The scatch image shouldn't change unless there is a docker release that affects this.
+    if test -f "$scratchTarGz"
+    then
+        rundocker load -i $scratchTarGz
+        return 0
+    fi  
+
+    if test `d images | grep -c $DOCKER_USER/$imageName` -eq 0
+    then
+        tar cv --files-from /dev/null | docker import - $scratchImage
+        adnimbus_registry/startAdNimbusRegistry.sh saveImage $imageName
+    fi  
+}
+
+function deletescratchimage() {
+    rundocker rmi $scratchImage
+}
+
+function deletenetlocationcontainer() {
+    rundocker rm $netLocationDataContainer 2>&1 > /dev/null
+}
+
+# Without a lot of difficulty, you can't share docker registries or the images that the docker engine has 
+# loaded for an instance. Given how lightweight the scratch image and data-only container are, let each instance create one.
+function createnetlocationdatacontainer() {
+    if test "$1" == "--force"
+    then
+        # Delete the containers before the images
+        deletenetlocationcontainer
+        deletescratchimage
+    fi
+
+    buildscratchimage
+
+    rundocker ps | grep -q $netLocationDataContainer
+    if test "$?" == 0
+    then
+        return 
+    fi
+
+    rundocker create -v "$adNimbusDir"/netlocation/data:/data --name $netLocationDataContainer $scratchImage .
+}
+

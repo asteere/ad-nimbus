@@ -27,10 +27,10 @@ checkhostnetlocation
 
 # 3.0 (Demo) Validate that two additional netlocations are added when the consul health checks start to fail
 
-# Watch the number of netlocations. In a CoreOS window run the following:
+# CoreOS: Watch the number of netlocations. 
 mywatch.sh -n .5 "flu | grep netlocation"
 
-# Watch for netlocation services getting added and removed. In a CoreOS window run the following:
+# CoreOS: Watch for netlocation services getting added and removed. 
 fjournal -f monitor@1.service
 
 # Watch confd update nginx/nginx.conf. When netlocation creates a consul key, confd will update the nginx.conf file.
@@ -46,19 +46,19 @@ tail -f tmp/nginx_access.log tmp/nginx_error.log
 
 # Use the consul web api to validate the nodes, services, key/values and health checks are correct.
 
-# Create a hacked failure situation. In a CoreOS window run the following:
+# CoreOS: Create a hacked failure situation. 
 forceFailures.sh 
 
 # 4.0 Watch the number of netlocations go from 3 to 1 using the commands above
 
 # Validate that netlocation services are removed once the failures are removed. It takes 30+ seconds after the failures
 # are cleared for the first netlocation service to be removed. It then takes an additional 30+ seconds for the second
-# netlocation to be removed.
+# netlocation to be removed. The lowest numbered running netlocation service is always removed.
 
-# Clear the hacked failure situation
+# CoreOS: Clear the hacked failure situation
 forceFailures.sh clear
 
-# 5.0 Validate that monitor runOtherChecks detects configuration issues
+# 5.0 CoreOS: Validate that monitor runOtherChecks detects configuration issues
 monitor/monitor.sh runOtherChecks 
 
 # 6.0 Repeat the demo with the other netlocation implementation

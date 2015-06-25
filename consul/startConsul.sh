@@ -164,7 +164,7 @@ function calcArgs() {
 }
 
 function startDocker() {
-    dockerImage="${DOCKER_REGISTRY}/${consulService}:${consulDockerTag}"
+    dockerImage="$DOCKER_USER/${consulService}:${consulDockerTag}"
 
     #dockerImage=progrium/consul
     #    --rm=true \

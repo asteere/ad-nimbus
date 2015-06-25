@@ -9,11 +9,12 @@
 #set -x
 
 set -a
-if test -d "/home/core/ad-nimbus"
+
+if test "`uname -s`" == "Darwin"
 then
-    . "$adNimbusDir"/.coreosProfile
-else
     . "$adNimbusDir"/.hostProfile
+else
+    . "$adNimbusDir"/.coreosProfile
 fi
 set +a
 

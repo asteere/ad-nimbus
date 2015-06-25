@@ -7,6 +7,7 @@
 
 echo "==================== `basename $0` started args:$*: ======================="
 set -x
+
 function setup() {
     echo `basename $0` in setup
 
@@ -18,7 +19,7 @@ function setup() {
 
     set -a
         
-    for envFile in /etc/environment /home/core/ad-nimbus/adNimbusEnvironment 
+    for envFile in /etc/environment /home/core/ad-nimbus/adNimbusEnvironment /home/core/ad-nimbus/.sharedProfile
     do  
         if test ! -f "$envFile"
         then
@@ -41,7 +42,7 @@ function setup() {
     dockerCmd="$dockerCmd ${COREOS_PRIVATE_IPV4} $instance"
     svc=${netLocationService}-${netLocationImplementation}
     dockerImage=$svc:${netLocationDockerTag}-${netLocationImplementation} 
-    dockerRepoImage=${DOCKER_REGISTRY}/$dockerImage
+    dockerRepoImage=${DOCKER_USER}/$dockerImage
 
     set +a
 }
@@ -96,14 +97,21 @@ function registerService() {
     "$adNimbusDir"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PRIVATE_IPV4} $port
 }
 
-function loadContainer() {
+function loadContainers() {
     docker rm -f ${containerName} > /dev/null 2>&1
     $adNimbusDir/adnimbus_registry/startAdNimbusRegistry.sh startPre $svc
+
+    docker ps | grep -q "$netLocationDataContainer"
+    if test $? != 0
+    then
+        createnetlocationdatacontainer
+    fi
+
     docker ps -a
 }
 
 function start() {
-    loadContainer
+    loadContainers
 
     startDocker
 }
@@ -117,11 +125,13 @@ function startDocker() {
         --rm=true \
         --expose=$netLocationContainerPort \
         -P \
+        --volumes-from $netLocationDataContainer \
         --volume="$adNimbusDir"/$netLocationService/$netLocationImplementation/src:/src \
-        --volume="$adNimbusDir"/$netLocationService/data:/data \
         --volume="$adNimbusTmp":${tmpDir} \
         $dockerRepoImage \
         $dockerCmd
+
+#        --volume="$adNimbusDir"/$netLocationService/data:/data \
 }
 
 function startDockerBash() {

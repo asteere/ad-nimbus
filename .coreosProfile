@@ -5,19 +5,19 @@
 
 # For the sake of foolish consistency and to make it easier to remember, functions are lower case
 function d() { 
-    docker $* 
+    rundocker $* 
 }
 
 function dps() { 
-    docker ps -a $*
+    rundocker ps -a $*
 }
 
 function dpsa() { 
-    docker ps -a $*
+    rundocker ps -a $*
 }
 
 function di() { 
-    docker images $*
+    rundocker images $*
 }
 
 function f() { 
@@ -501,7 +501,7 @@ function drmf() {
     for ipAddr in `getIpAddrsInCluster`
     do 
         echo Checking for docker containers on $ipAddr
-        ssh $ipAddr "docker ps -aq | xargs --no-run-if-empty docker rm -f"
+        ssh $ipAddr "docker ps -aq | xargs --no-run-if-empty docker rm -vf"
     done
 }
 
@@ -510,17 +510,19 @@ function dockerbash() {
 
     echo NFS share $adNimbusDir will be located on /opt/ad-nimbus
 
-    docker run -v $adNimbusDir:/opt/ad-nimbus -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
+    rundocker run -v $adNimbusDir:/opt/ad-nimbus -it $DOCKER_USER/devutils:devutils /bin/bash 
 }
 
-if test -d "/home/core/ad-nimbus"
+# If we are on coreos or centos (in the demo environment) then /home/core should be defined
+# If we are Darwin then a user is sourcing this file and adNimbusDir is defined and the .shareProfile have been sourced.
+if test "$adNimbusDir" == ""
 then
     export adNimbusDir=/home/core/ad-nimbus
-
-    . "$adNimbusDir"/.sharedProfile
-
-    cdad
 fi
+
+. "$adNimbusDir"/.sharedProfile
+
+cdad
 
 if test -x "$adNimbusDir/devutils/jq"
 then
@@ -534,13 +536,17 @@ then
     }
 fi
 
+# TODO: Figure out how to kill the ssh-agent on logout. Need to make it part of cloud-init
 # Setup ssh
 # http://docstore.mik.ua/orelly/networking_2ndEd/ssh/ch06_03.htm
 # Setup fleetctl status
-trap '
-  test -n "$SSH_AGENT_PID"  && eval `ssh-agent -k` ;
-  test -n "$SSH2_AGENT_PID" && kill $SSH2_AGENT_PID
-' 0
+#if [ -z "$PS1" ]
+#then
+#    trap '
+#      test -n "$SSH_AGENT_PID"  && eval `ssh-agent -k` ;
+#      test -n "$SSH2_AGENT_PID" && kill $SSH2_AGENT_PID
+#    ' 0
+#fi
 
 # If no agent is running and we have a terminal, run ssh-agent and ssh-add.
 # (For SSH2, change this to use SSH2_AUTH_SOCK, ssh-agent2 and ssh-add2.)
