@@ -34,25 +34,28 @@ $adNimbusDir/aws/prepImage.sh
 # Copy the awscreateimage output line above and run it on the Mac. The line should look like the following:
 #awscreateimage 172.31.4.77
 
-# Shutdown the instance by deleting the Auto Scaling Group defined for this stack. Otherwise, more instances will be created.
+# AWS shutsdown an instance, creates the image and starts the instance.
+
+# Cleanup the stack and instance. It may take a couple of minutes before the ec2 and cloudformation web pages 
+# show everything terminated.
 awsdeletestack
 
-# To Run the demo create the stack
+# To Run the demo make sure the ec2 AMI page shows that the image is ready before creating the stack
 # Mac:
 awscreatestack
 awsopenssh
 
-# On an AWS EC2 instance:
+# AWS EC2 instance:
 fstartall
 
 # Regression Testing: Follow the instructions in docs/RegressionTesting.md
 
 # Load Tests: 
-# Start a JMeter cluster
+# MAC: Start a JMeter cluster
 awscreatestack
 
 # Follow instructions in LoadTests/JMeter/README.md
-# 
+ 
 # When you are done you can terminate the instances but leave the stack for future clusters 
 awsterminatecluster
 

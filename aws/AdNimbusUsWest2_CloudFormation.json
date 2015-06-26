@@ -9,7 +9,7 @@
         "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
         "MinSize": "0",
         "MaxSize": "12",
-        "DesiredCapacity": "1",
+        "DesiredCapacity": "3",
         "Tags": [
             {"Key": "Name", "Value": { "Ref" : "AWS::StackName" }, "PropagateAtLaunch": true}
         ]
@@ -18,7 +18,7 @@
     "CoreOSServerLaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId" : "ami-5d4d486d",
+        "ImageId" : "ami-ff0601cf",
         "InstanceType": "t2.micro",
         "KeyName": "AdNimbusUsWest2",
         "SecurityGroups": ["AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5"],
@@ -30,7 +30,7 @@
                 "  update:\n",
                 "    reboot-strategy: 'off'\n",
                 "  etcd:\n",
-                "    discovery: https://discovery.etcd.io/84873f9b50dc374be6219d450f9683cb\n",
+                "    discovery: https://discovery.etcd.io/ea2c3fe5fe3479ca9ba7a320e2ad48b7\n",
                 "    addr: $private_ipv4:4001\n",
                 "    peer-addr: $private_ipv4:7001\n",
                 "    peer-election-timeout: 2000\n",

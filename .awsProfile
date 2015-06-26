@@ -17,6 +17,8 @@ function awsmactos3() {
     # Update the list of files with non 644 file permissions. Currently S3 loses them
     getPermissions.sh
 
+    rm -f "$adNimbusDir"/netlocation/.nfs*
+
     awsfiletransfer $cmd $adNimbusDir $s3bucket $opt1
 }
 
@@ -172,9 +174,9 @@ function awscreatestack() {
     awsdescribeinstances
 
     echo
-    mywatch.sh -g -n 2 awsgetpublicipaddresses
+    mywatch.sh -g -n 2 awsgetipaddresses
 
-    awsgetpublicipaddresses
+    awsgetipaddresses
 
     curlNewToken $newToken
 }

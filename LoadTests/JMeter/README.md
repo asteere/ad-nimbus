@@ -29,6 +29,15 @@ cd LoadTests/JMeter
 cdad
 awsgetipaddresses
 
+# Start a 3 instance cluster with JMeter
+# Mac:
+awscreatestack
+
+# Get the public ip addresses from the cluster that was started. The IP addresses appear to be listed in the order 
+# they were created. 
+# TODO: Figure out how to tag the instances in the cluster
+awsopenssh
+
 # For each instance you want to run JMeter
 # The scps are only required if the image doesn't have the latest versions
 scp "$adNimbusDir/registrySaves/$imageTag.tar.gz core@<publicIpAddress>:/home/core
