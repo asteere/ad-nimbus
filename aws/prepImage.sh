@@ -3,6 +3,8 @@
 # Additional setup steps
 ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys 
 
+# TODO: Preserve read, write, execute permissions while files are on s3
+
 # Stop services and remove files to simulate a boot from a first-time image so coreos will create the right files
 # Kudos: https://nickrandell.wordpress.com/2014/09/29/creating-a-coreos-cluster-on-linode/
 sudo systemctl stop fleet

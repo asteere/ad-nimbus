@@ -14,6 +14,9 @@ function awsmactos3() {
     cmd=$1
     opt1=$2
 
+    # Update the list of files with non 644 file permissions. Currently S3 loses them
+    getPermissions.sh
+
     awsfiletransfer $cmd $adNimbusDir $s3bucket $opt1
 }
 
@@ -23,6 +26,8 @@ function awscps3toinstance() {
 
 function awssyncs3toinstance() {
     awss3toinstance sync --delete
+
+    /bin/bash "$adNimbusDir"/bin/restorePermissions.sh
 }
 
 function awss3toinstance() {
@@ -100,7 +105,7 @@ function myip() {
 
 function awscreatestack() {
     # Args: imageId numInstances
-    if test ! -f "$stackNameFile"
+    if test -f "$stackNameFile"
     then
         rm "$stackNameFile"
         if test "$?" != 0
@@ -126,7 +131,8 @@ function awscreatestack() {
     awssetup
 
     allowSshFrom=`myip`/32
-    echo If ssh to public IP address gets \"Connection refused\", is $allowSshFrom in the security group $securityGroup inbound rules
+    echo Is $allowSshFrom in the security group $securityGroup inbound rules?
+    echo Otherwise, ssh will get a \"Connection refused\". 
 
     echo
     newToken=`curl -s https://discovery.etcd.io/new`
@@ -214,7 +220,7 @@ function awsupdateuserdata() {
     numInstances=3
     newToken=`curl -L -s https://discovery.etcd.io/new?size=$numInstances`
     echo Using discovery token $newToken
-    sed "s|https://discovery.etcd.io/.*|$newToken|" "$adNimbusDir"/user-data.tmpl > "$adNimbusDir"/aws/user-data-aws
+    sed "s|https://discovery.etcd.io/.*|$newToken|" "$adNimbusDir"/user-data.tmpl > "$userDataFile"
 }
 
 function awsstartcluster() {
@@ -223,7 +229,17 @@ function awsstartcluster() {
     awsupdateuserdata
 
     numInstances=3
-    aws ec2 run-instances --image-id $imageId --count $numInstances --instance-type t2.micro --key-name AdNimbusUsWest2 --security-groups $securityGroup --user-data "file://$adNimbusDir/aws/user-data-aws"
+    if test "$1" != ""
+    then
+        numInstances=$1
+    fi
+
+    aws ec2 run-instances --image-id $imageId \
+        --count $numInstances \
+        --instance-type $instanceType \
+        --key-name $keyName \
+        --security-groups $securityGroup \
+        --user-data "file://$userDataFile"
 
     if test $? != 0
     then
@@ -248,8 +264,18 @@ function awsgetprivateipaddresses() {
 }
 
 function awsgetipaddresses() {
-    awsdescribeinstances | grep '"'$1'": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' -e's/ //g' 
+    pattern=$1
 
+    if test "$1" == ""
+    then
+        pattern='P.*IpAddress'
+        echo PublicIpAddress PrivateIpAddress | awk '{printf("%-15s %-15s\n", $1, $2)}'
+        awsdescribeinstances | grep '"'$pattern'": "' | grep ',' | \
+            sed -e 's/.*ess.:.//' -e 's/ //g' -e 's/"//g' -e 's/,//g' | \
+            awk '{key=$0; getline; printf("%-15s %-15s\n", key, $0)}'
+    else
+        awsdescribeinstances | grep '"'$1'": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' -e's/ //g'
+    fi
 }
 
 function awsopenssh() {
@@ -332,10 +358,17 @@ function awscreatetar() {
 }
 
 function awsvariables() {
-    export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
-    export s3bucket=s3://ad-nimbus-bucket/ad-nimbus
-    export imageIdFile="$adNimbusDir/aws/imageIdFile"
-    export stackNameFile=$adNimbusDir/aws/stackName
+    set -a
+
+    securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
+    s3bucket=s3://ad-nimbus-bucket/ad-nimbus
+    imageIdFile="$adNimbusDir/aws/imageIdFile"
+    stackNameFile=$adNimbusDir/aws/stackName
+    instanceType=t2.micro
+    keyName=AdNimbusUsWest2
+    userDataFile="$adNimbusDir/aws/user-data-aws"
+
+    set +a
 }
 
 # This is needed when making a adnimbus image from a coreos image and .coreosProfile and .sharedProfile are there yet.

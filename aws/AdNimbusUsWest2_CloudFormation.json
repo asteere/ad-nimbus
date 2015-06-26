@@ -30,7 +30,7 @@
                 "  update:\n",
                 "    reboot-strategy: 'off'\n",
                 "  etcd:\n",
-                "    discovery: https://discovery.etcd.io/7a3fb7b9843d73e900dff4fdbe5e8f94\n",
+                "    discovery: https://discovery.etcd.io/84873f9b50dc374be6219d450f9683cb\n",
                 "    addr: $private_ipv4:4001\n",
                 "    peer-addr: $private_ipv4:7001\n",
                 "    peer-election-timeout: 2000\n",

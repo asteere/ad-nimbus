@@ -43,5 +43,13 @@ ssh -R 60000:localhost:60000 -o ServerAliveInterval=60 -o StrictHostKeyChecking=
 cdad
 cd LoadTests/JMeter
 # Create comma separated list of remote JMeter server ip address 
-./runjmeter.sh -Jremote_hosts=1.2.3.4,5.6.7.8
+./runJmeter.sh -Jremote_hosts=1.2.3.4,5.6.7.8
 
+# Set the domain variable to the public ip address that is running nginx
+# Make sure that the nginx port, 49160, is available to the network you are on
+
+# Shutdown
+# On the Mac
+# Close JMeter
+# Terminate the clusters
+awsterminatecluster

@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Variables, etc that is shared between Darwin and Coreos, etc. 
+# Pull in shared functions here as the convention is to source .*Profile
 . "$adNimbusDir"/.sharedFunctions
 
 sourceadnimbusenvironment

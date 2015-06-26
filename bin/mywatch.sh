@@ -3,10 +3,12 @@
 # Allow functions to be watched
 # Works:
 #   Functions sourced at start of each script (.hostProfile) can be watched
-# TODO:
-#   Export functions that haven't been to allow watch to find them.
 
-#set -x
+if test "$1" == "-d"
+then
+    set -x
+    shift 1
+fi
 
 set -a
 
@@ -16,6 +18,11 @@ then
 else
     . "$adNimbusDir"/.coreosProfile
 fi
+
+export -f `grep '^function' "$adNimbusDir"/.awsProfile "$adNimbusDir"/.hostProfile \
+    "$adNimbusDir"/.coreosProfile "$adNimbusDir"/.sharedFunctions | \
+    sed 's/.*ion \(.*\)(.*/\1/'` 2> /dev/null
+
 set +a
 
 cmd=`basename $0`
