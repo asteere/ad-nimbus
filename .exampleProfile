@@ -1,19 +1,19 @@
 #! /bin/bash
 
 # If you don't have a .profile, copy this file to your $HOME directory and rename it to .profile.
-
-# Otherwise, the code below to your ~/.profile.
+# Otherwise, add/merge the code below to your ~/.profile.
+#-------------------
 
 # Allow the ad-nimbus .profile to login to docker hub and to use the right registry
-export MY_DOCKER_REGISTRY=asteere
+export DOCKER_USER=yourid
+export DOCKER_EMAIL='your@email.com'
+export DOCKER_PWD='your_password'
 
-# Change these value to your DockerHub account so you can build and push containers
-export DOCKER_USER=asteere
-export DOCKER_EMAIL='awsteere@aol.com'
-export DOCKER_PWD='REPLACEME'
+export AWS_OWNER_ID=your_aws_id
 
-export VAGRANT_CWD=~/REPLACE/ME/WITH/THE/RIGHT/FOLDER/asteere/ad-nimbus
+export VAGRANT_CWD=/REPLACE_ME/asteere/ad-nimbus
 
+# Allow for multiple Vagrant environments
 if test "$1" != ""
 then
     export VAGRANT_CWD=~/$1/asteere/ad-nimbus
@@ -25,6 +25,4 @@ if test -f "$VAGRANT_CWD/.hostProfile"
 then
     . "$VAGRANT_CWD/.hostProfile"
 fi
-
-
 

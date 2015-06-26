@@ -51,8 +51,21 @@ function d() {
 function vup() {
     cdad
     echo `date`: Creating cluster from Vagrantfile in folder `pwd`
-    #VAGRANT_LOG=info 
-    vagrant up 2>&1 | tee /tmp/vup.log
+
+    case "$1" in
+    info|debug|warn|error)
+        dbgLevel=$1
+        export VAGRANT_LOG=$dbgLevel;
+        shift 1
+        ;;
+    *)
+        ;;
+    esac
+
+    vagrant up $* 2>&1 | tee /tmp/vup.log
+
+    unset VAGRANT_LOG
+
     date
 }
 
@@ -65,63 +78,89 @@ function vssh() {
 }
 
 function buildall() {
-    buildconfd
-    buildnginx
-    buildnetlocation
-    buildconsul
-    builddevutils
+    deletenetlocationcontainer
+    rundocker rmi `rundocker images | grep $DOCKER_USER | awk '{print $3}'`
+
+    buildimage scratch
+
+    buildimage confd
+    buildimage nginx
+    buildimage netlocation nodejs
+    buildimage netlocation go
+    buildimage consul
+
+    buildimage aws cli
+
+    buildimage devutils
 }
 
-function builddevutils() {
-    buildcontainer devutils
+function prepnetlocationgo() {
+    buildscratchimage
+
+    # Build netlocation statically
+    rundocker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" \
+        -v "$PWD":/go \
+        -w /go golang:1.4-onbuild \
+        go install -a -installsuffix cgo -ldflags '-s' github.com/mark-larter/netlocation 
 }
 
-function buildconfd() {
-    buildcontainer confd
-}
-
-function buildconsul() {
-    buildcontainer consul
-}
-
-function buildnginx() {
-    buildcontainer nginx
-}
-
-function buildnetlocation() {
-    buildcontainer netlocation
-}
-
-function buildcontainer() {
+function buildimage() {
     svc=$1
+    svcDir=$svc
 
+    # HACK: have all images built from the same function
+    if test "$svc" == "$scratch"
+    then
+        buildscratchimage
+        return
+    fi
+
+    origDir=$PWD
     cdad
+
+    cd $1
+    if test "$2" != ""
+    then
+        cd $2
+        svc=${1}-${2}
+        if test "$2" == "go"
+        then
+            if ! prepnetlocationgo; then
+                return 1
+            fi
+        fi
+    fi
 
     echo Building docker container $svc
 
-    dockerTag=$DOCKER_REGISTRY/$svc:$svc
+    dockerTag=$DOCKER_USER/$svc:$svc
 
     svcTar="$adNimbusDir/registrySaves/$svc.tar"
     svcTarGz="$svcTar.gz"
-    if test -f "$svcTar"
+    if test -f "$svcTarGz"
     then
-        runDocker load -s $svcTarGz
+        rundocker load -i $svcTarGz
     fi
 
-    # this will result in two repositories $DOCKER_REGISTRY/$svc:latest and $svc:latest containing collections of images
-    rundocker build --tag $dockerTag $svc 
+    # this will result in two repositories $DOCKER_USER/$svc:latest and $svc:latest containing collections of images
+    # Docker is run from the parent directory of the folder with the Dockerfile
+    rundocker build --tag $dockerTag .
     if test ! $? == 0
     then
         return
     fi
 
-    rundocker save -o $svcTar $dockerTag
-    gzip $svcTar
+    "$adNimbusDir"/adnimbus_registry/startAdNimbusRegistry.sh saveImage $svc
+
+    dlogin
+    if test "$?" != 0
+    then
+        return
+    fi
 
     rundocker push $dockerTag
 
-    cd -
-
+    cd $origDir > /dev/null
 }
 
 function getlistofvms() {
@@ -208,7 +247,7 @@ function setupdocker() {
     then
         b2dstatus=`boot2docker status 2>&1`
         echo boot2docker current status: $b2dstatus
-        echo $b2dstatus | grep "machine not exist" 2>&1 > /dev/null
+        echo $b2dstatus | grep -q "machine not exist"
         if test $? == 0
         then
             echo boot2docker init
@@ -309,6 +348,33 @@ function resetAdNimbusDir() {
     export adNimbusTmp="$adNimbusDir/tmp"
 }
 
+# Use this function when you want to create a tar file of the useful source code but not build artifacts
+function createtar() {
+    cd "$adNimbusDir"/..
+
+    daProject=ad-nimbus
+    gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+        --exclude='.vagrant' \
+        --exclude=.vagrant.d \
+        --exclude='.git' \
+        --exclude='.nfs*' \
+        --exclude=nginx/.nginx.conf* \
+        --exclude=registrySaves \
+        --exclude=registry-dev \
+        --exclude=tmp \
+        --exclude=netlocation/nodejs/src/node_modules \
+        --exclude=netlocation/data \
+        --exclude=netlocation/go/data \
+        $daProject 
+
+    pwd
+    ls -l $gzFile
+
+    cd -
+}
+
+# Sanity checks to see if the user has their .profile setup correctly
 if test "$VAGRANT_CWD" == ""
 then
     echo This .profile assumes that VAGRANT_CWD has been exported and set it to your ad-nimbus folder on the host machine. 
@@ -325,11 +391,11 @@ then
     echo export VAGRANT_CWD="$VAGRANT_CWD"
     echo Exiting.
     return
-else
-    resetAdNimbusDir
 fi
 
-maxMindFolder="$adNimbusDir/netlocation/src/data/maxMind"
+resetAdNimbusDir
+
+maxMindFolder="$adNimbusDir/netlocation/data/maxMind"
 for dataFile in GeoIP2-City.mmdb  GeoIP2-ISP.mmdb
 do
     if test ! -f "$maxMindFolder/$dataFile" 
@@ -341,20 +407,6 @@ do
     fi
 done
 
-if test "$DOCKER_REGISTRY" == ""
-then
-    echo Please set and export DOCKER_REGISTRY in your ~/.profile to the docker registry you want to use '(asteere, mark-larter, localhost:5000, etc.)'.
-    echo Exiting
-    return
-fi
-
-if test "$DOCKER_USER" == ""
-then
-    echo Please set and export DOCKER_USER in your ~/.profile to the docker registry user you want to use '(asteere, mark-larter, etc.)'.
-    echo Exiting.
-    return
-fi
-
 # User's .profile or .bash_profile set up correctly, time to get to work
 
 export VAGRANT_HOME="$adNimbusDir/.vagrant.d"
@@ -363,16 +415,26 @@ export VAGRANT_DOTFILE_PATH="$adNimbusDir/.vagrant"
 # Pull in the common functions, etc.
 . "$adNimbusDir"/.sharedProfile
 
+# TODO: Do we want to always pull in the AWS functions?
+. "$adNimbusDir"/.awsProfile
+
 # Sourcing the adNimbusEnvironment will overwrite these variables
 resetAdNimbusDir
 
 cdad
 
 # Make vagrant's key accessible to coreos 
-vagrantInsecureKey=insecure_private_key
-if test -f "$VAGRANT_HOME"/insecure_private_key
+# TODO: Is this needed with port forwarding?
+if test "$VAGRANT_HOME"/insecure_private_key -nt "$adNimbusDir"/insecure_private_key
 then
-    cp "$VAGRANT_HOME"/insecure_private_key .
+    cp "$VAGRANT_HOME"/insecure_private_key "$adNimbusDir"
+fi
+
+# Port forwarding should have been setup. This means that identities known to the host machine are known to the guests.
+ssh-add -L | grep -q insecure_private_key
+if test "$?" != 0
+then
+    ssh-add "$VAGRANT_HOME"/insecure_private_key > /dev/null 2>&1 
 fi
 
 # If you want to make the WebContent Research available clone the repo into ~/Research/WebContent. 
@@ -382,4 +444,16 @@ then
     export webContentDir="$HOME/Research/WebContent"
 fi
 
+if test -x `which aws`
+then
+    complete -C aws_completer aws
+fi
+
+which go 2>&1 > /dev/null
+if test "$?" == "0"
+then
+    export GOPATH="$adNimbusDir/netlocation/go"
+    export GOROOT=/usr/local/opt/go/libexec
+    PATH=$PATH:$GOROOT/bin
+fi
 

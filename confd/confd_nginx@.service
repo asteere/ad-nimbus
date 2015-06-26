@@ -15,7 +15,7 @@ After=etcd.service
 KillMode=none
 
 EnvironmentFile=/etc/environment
-EnvironmentFile=/home/core/share/adNimbusEnvironment
+EnvironmentFile=/home/core/ad-nimbus/adNimbusEnvironment
 
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
@@ -24,16 +24,16 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker rm -f ${confdDockerTag}_%i
-ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${nginxService}
-ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${consulService}
+ExecStartPre=/home/core/ad-nimbus/adnimbus_registry/startAdNimbusRegistry.sh startPre ${nginxService}
+ExecStartPre=/home/core/ad-nimbus/adnimbus_registry/startAdNimbusRegistry.sh startPre ${confdService}
 ExecStartPre=-/usr/bin/docker ps -a
 
-ExecStartPost=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PRIVATE_IPV4}
+ExecStartPost=/home/core/ad-nimbus/monitor/monitor.sh registerNginxService %i ${COREOS_PRIVATE_IPV4}
 
-ExecStart=/home/core/share/confd/startConfd_Nginx.sh start %i
+ExecStart=/home/core/ad-nimbus/confd/startConfd_Nginx.sh start %i
 
-ExecStopPost=/home/core/share/monitor/monitor.sh unregisterNginxService %i ${COREOS_PRIVATE_IPV4}
-ExecStopPost=/home/core/share/confd/startConfd_Nginx.sh stop %i
+ExecStopPost=/home/core/ad-nimbus/monitor/monitor.sh unregisterNginxService %i ${COREOS_PRIVATE_IPV4}
+ExecStopPost=/home/core/ad-nimbus/confd/startConfd_Nginx.sh stop %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker rm -f ${confdDockerTag}_%i

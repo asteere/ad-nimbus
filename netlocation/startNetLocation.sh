@@ -6,6 +6,7 @@
 # Upon termination remove the consul key, send the signal to docker
 
 echo "==================== `basename $0` started args:$*: ======================="
+set -x
 
 function setup() {
     echo `basename $0` in setup
@@ -18,7 +19,7 @@ function setup() {
 
     set -a
         
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment 
+    for envFile in /etc/environment /home/core/ad-nimbus/adNimbusEnvironment /home/core/ad-nimbus/.sharedProfile
     do  
         if test ! -f "$envFile"
         then
@@ -32,6 +33,17 @@ function setup() {
     netLocationConsulValue=-1
     netLocationGuestOsPort=-1
 
+    if test "$netLocationImplementation" == "go"
+    then
+        dockerCmd="/netlocation/bin/netlocation"
+    else
+        dockerCmd="/src/startNpm.sh"
+    fi
+    dockerCmd="$dockerCmd ${COREOS_PRIVATE_IPV4} $instance"
+    svc=${netLocationService}-${netLocationImplementation}
+    dockerImage=$svc:${netLocationDockerTag}-${netLocationImplementation} 
+    dockerRepoImage=${DOCKER_USER}/$dockerImage
+
     set +a
 }
 
@@ -39,7 +51,7 @@ function setKeyValue() {
     key=$1
     value=$2
 
-    /usr/bin/curl -v -s -X PUT -d $value http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
+    curl -v -s -X PUT -d $value http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
     
     dumpConsulKeys
 }
@@ -47,13 +59,13 @@ function setKeyValue() {
 function removeKeyValue() {
     key=$1
 
-    /usr/bin/curl -v -s -X DELETE http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
+    curl -v -s -X DELETE http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv${key}
 
     dumpConsulKeys
 }
 
 function dumpConsulKeys() {
-    /usr/bin/curl -v -s -L -X GET http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv/?recurse
+    curl -v -s -L -X GET http://${COREOS_PRIVATE_IPV4}:${consulHttpPort}/v1/kv/?recurse
 }
 
 function createNetLocationConsulKey() {
@@ -85,30 +97,47 @@ function registerService() {
     "$adNimbusDir"/monitor/monitor.sh registerNetLocationService $instance ${COREOS_PRIVATE_IPV4} $port
 }
 
-function startDocker() {
-    # From: https://github.com/coreos/fleet/issues/612
-    #    -p 49170:8080 \
-    # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.
-    /usr/bin/docker run \
-        --name=${containerName} $interactive \
-        --rm=true \
-        -P \
-        --volume="$adNimbusDir"/${netLocationService}/src:/src \
-        --volume="$adNimbusTmp":${tmpDir} \
-        ${DOCKER_REGISTRY}/${netLocationService}:${netLocationDockerTag} \
-        $dockerCmd
+function loadContainers() {
+    docker rm -f ${containerName} > /dev/null 2>&1
+    $adNimbusDir/adnimbus_registry/startAdNimbusRegistry.sh startPre $svc
+
+    docker ps | grep -q "$netLocationDataContainer"
+    if test $? != 0
+    then
+        createnetlocationdatacontainer
+    fi
+
+    docker ps -a
 }
 
 function start() {
-    dockerCmd="/src/startNpm.sh ${COREOS_PRIVATE_IPV4} $instance"
+    loadContainers
 
     startDocker
 }
 
-function startDockerBash() {
-    dockerCmd="/bin/bash $*"
+function startDocker() {
+    # From: https://github.com/coreos/fleet/issues/612
+    #    -p 49170:8080 \
+    # Use -P as multiple netlocation services can be started on the same OS. Don't want the ports to conflict.
+    docker run \
+        --name=${containerName} $interactive \
+        --rm=true \
+        --expose=$netLocationContainerPort \
+        -P \
+        --volumes-from $netLocationDataContainer \
+        --volume="$adNimbusDir"/$netLocationService/$netLocationImplementation/src:/src \
+        --volume="$adNimbusTmp":${tmpDir} \
+        $dockerRepoImage \
+        $dockerCmd
 
-    interactive="-it"
+#        --volume="$adNimbusDir"/$netLocationService/data:/data \
+}
+
+function startDockerBash() {
+    dockerCmd="bash $*"
+
+    interactive="-it --privileged"
 
     startDocker
 }
@@ -126,7 +155,7 @@ function cleanup() {
 
     docker kill -s $signal $containerName
 
-    docker rm -f ${containerName}
+    docker rm -f $containerName
 
     createNetLocationConsulKey $instance
 
@@ -151,7 +180,7 @@ function stop() {
         instance=$1
     fi
 
-    docker kill -s KILL ${netlocationService}_$instance
+    docker kill -s KILL $containerName
 }
 
 if test "$1" == "-d"
@@ -164,7 +193,13 @@ functionName=$1
 shift 1
 
 instance=$1
-containerName=${netLocationDockerTag}_$instance 
+if test "$instance" == ""
+then
+    instance=1
+else
+    shift 1
+fi
+containerName=${netLocationService}_$instance 
 
 setup
 

@@ -14,8 +14,8 @@ var SERVICE = "netLocation";
 var PORT = 8080;
 
 // Initialize MaxMind geo-location data.
-var countryDb = geoReader.openSync(__dirname + '/data/maxMind/GeoIP2-City.mmdb');
-var ispDb = geoReader.openSync(__dirname + '/data/maxMind/GeoIP2-ISP.mmdb');
+var countryDb = geoReader.openSync('/data/maxMind/GeoIP2-City.mmdb');
+var ispDb = geoReader.openSync('/data/maxMind/GeoIP2-ISP.mmdb');
 
 // Print the result
 

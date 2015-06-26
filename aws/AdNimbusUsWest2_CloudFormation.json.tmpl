@@ -1,0 +1,93 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CoreOS on EC2: http://coreos.com/docs/running-coreos/cloud-providers/ec2/",
+  "Resources": {
+    "CoreOSServerAutoScale": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": {"Fn::GetAZs": ""},
+        "LaunchConfigurationName": {"Ref": "CoreOSServerLaunchConfig"},
+        "MinSize": "0",
+        "MaxSize": "12",
+        "DesiredCapacity": "0",
+        "Tags": [
+            {"Key": "Name", "Value": { "Ref" : "AWS::StackName" }, "PropagateAtLaunch": true}
+        ]
+      }
+    },    
+    "CoreOSServerLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId" : "ami-REPLACEME",
+        "InstanceType": "t2.micro",
+        "KeyName": "AdNimbusUsWest2",
+        "SecurityGroups": ["AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5"],
+        "UserData" : { "Fn::Base64":
+          { "Fn::Join": [ "", [
+                "#cloud-config\n",
+                "---\n",
+                "coreos:\n",
+                "  update:\n",
+                "    reboot-strategy: 'off'\n",
+                "  etcd:\n",
+                "    discovery: https://discovery.etcd.io/REPLACEME\n",
+                "    addr: $private_ipv4:4001\n",
+                "    peer-addr: $private_ipv4:7001\n",
+                "    peer-election-timeout: 2000\n",
+                "    peer-heartbeat-interval: 500\n",
+                "  fleet:\n",
+                "    public-ip: $private_ipv4\n",
+                "    etcd_request_timeout: 3.0\n",
+                "  units:\n",
+                "  - name: etcd.service\n",
+                "    command: start\n",
+                "  - name: fleet.service\n",
+                "    command: start\n",
+                "  - name: docker-tcp.socket\n",
+                "    command: start\n",
+                "    enable: true\n",
+                "    content: |\n",
+                "      [Unit]\n",
+                "      Description=Docker Socket for the API\n\n",
+                "      [Socket]\n",
+                "      ListenStream=2375\n",
+                "      Service=docker.service\n",
+                "      BindIPv6Only=both\n\n",
+                "      [Install]\n",
+                "      WantedBy=sockets.target\n",
+                "# Note: write_files is executed before the coreos section\n",
+                "write_files:\n",
+                "  - path: /etc/ntp.conf\n",
+                "    permissions: 644\n",
+                "    owner: root\n",
+                "    content: |\n",
+                "      # Allow for large adjustments in time\n",
+                "      # From: http://serverfault.com/questions/365690/\n",
+                "      #     best-practices-for-ntp-updating-in-virtualbox-virtual-machines-without-guest-add\n",
+                "      tinker panic 0\n\n",
+                "      # Common pool\n",
+                "      server 0.coreos.pool.ntp.org\n",
+                "      server 1.coreos.pool.ntp.org\n",
+                "      server 2.coreos.pool.ntp.org\n",
+                "      server 3.coreos.pool.ntp.org\n\n",
+                "      # - Allow only time queries, at a limited rate.\n",
+                "      # - Allow all local queries (IPv4, IPv6)\n",
+                "      restrict default nomodify nopeer noquery limited kod\n",
+                "      restrict 127.0.0.1\n",
+                "      restrict [::1]\n",
+                "  - path: /home/core/.bash_profile\n",
+                "    permissions: 644\n",
+                "    owner: core\n",
+                "    content: |\n",
+                "      #!/bin/bash\n\n",
+                "      if test -f ~/ad-nimbus/.coreosProfile\n",
+                "      then\n",
+                "           . ~/ad-nimbus/.coreosProfile\n",
+                "      fi\n"
+            ] ]
+          }
+        }
+      }
+    }
+  }
+}

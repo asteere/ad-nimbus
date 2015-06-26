@@ -4,7 +4,7 @@
 .*.swp
 
 # TODO: Decide if we want a bin folder of Linux exes to help with debugging
-bin
+bin/
 
 # Discovery token gets updated everytime "vagrant up" or "vagrant reload" occurs. 
 # Use a template file to minimize what gets committed.
@@ -21,10 +21,10 @@ insecure_private_key
 
 # TODO: Is npm install of netlocation which requires express and maxmind saving them to netlocation/src/node_modules? 
 # TODO: Is there a better way to get nodejs running without writing node_modules
-netlocation/src/node_modules
+netlocation/nodejs/src/node_modules
 
 # Don't include maxmind stuff until we get our own repository for git and docker
-netlocation/src/data/*
+netlocation/data/*
 
 # Ignore test files for health checks
 netlocation/src/netlocation@*.service_*.cfg
@@ -37,8 +37,25 @@ nginx/.nginx.conf*
 */.nfs*
 
 # Scribble area for monitor logs, demo config information, etc
-**/tmp
+tmp/
 
 # Docker registry for this project
 registrySaves
 registry-dev
+
+# temporary files used by aws scripts
+aws/stackName
+aws/imageIdFile
+aws/user-data-aws
+
+# Temp script workaround to restore permissions on the ec2 instance
+bin/restorePermissions.sh
+
+# Ignore go build artifacts
+netlocation/go/bin
+netlocation/go/pkg
+
+# Files created when running bash in the JMeter container 
+LoadTests/JMeter/.java
+LoadTests/JMeter/.bash_history
+

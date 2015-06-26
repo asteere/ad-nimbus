@@ -11,7 +11,7 @@ if File.exists?('user-data.tmpl') && ( ARGV[0].eql?('up') )
  
   data = YAML.load(IO.readlines('user-data.tmpl')[1..-1].join)
   data['coreos']['etcd']['discovery'] = token
- 
+
   yaml = YAML.dump(data)
   File.open('user-data', 'w') { |file| file.write("#cloud-config\n\n#{yaml}") }
 end

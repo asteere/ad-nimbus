@@ -14,8 +14,9 @@ then
     nginxDir=/opt/nginx
     tmpDir=/opt/tmp
 else
-    nginxDir=/home/core/share/nginx
-    tmpDir=/home/core/share/tmp
+    # We are running from the command line, .coreosProfile should have been sourced
+    nginxDir="$adNimbusDir"/nginx
+    tmpDir="$adNimbusDir"/tmp
 fi
 nginxCidFile="$tmpDir"/nginx.cid
 

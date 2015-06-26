@@ -15,8 +15,3 @@ RUN chmod +x /etc/confd/confd
 # From: http://blog.dixo.net/2015/02/sending-signals-from-one-docker-container-to-another/
 RUN yum -y install nc
 
-# Make the folder accessible by ssh container
-VOLUME /usr/share
-
-
-

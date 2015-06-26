@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jmeterTestPlan version="1.2" properties="2.7" jmeter="2.12 r1636949">
+<jmeterTestPlan version="1.2" properties="2.8" jmeter="2.13 r1665067">
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="DevOps NetLocation Load Test" enabled="true">
       <stringProp name="TestPlan.comments"></stringProp>
@@ -9,7 +9,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="domain" elementType="Argument">
             <stringProp name="Argument.name">domain</stringProp>
-            <stringProp name="Argument.value">172.17.8.105</stringProp>
+            <stringProp name="Argument.value">172.17.8.103</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="port" elementType="Argument">
@@ -19,12 +19,12 @@
           </elementProp>
           <elementProp name="path" elementType="Argument">
             <stringProp name="Argument.name">path</stringProp>
-            <stringProp name="Argument.value"></stringProp>
+            <stringProp name="Argument.value">/api/v1/netLocation/</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="resourceNetLocation" elementType="Argument">
             <stringProp name="Argument.name">resourceNetLocation</stringProp>
-            <stringProp name="Argument.value"></stringProp>
+            <stringProp name="Argument.value">198.243.23.131</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -36,10 +36,10 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">100</stringProp>
+          <stringProp name="LoopController.loops">4</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">250</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+        <stringProp name="ThreadGroup.num_threads">2</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">0</stringProp>
         <longProp name="ThreadGroup.start_time">1422653874000</longProp>
         <longProp name="ThreadGroup.end_time">1422653874000</longProp>
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
@@ -160,113 +160,6 @@
             <stringProp name="filename">jmeterSimpleDataWriter.log</stringProp>
           </ResultCollector>
           <hashTree/>
-          <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.ThreadsStateOverTimeGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Active Threads Over Time" enabled="true">
-            <boolProp name="ResultCollector.error_logging">false</boolProp>
-            <objProp>
-              <name>saveConfig</name>
-              <value class="SampleSaveConfiguration">
-                <time>true</time>
-                <latency>true</latency>
-                <timestamp>true</timestamp>
-                <success>true</success>
-                <label>true</label>
-                <code>true</code>
-                <message>true</message>
-                <threadName>true</threadName>
-                <dataType>true</dataType>
-                <encoding>false</encoding>
-                <assertions>true</assertions>
-                <subresults>true</subresults>
-                <responseData>false</responseData>
-                <samplerData>false</samplerData>
-                <xml>false</xml>
-                <fieldNames>false</fieldNames>
-                <responseHeaders>false</responseHeaders>
-                <requestHeaders>false</requestHeaders>
-                <responseDataOnError>false</responseDataOnError>
-                <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
-                <assertionsResultsToSave>0</assertionsResultsToSave>
-                <bytes>true</bytes>
-                <threadCounts>true</threadCounts>
-              </value>
-            </objProp>
-            <stringProp name="filename"></stringProp>
-            <longProp name="interval_grouping">500</longProp>
-            <boolProp name="graph_aggregated">false</boolProp>
-            <stringProp name="include_sample_labels"></stringProp>
-            <stringProp name="exclude_sample_labels"></stringProp>
-            <stringProp name="start_offset"></stringProp>
-            <stringProp name="end_offset"></stringProp>
-            <boolProp name="include_checkbox_state">false</boolProp>
-            <boolProp name="exclude_checkbox_state">false</boolProp>
-          </kg.apc.jmeter.vizualizers.CorrectedResultCollector>
-          <hashTree/>
-          <ResultCollector guiclass="StatGraphVisualizer" testclass="ResultCollector" testname="Aggregate Graph" enabled="true">
-            <boolProp name="ResultCollector.error_logging">false</boolProp>
-            <objProp>
-              <name>saveConfig</name>
-              <value class="SampleSaveConfiguration">
-                <time>true</time>
-                <latency>true</latency>
-                <timestamp>true</timestamp>
-                <success>true</success>
-                <label>true</label>
-                <code>true</code>
-                <message>true</message>
-                <threadName>true</threadName>
-                <dataType>true</dataType>
-                <encoding>false</encoding>
-                <assertions>true</assertions>
-                <subresults>true</subresults>
-                <responseData>false</responseData>
-                <samplerData>false</samplerData>
-                <xml>false</xml>
-                <fieldNames>false</fieldNames>
-                <responseHeaders>false</responseHeaders>
-                <requestHeaders>false</requestHeaders>
-                <responseDataOnError>false</responseDataOnError>
-                <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
-                <assertionsResultsToSave>0</assertionsResultsToSave>
-                <bytes>true</bytes>
-                <threadCounts>true</threadCounts>
-              </value>
-            </objProp>
-            <stringProp name="filename"></stringProp>
-          </ResultCollector>
-          <hashTree/>
-          <ResultCollector guiclass="GraphVisualizer" testclass="ResultCollector" testname="Graph Results" enabled="true">
-            <boolProp name="ResultCollector.error_logging">false</boolProp>
-            <objProp>
-              <name>saveConfig</name>
-              <value class="SampleSaveConfiguration">
-                <time>true</time>
-                <latency>true</latency>
-                <timestamp>true</timestamp>
-                <success>true</success>
-                <label>true</label>
-                <code>true</code>
-                <message>true</message>
-                <threadName>true</threadName>
-                <dataType>true</dataType>
-                <encoding>false</encoding>
-                <assertions>true</assertions>
-                <subresults>true</subresults>
-                <responseData>false</responseData>
-                <samplerData>false</samplerData>
-                <xml>false</xml>
-                <fieldNames>false</fieldNames>
-                <responseHeaders>false</responseHeaders>
-                <requestHeaders>false</requestHeaders>
-                <responseDataOnError>false</responseDataOnError>
-                <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
-                <assertionsResultsToSave>0</assertionsResultsToSave>
-                <bytes>true</bytes>
-                <threadCounts>true</threadCounts>
-              </value>
-            </objProp>
-            <stringProp name="filename"></stringProp>
-          </ResultCollector>
-          <hashTree/>
           <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.LatenciesOverTimeGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Response Latencies Over Time" enabled="true">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
@@ -315,84 +208,6 @@
           </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
           <hashTree/>
         </hashTree>
-        <ResultCollector guiclass="RespTimeGraphVisualizer" testclass="ResultCollector" testname="Response Time Graph" enabled="true">
-          <boolProp name="ResultCollector.error_logging">false</boolProp>
-          <objProp>
-            <name>saveConfig</name>
-            <value class="SampleSaveConfiguration">
-              <time>true</time>
-              <latency>true</latency>
-              <timestamp>true</timestamp>
-              <success>true</success>
-              <label>true</label>
-              <code>true</code>
-              <message>true</message>
-              <threadName>true</threadName>
-              <dataType>true</dataType>
-              <encoding>false</encoding>
-              <assertions>true</assertions>
-              <subresults>true</subresults>
-              <responseData>false</responseData>
-              <samplerData>false</samplerData>
-              <xml>false</xml>
-              <fieldNames>false</fieldNames>
-              <responseHeaders>false</responseHeaders>
-              <requestHeaders>false</requestHeaders>
-              <responseDataOnError>false</responseDataOnError>
-              <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
-              <assertionsResultsToSave>0</assertionsResultsToSave>
-              <bytes>true</bytes>
-              <threadCounts>true</threadCounts>
-            </value>
-          </objProp>
-          <stringProp name="filename"></stringProp>
-        </ResultCollector>
-        <hashTree/>
-        <kg.apc.jmeter.vizualizers.CompositeResultCollector guiclass="kg.apc.jmeter.vizualizers.CompositeGraphGui" testclass="kg.apc.jmeter.vizualizers.CompositeResultCollector" testname="jp@gc - Composite Graph" enabled="true">
-          <boolProp name="ResultCollector.error_logging">false</boolProp>
-          <objProp>
-            <name>saveConfig</name>
-            <value class="SampleSaveConfiguration">
-              <time>true</time>
-              <latency>true</latency>
-              <timestamp>true</timestamp>
-              <success>true</success>
-              <label>true</label>
-              <code>true</code>
-              <message>true</message>
-              <threadName>true</threadName>
-              <dataType>true</dataType>
-              <encoding>false</encoding>
-              <assertions>true</assertions>
-              <subresults>true</subresults>
-              <responseData>false</responseData>
-              <samplerData>false</samplerData>
-              <xml>false</xml>
-              <fieldNames>false</fieldNames>
-              <responseHeaders>false</responseHeaders>
-              <requestHeaders>false</requestHeaders>
-              <responseDataOnError>false</responseDataOnError>
-              <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
-              <assertionsResultsToSave>0</assertionsResultsToSave>
-              <bytes>true</bytes>
-              <threadCounts>true</threadCounts>
-            </value>
-          </objProp>
-          <stringProp name="filename"></stringProp>
-          <longProp name="interval_grouping">500</longProp>
-          <boolProp name="graph_aggregated">false</boolProp>
-          <stringProp name="include_sample_labels"></stringProp>
-          <stringProp name="exclude_sample_labels"></stringProp>
-          <stringProp name="start_offset"></stringProp>
-          <stringProp name="end_offset"></stringProp>
-          <boolProp name="include_checkbox_state">false</boolProp>
-          <boolProp name="exclude_checkbox_state">false</boolProp>
-          <collectionProp name="COMPOSITE_CFG">
-            <collectionProp name=""/>
-            <collectionProp name=""/>
-          </collectionProp>
-        </kg.apc.jmeter.vizualizers.CompositeResultCollector>
-        <hashTree/>
       </hashTree>
     </hashTree>
   </hashTree>

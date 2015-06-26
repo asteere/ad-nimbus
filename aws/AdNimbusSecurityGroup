@@ -1,0 +1,186 @@
+{
+    "SecurityGroups": [
+        {
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1", 
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ], 
+                    "UserIdGroupPairs": [], 
+                    "PrefixListIds": []
+                }
+            ], 
+            "Description": "CoreOS SecurityGroup", 
+            "Tags": [
+                {
+                    "Value": "arn:aws:cloudformation:us-west-2:015325900309:stack/AdNimbusUsWest2/e0b780e0-0e16-11e5-bcd6-50e2414b0a7c", 
+                    "Key": "aws:cloudformation:stack-id"
+                }, 
+                {
+                    "Value": "CoreOSSecurityGroup", 
+                    "Key": "aws:cloudformation:logical-id"
+                }, 
+                {
+                    "Value": "AdNimbusUsWest2", 
+                    "Key": "aws:cloudformation:stack-name"
+                }
+            ], 
+            "IpPermissions": [
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 4096, 
+                    "IpRanges": [], 
+                    "ToPort": 4096, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 22, 
+                    "IpRanges": [], 
+                    "ToPort": 22, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 8000, 
+                    "IpRanges": [], 
+                    "ToPort": 8500, 
+                    "IpProtocol": "udp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 8500, 
+                    "IpRanges": [
+                        {
+                            "CidrIp": "198.243.23.131/32"
+                        }
+                    ], 
+                    "ToPort": 8500, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": []
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 22, 
+                    "IpRanges": [
+                        {
+                            "CidrIp": "198.243.23.131/32"
+                        }
+                    ], 
+                    "ToPort": 22, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": []
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 7001, 
+                    "IpRanges": [], 
+                    "ToPort": 7001, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 1024, 
+                    "IpRanges": [], 
+                    "ToPort": 65535, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 49190, 
+                    "IpRanges": [], 
+                    "ToPort": 49190, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }, 
+                {
+                    "PrefixListIds": [], 
+                    "FromPort": 4001, 
+                    "IpRanges": [], 
+                    "ToPort": 4001, 
+                    "IpProtocol": "tcp", 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-8fcf20eb"
+                        }
+                    ]
+                }
+            ], 
+            "GroupName": "AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5", 
+            "VpcId": "vpc-6b850b0e", 
+            "OwnerId": "015325900309", 
+            "GroupId": "sg-8fcf20eb"
+        }, 
+        {
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1", 
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ], 
+                    "UserIdGroupPairs": [], 
+                    "PrefixListIds": []
+                }
+            ], 
+            "Description": "default VPC security group", 
+            "IpPermissions": [
+                {
+                    "IpProtocol": "-1", 
+                    "IpRanges": [], 
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "015325900309", 
+                            "GroupId": "sg-23f01747"
+                        }
+                    ], 
+                    "PrefixListIds": []
+                }
+            ], 
+            "GroupName": "default", 
+            "VpcId": "vpc-6b850b0e", 
+            "OwnerId": "015325900309", 
+            "GroupId": "sg-23f01747"
+        }
+    ]
+}

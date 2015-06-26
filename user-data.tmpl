@@ -3,7 +3,7 @@
 ---
 coreos:
   update:
-    reboot-strategy:off
+    reboot-strategy: 'off'
   etcd:
     discovery: https://discovery.etcd.io/06ba7da0d69ee50b963604714f7ea022
     addr: $private_ipv4:4001
@@ -13,7 +13,6 @@ coreos:
   fleet:
     public-ip: $private_ipv4
     etcd_request_timeout: 3.0
-    metadata: core-01=172.17.8.101,core-02=172.17.8.102,core-03=172.17.8.103
   units:
   - name: etcd.service
     command: start
@@ -33,9 +32,10 @@ coreos:
 
       [Install]
       WantedBy=sockets.target
+# Note: write_files is executed before the coreos section
 write_files:
   - path: /etc/ntp.conf
-    permissions: 0644
+    permissions: 644
     owner: root
     content: |
       # Allow for large adjustments in time
@@ -55,12 +55,13 @@ write_files:
       restrict 127.0.0.1
       restrict [::1]
   - path: /home/core/.bash_profile
-    permissions: 0644
+    permissions: 644
     owner: core
     content: |
       #!/bin/bash
 
-      if test -f ~/share/.coreosProfile
+      if test -f ~/ad-nimbus/.coreosProfile
       then
-           . ~/share/.coreosProfile
+           . ~/ad-nimbus/.coreosProfile
       fi
+

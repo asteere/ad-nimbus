@@ -1,11 +1,12 @@
-DOCKER_REGISTRY=asteere
+DOCKER_USER=asteere
 currentContainers="consul netlocation confd nginx" 
 #adnimbus_registry"
 
-adNimbusDir=/home/core/share
+# Can't use variables in fleetctl ENV files
+adNimbusDir=/home/core/ad-nimbus
 
 # shared tmp folder on coreos and docker
-adNimbusTmp=/home/core/share/tmp
+adNimbusTmp=/home/core/ad-nimbus/tmp
 tmpDir=/opt/tmp
 
 # etcd
@@ -28,6 +29,7 @@ consulDnsPort=8600
 consulDir=/opt/consul
 
 # netLocation
+netLocationImplementation=go
 netLocationService=netlocation
 netLocationDockerTag=netlocation
 netLocationKey=/raptor/netlocation
@@ -35,9 +37,12 @@ netLocationKey=/raptor/netlocation
 netLocationContainerPort=8080
 netLocationDir=/opt/netlocation
 netLocationTestUrl=/api/v1/netLocation/198.243.23.131
+netLocationDataContainer=netlocationdata
+
+# monitor.sh uses reflection on this variable name to get min and max values
 netlocationRoot=NetLocation
-minNetLocationServices=1
-maxNetLocationServices=3
+minNetLocationServices=3
+maxNetLocationServices=6
 
 # nginx
 nginxService=nginx
@@ -45,6 +50,8 @@ nginxDockerTag=nginx
 nginxGuestOsPort=49160
 nginxContainerPort=80
 nginxDir=/opt/nginx
+
+# monitor.sh uses reflection on this variable name to get min and max values
 nginxRoot=Nginx
 minNginxServices=1
 maxNginxServices=1
@@ -56,3 +63,6 @@ adNimbusRegistryService=adnimbus_registry
 adNimbusRegistryDockerTag=adnimbus_registry
 adNimbusRegistryGuestOsPort=5000
 adNimbusRegistryContainerPort=5000
+
+# Empty image used as a building block
+scratch=scratch

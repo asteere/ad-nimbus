@@ -1,5 +1,4 @@
-#!/bin/bash 
-
+#! /bin/bash 
 
 function getIpAddrsInCluster() {
     fleetctl list-machines -fields=ip --no-legend
@@ -8,7 +7,7 @@ function getIpAddrsInCluster() {
 function setup() {
     set -a
 
-    for envFile in /etc/environment /home/core/share/adNimbusEnvironment /home/core/share/monitor/monitorEnvironment
+    for envFile in /etc/environment /home/core/ad-nimbus/adNimbusEnvironment /home/core/ad-nimbus/monitor/monitorEnvironment
     do
         if test -f "$envFile"
         then
@@ -17,7 +16,7 @@ function setup() {
     done 
 
     # TODO: When a check gets set should we set the consulIpAddr to that address so it runs local
-    consulIpAddr=`getIpAddrsInCluster | awk '{print $1}'`
+    consulIpAddr=`getIpAddrsInCluster | head -1`
 
     curlOptions='-s -L'
 
@@ -655,5 +654,5 @@ then
     exit 0
 fi
 
-return 2>/dev/null || echo Usage: `basename $0` '[start|stop]' && exit 1
+return 2>/dev/null || echo Usage: `basename $0` 'functionName functionArgs' && exit 1
 

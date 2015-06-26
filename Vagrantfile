@@ -38,9 +38,9 @@ def vm_cpus
 end
 
 Vagrant.configure("2") do |config|
-    # always use Vagrants insecure key
+    # TODO: Get insert_key = true (default) to work
     config.ssh.insert_key = false
-    config.ssh.forward_agent = true;
+    config.ssh.forward_agent = true
 
     config.vm.box = "coreos-%s" % $update_channel
 
@@ -116,7 +116,7 @@ Vagrant.configure("2") do |config|
             # Allow port forwarding on the nginx port
             config.vm.network "forwarded_port", guest: 49160, host: 49160, auto_correct: true
 
-            # TODO: For load testing purposes, allow the net location servers to be individually queried
+            # TODO: Uncomment if you need to access the net location servers from the host/web
             #config.vm.network "forwarded_port", guest: 49170, host: 49170, auto_correct: true
 
             ["vmware_fusion", "vmware_workstation"].each do |vmware|
@@ -134,7 +134,7 @@ Vagrant.configure("2") do |config|
             end
 
             # Enable NFS for sharing the host machine into the VM.
-            config.vm.synced_folder ".", "/home/core/share", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
+            config.vm.synced_folder ".", "/home/core/ad-nimbus", id: "core", :nfs => true, :mount_options => ['nolock,vers=3,udp']
 
             # Load the WebContent Research project if available
             webContentDir = ENV['webContentDir']

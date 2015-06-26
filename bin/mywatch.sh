@@ -1,33 +1,34 @@
 #! /bin/bash
 
-set -a
-if test -d "/home/core/share"
+# Allow functions to be watched
+# Works:
+#   Functions sourced at start of each script (.hostProfile) can be watched
+
+if test "$1" == "-d"
 then
-    . "$adNimbusDir"/.coreosProfile
-else
-    . "$adNimbusDir/".hostProfile
+    set -x
+    shift 1
 fi
+
+set -a
+
+if test "`uname -s`" == "Darwin"
+then
+    . "$adNimbusDir"/.hostProfile
+else
+    . "$adNimbusDir"/.coreosProfile
+fi
+
+export -f `grep '^function' "$adNimbusDir"/.awsProfile "$adNimbusDir"/.hostProfile \
+    "$adNimbusDir"/.coreosProfile "$adNimbusDir"/.sharedFunctions | \
+    sed 's/.*ion \(.*\)(.*/\1/'` 2> /dev/null
+
 set +a
 
 cmd=`basename $0`
 
-Usage="$cmd -n interval scriptFunctionAlias arguments"
+Usage="$cmd watchArguments scriptFunctionAlias arguments"
 
-#set -x
-echo $*
-interval=2
-if test "$1" == "-n"
-then
-    shift 1
-    interval=$1
-    shift 1
-fi
+#echo $*
 
-if test "$cmd" == "mywatch.sh"
-then
-    typeset -f "$*"
-    watch -n $interval $*
-else
-    typeset -f vs
-    mywatch.sh watch -n $interval $*
-fi
+watch $*

@@ -5,19 +5,19 @@
 
 # For the sake of foolish consistency and to make it easier to remember, functions are lower case
 function d() { 
-    docker $* 
+    rundocker $* 
 }
 
 function dps() { 
-    docker ps -a $*
+    rundocker ps -a $*
 }
 
 function dpsa() { 
-    docker ps -a $*
+    rundocker ps -a $*
 }
 
 function di() { 
-    docker images $*
+    rundocker images $*
 }
 
 function f() { 
@@ -69,8 +69,7 @@ function fstartadnimbus_registry() {
 }
 
 function fstartnetlocation() {
-    numNetLocationInstances=1
-    fstart netlocation $numNetLocationInstances
+    fstart netlocation $minNetLocationServices
 }
 
 function etctree() { 
@@ -102,7 +101,7 @@ function fjournal() {
         shift 1
     fi
 
-    if [[ "$1" == "-"* ]]
+    if [[ "$1" == "-"[0-9]* ]]
     then
         linesArg=`echo $1 | sed 's/-/-lines=/'`
         shift 1
@@ -218,7 +217,7 @@ function waitforcoreosdockertar() {
         echo Jobs still running: 
         jobs
         interval=10
-        echo $jobs | grep Stopped 2>&1 > /dev/null
+        echo $jobs | grep -q Stopped
         if test "$?" == 0
         then
             interval=5
@@ -389,7 +388,7 @@ function fstatus() {
             # User fleetctl journal instead
 
             f status $service 2>&1 > /tmp/status.out
-            grep 'Loaded' /tmp/status.out | grep 'not-found' 2>&1 > /dev/null
+            grep 'Loaded' /tmp/status.out | grep -q 'not-found'
             if test $? == 1
             then
                 cat /tmp/status.out
@@ -502,41 +501,28 @@ function drmf() {
     for ipAddr in `getIpAddrsInCluster`
     do 
         echo Checking for docker containers on $ipAddr
-        dockerContainers=`ssh $ipAddr docker ps -a 2>&1 | \
-            grep -v -e 'list of known hosts' -e NAMES | \
-            awk '{print $NF}'`
-
-        if test ! "$dockerContainers" == ""
-        then
-            echo Removing docker containers: $dockerContainers on $ipAddr
-            ssh $ipAddr docker rm -f $dockerContainers 
-        fi
+        ssh $ipAddr "docker ps -aq | xargs --no-run-if-empty docker rm -vf"
     done
 }
 
 function dockerbash() {
     cdad
 
-    echo NFS share $adNimbusDir will be located on /opt/share
+    echo NFS share $adNimbusDir will be located on /opt/ad-nimbus
 
-    docker run -v $adNimbusDir:/opt/share -it $DOCKER_REGISTRY/devutils:devutils /bin/bash 
+    rundocker run -v $adNimbusDir:/opt/ad-nimbus -it $DOCKER_USER/devutils:devutils /bin/bash 
 }
 
-if test "$HOME" != "/home/core" -a ! -d "/Users"
+# If we are on coreos or centos (in the demo environment) then /home/core should be defined
+# If we are Darwin then a user is sourcing this file and adNimbusDir is defined and the .shareProfile have been sourced.
+if test "$adNimbusDir" == ""
 then
-    mkdir -p /home/core
-    echo Creating link from /home/core/share to `pwd`. If this is not the ad-nimbus root, please create the correct link.
-    ln -s `pwd` /home/core/share
+    export adNimbusDir=/home/core/ad-nimbus
 fi
 
-if test -d "/home/core/share"
-then
-    export adNimbusDir=/home/core/share
+. "$adNimbusDir"/.sharedProfile
 
-    . "$adNimbusDir"/.sharedProfile
-
-    cdad
-fi
+cdad
 
 if test -x "$adNimbusDir/devutils/jq"
 then
@@ -550,21 +536,36 @@ then
     }
 fi
 
-ssh-add -L | grep insecure_private_key 2>&1 > /dev/null
-if test ! $? == 0
+# TODO: Figure out how to kill the ssh-agent on logout. Need to make it part of cloud-init
+# Setup ssh
+# http://docstore.mik.ua/orelly/networking_2ndEd/ssh/ch06_03.htm
+# Setup fleetctl status
+#if [ -z "$PS1" ]
+#then
+#    trap '
+#      test -n "$SSH_AGENT_PID"  && eval `ssh-agent -k` ;
+#      test -n "$SSH2_AGENT_PID" && kill $SSH2_AGENT_PID
+#    ' 0
+#fi
+
+# If no agent is running and we have a terminal, run ssh-agent and ssh-add.
+# (For SSH2, change this to use SSH2_AUTH_SOCK, ssh-agent2 and ssh-add2.)
+if [ "$SSH_AUTH_SOCK" = "" ]
 then
-    # if this gets read in by .bashrc there can't be any output
-    ssh-add insecure_private_key > /dev/null 2>&1
+  eval `ssh-agent`
+  /usr/bin/tty > /dev/null && ssh-add
 fi
 
-# Setup fleetctl status
-if test "$SSH_AUTH_SOCK" == ""
+if test -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
 then
-    eval $(ssh-agent)
+    # TODO: Are we adding this too many times?
+    # if this gets read in by .bashrc there can't be any output
+    ssh-add ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem > /dev/null 2>&1
+    ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys
 fi
 
 export VIMINIT='set ic number tabstop=4 shiftwidth=4 expandtab noai nocin nosi inde=<CR> fileformat=unix'
-export numInstances=`grep '$num_instances=' config.rb | sed 's/.*=//'`
+export numInstances=`grep '$num_instances=' "$adNimbusDir/config.rb" | sed 's/.*=//'`
 
 if test -f /etc/environment
 then

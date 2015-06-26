@@ -14,7 +14,7 @@ After=etcd.service
 KillMode=none
 
 EnvironmentFile=/etc/environment
-EnvironmentFile=/home/core/share/adNimbusEnvironment
+EnvironmentFile=/home/core/ad-nimbus/adNimbusEnvironment
 
 # Pulling the container the first time can take more than the default 90secs. Set to 0 for no timeout
 TimeoutStartSec=0
@@ -23,11 +23,11 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/home/core/share/adnimbus_registry/startAdNimbusRegistry.sh startPre ${nginxService}
+ExecStartPre=/home/core/ad-nimbus/adnimbus_registry/startAdNimbusRegistry.sh startPre ${nginxService}
 
-ExecStartPre=/home/core/share/monitor/monitor.sh registerNginxService %i ${COREOS_PRIVATE_IPV4}
+ExecStartPre=/home/core/ad-nimbus/monitor/monitor.sh registerNginxService %i ${COREOS_PRIVATE_IPV4}
 
-ExecStart=/home/core/share/nginx/startNginx.sh start %i
+ExecStart=/home/core/ad-nimbus/nginx/startNginx.sh start %i
 
 ExecStopPost=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStopPost=-/usr/bin/docker ps -a

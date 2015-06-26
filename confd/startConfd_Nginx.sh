@@ -8,7 +8,7 @@ instance=$2
 function setup() {
     set -a
     . /etc/environment
-    . /home/core/share/adNimbusEnvironment
+    . /home/core/ad-nimbus/adNimbusEnvironment
 
     set +a
 

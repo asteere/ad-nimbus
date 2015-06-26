@@ -1,11 +1,11 @@
 #!/bin/bash
 
-echo `basename $0` args:$*:
+echo '=========================' `basename $0` args:$*: '=========================='
 
 function setup() {
     set -a
     . /etc/environment
-    . /home/core/share/adNimbusEnvironment
+    . /home/core/ad-nimbus/adNimbusEnvironment
     set +a
 
     trap 'sendSignal SIGTERM' TERM
@@ -29,7 +29,7 @@ function start() {
         --volume="$adNimbusDir"/${confdService}:${confdDir} \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
         --volume="$adNimbusTmp":${tmpDir} \
-        ${DOCKER_REGISTRY}/${confdService}:${confdDockerTag} \
+        ${DOCKER_USER}/${confdService}:${confdDockerTag} \
         /etc/confd/confd \
         -backend=${consulService} \
         -confdir=${confdDir} \

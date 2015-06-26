@@ -13,15 +13,6 @@ RUN yum install -y nodejs
 # Install app dependencies.
 RUN npm i maxmind-db-reader
 
-# Copy app source to VM. If you do this, then you need to rebuild the container whenever anything in src changes
-#COPY ./src /src
-
-# Install app.
-#RUN cd /src; npm i
-
-# Map port.
-EXPOSE 8080
-
 # Define runtime.
 #CMD ["node", "/src/index.js"]
 
