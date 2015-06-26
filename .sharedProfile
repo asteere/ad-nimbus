@@ -4,6 +4,8 @@
 
 sourceadnimbusenvironment
 
+export adNimbusTmp="$adNimbusDir"/tmp
+
 if [ ! -z "$PS1" ]
 then
     # Custom bash prompt via kirsle.net/wizards/ps1.html

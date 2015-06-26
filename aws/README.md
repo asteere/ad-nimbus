@@ -7,30 +7,30 @@
 latestAmi=ami-5d4d486d  # latest Ami as of 6/25/2015
 awscreatestack $latestAmi 1
 
-# Create the adnimbus tar, scp the tar file on a us-west2 coreos image and ssh to it
+# Populate the instance ad-nimbus and the aws credentials
+
+# Either get ad-nimbus from s3 
+awssyncmactos3
+scp -r ~/.aws core@`awsgetpublicipaddresses`:/home/core/
+scp -r "$adNimbusDir"/.awsProfile core@`awsgetpublicipaddresses`:/home/core/
+scp -r "$adNimbusDir"/aws/prepImage.sh core@`awsgetpublicipaddresses`:/home/core/
+
+# Or get it from Mac
 awscreatetar
 awsscpadnimbus
+
+# Either way, open ssh session to instance
 awsopenssh
 
-# On the AWS EC2 instance run the following:
-tar zxvf aws_ad-nimbus*tar.gz
-mv *tar.gz registrySaves
-mv Users/troppus/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem ~/.ssh 
-rm -rf Users
-ssh-keygen -y -f ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem >> ~/.ssh/authorized_keys 
-. ad-nimbus/.coreosProfile
-echo Check if any of the commands fail'?'
+# Pull the data from s3 bucket
+# Get the AWS cli container
+. .awsProfile
+docker pull asteere/aws-cli:aws-cli
+awssyncs3toinstance
+. $adNimbusDir/.coreosProfile
 
-# Stop services and remove files to simulate a boot from a first-time image so coreos will create the right files
-# Kudos: https://nickrandell.wordpress.com/2014/09/29/creating-a-coreos-cluster-on-linode/
-sudo systemctl stop fleet
-sudo systemctl stop etcd
-sudo rm -r /etc/machine-id
-sudo rm -r /var/lib/etcd/*
-sudo rm -r /run/systemd/system/etcd.service.d
-sudo rm -r /run/systemd/system/fleet.service.d
-rm aws_ad-nimbus*tar.gz
-echo awscreateimage `ip addr | grep 'inet ' | grep eth0 | sed 's/.*inet \(.*\)\/.*brd.*/\1/'`
+# Additional setup steps
+$adNimbusDir/aws/prepImage.sh
 
 # Copy the awscreateimage output line above and run it on the Mac. The line should look like the following:
 #awscreateimage 172.31.4.77
@@ -43,10 +43,13 @@ awsdeletestack
 awscreatestack
 awsopenssh
 
-# On the AWS EC2 instance:
+# On an AWS EC2 instance:
 fstartall
 
 # Follow the instructions in docs/RegressionTesting.md
+
+# To start a JMeter cluster
+awscreatestack
 
 # When you are done delete the stack
 awsdeletestack

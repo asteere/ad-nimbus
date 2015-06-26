@@ -1,0 +1,349 @@
+#!/bin/bash
+
+# Everything to do with using AWS services
+
+function awscpmactos3() {
+    awsmactos3 cp --recursive 
+}
+
+function awssyncmactos3() {
+    awsmactos3 sync --delete
+}
+
+function awsmactos3() {
+    cmd=$1
+    opt1=$2
+
+    awsfiletransfer $cmd $adNimbusDir $s3bucket $opt1
+}
+
+function awscps3toinstance() {
+    awss3toinstance cp --recursive 
+}
+
+function awssyncs3toinstance() {
+    awss3toinstance sync --delete
+}
+
+function awss3toinstance() {
+    cmd=$1
+    opt1=$2
+
+    awsfiletransfer $cmd $s3bucket /home/core/ad-nimbus $opt1
+}
+
+function awsfiletransfer() {
+    cmd=$1
+    fromDir=$2
+    toDir=$3
+    opt1=$4
+
+    if test `uname -s` == "Darwin"
+    then
+        # This was helpful: http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+        aws s3 $cmd $fromDir $toDir $opt1 --exclude '.git/*' --exclude 'tmp/*' --exclude 'registery-dev/*' --exclude '.vagrant/*' --exclude '.vagrant.d/*' --exclude 'insecure_private_key' --exclude '.gitignore' --exclude '.DS_Store' --exclude '.*.swp'
+    else
+        awsrunclidocker "aws s3 $cmd $fromDir $toDir $opt1"
+        (cd "$adNimbusDir"; sudo chown -R core:core .)
+    fi
+}
+
+function awsrunclidocker() {
+    docker run --rm -t -i -v /home/core/.aws:/root/.aws -v /home/core:/home/core asteere/aws-cli:aws-cli $*
+}
+
+# All AWS variables that are dynamic
+function awssetup() {
+    # us-west2 coreos HVM image: ami-c5162ef5 
+    export imageId=`cat $imageIdFile`
+
+    if test ! -f "$stackNameFile"
+    then
+        timestamp=`date +"%Y%m%d-%H%M"`
+        echo "AdNimbus-${imageId}-${timestamp}-CoreOS-stable" > "$stackNameFile"
+    fi 
+    export stackName=`cat $stackNameFile`
+}
+
+function awscreateimage() {
+    if test "$1" == ""
+    then
+        echo Error: To create the image, I need the private ip address of the instance
+        return 1
+    fi
+
+    awssetup
+
+    instanceId=`aws ec2 describe-instances --filters "Name=private-ip-address,Values=$1" | \
+        grep InstanceId | \
+        sed -e 's/.*: "//' -e 's/",//'`
+
+    timestamp=`date +"%Y%m%d-%H%M"`
+    aws ec2 create-image --instance-id $instanceId --name "AdNimbus_${timestamp}" --description "TBD" | tee /tmp/imageId
+
+    grep ImageId /tmp/imageId | sed -e 's/.*: "//' -e 's/"//' > "$imageIdFile"
+}
+
+function awsvalidatetemplate() {
+    templateFile=$1
+    if test "$1" == ""
+    then
+        echo Error: Missing full path to template file
+        templateFile=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json
+    fi
+    aws cloudformation validate-template --template-body file://$templateFile
+}
+
+function myip() {
+    curl -s ifconfig.me
+}
+
+function awscreatestack() {
+    # Args: imageId numInstances
+    if test ! -f "$stackNameFile"
+    then
+        rm "$stackNameFile"
+        if test "$?" != 0
+        then
+            echo Error: Unable to delete file $stackNameFile
+            return 1
+        fi
+    fi
+
+    if [[ "$1" == "ami-"* ]]
+    then
+        echo $1 > "$imageIdFile"
+        shift 1
+    fi
+
+    if [[ "$1" == [0-9]* ]]
+    then
+        numInstances=$1
+    else
+        numInstances=3
+    fi
+
+    awssetup
+
+    allowSshFrom=`myip`/32
+    echo If ssh to public IP address gets \"Connection refused\", is $allowSshFrom in the security group $securityGroup inbound rules
+
+    echo
+    newToken=`curl -s https://discovery.etcd.io/new`
+    echo newToken $newToken
+    curlNewToken $newToken
+
+    stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
+    sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' \
+        -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' \
+        -e 's/\(.*DesiredCapacity.: .\)./\1'$numInstances'/' \
+        ${stackTemplate}.tmpl > $stackTemplate
+
+    echo
+    echo diff ${stackTemplate}.tmpl $stackTemplate
+    diff ${stackTemplate}.tmpl $stackTemplate
+
+    echo
+    awsvalidatetemplate $stackTemplate
+
+    grep -q "$newToken" $stackTemplate 
+    if test "$?" != 0
+    then
+        echo Error: new token insertion failed
+        return 1
+    fi
+
+    echo
+    echo aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate
+    aws cloudformation create-stack --stack-name $stackName --template-body file://$stackTemplate 
+    # TODO: Is this option useful: --generate-cli-skeleton 
+    if test "$?" != "0"
+    then
+        return 1
+    fi
+
+    echo
+    awsdescribeinstances
+
+    echo
+    mywatch.sh -g -n 2 awsgetpublicipaddresses
+
+    awsgetpublicipaddresses
+
+    curlNewToken $newToken
+}
+
+function curlNewToken() {
+    curl -s "$1" | jq "."
+}
+
+function awsdeletestack() {
+    awssetup
+
+    if  test "$1" != ""
+    then
+        stackName=$1
+    else
+        awssetup
+        rm -f $"stackNameFile"
+    fi
+
+    #stackId=`awsdescribestack | grep StackId | sed -e "s/.*$stackName.//" -e 's/",//'`
+    echo aws cloudformation delete-stack --stack-name $stackName
+    aws cloudformation delete-stack --stack-name $stackName
+}
+
+function awsdescribestack() {
+    awssetup
+
+    aws cloudformation describe-stacks --stack-name $stackName
+}
+
+
+function awsdescribestackevents() {
+    awssetup
+
+    aws cloudformation describe-stack-events --stack-name $stackName
+}
+
+function awsliststacks() {
+    aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
+}
+
+function awsupdateuserdata() {
+    numInstances=3
+    newToken=`curl -L -s https://discovery.etcd.io/new?size=$numInstances`
+    echo Using discovery token $newToken
+    sed "s|https://discovery.etcd.io/.*|$newToken|" "$adNimbusDir"/user-data.tmpl > "$adNimbusDir"/aws/user-data-aws
+}
+
+function awsstartcluster() {
+    awssetup
+
+    awsupdateuserdata
+
+    numInstances=3
+    aws ec2 run-instances --image-id $imageId --count $numInstances --instance-type t2.micro --key-name AdNimbusUsWest2 --security-groups $securityGroup --user-data "file://$adNimbusDir/aws/user-data-aws"
+
+    if test $? != 0
+    then
+        exit $?
+    fi
+
+    sleep 5
+
+    awsgetpublicipaddresses
+}
+
+function awsdescribeinstances() {
+    aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" 
+}
+
+function awsgetpublicipaddresses() {
+    awsgetipaddresses "PublicIpAddress"
+}
+
+function awsgetprivateipaddresses() {
+    awsgetipaddresses "PrivateIpAddress"
+}
+
+function awsgetipaddresses() {
+    awsdescribeinstances | grep '"'$1'": "' | grep ',' | sed -e 's/.*": "//' -e 's/".//' -e's/ //g' 
+
+}
+
+function awsopenssh() {
+    rm -f /tmp/ssh_*
+    for awsIpAddr in `awsgetpublicipaddresses`
+    do  
+        sshScript=/tmp/ssh_$awsIpAddr
+        printf '#! /bin/bash\n    ssh core@'$awsIpAddr' -t \n bash -l\n' > $sshScript
+        chmod +x $sshScript
+        open -a Terminal.app $sshScript
+    done
+}
+
+function awsscpadnimbus() {
+    echo 'Do you want to use scp (long time) or sync to s3 (shorter) - type q to quit'
+    read a
+    if test "$a" == "q"
+    then
+        return
+    fi
+
+    tarFile="`ls -t $adNimbusDir/../aws_*tar.gz | head -1`"
+    for awsIpAddr in `awsgetpublicipaddresses` 
+    do 
+        echo scp "$tarFile" core@$awsIpAddr:/home/core
+        scp "$tarFile" core@$awsIpAddr:/home/core
+        for dockerTar in registrySaves/*.gz
+        do
+            dockerTar="$adNimbusDir/$dockerTar"
+            echo scp $dockerTar core@$awsIpAddr:/home/core
+            scp $dockerTar core@$awsIpAddr:/home/core
+        done
+    done
+}
+
+function awscreatesecuritygroup() {
+    aws ec2 create-security-group --group-name "AdNimbusSecurityGroup" 
+}
+
+function awsterminatecluster() {
+    instanceIds=`awsdescribeinstances | grep InstanceId | sed -e 's/.*": "//' -e 's/",//'`
+
+    for instanceId in $instanceIds
+    do
+        aws ec2 terminate-instances --instance-ids $instanceIds
+    done
+
+}
+
+# Use this function when you want to create a tar file of the artifacts needed for an aws image
+function awscreatetar() {
+    cd "$adNimbusDir"/..
+
+    daProject=ad-nimbus
+    gzFile=aws_${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
+    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+        --exclude='.vagrant' \
+        --exclude=.vagrant.d \
+        --exclude='.git*' \
+        --exclude='.nfs*' \
+        --exclude='.*.swp' \
+        --exclude='.DS_Store' \
+        --exclude='.exampleProfile' \
+        --exclude='devutils' \
+        --exclude='docs' \
+        --exclude='aws' \
+        --exclude='insecure_private_key' \
+        --exclude=registrySaves \
+        --exclude=nginx/.nginx.conf* \
+        --exclude=registry-dev \
+        --exclude=netlocation/go \
+        --exclude=netlocation/nodejs/src/node_modules \
+        --exclude=tmp \
+        $daProject ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem
+
+    pwd
+    ls -l $gzFile
+
+    cd -
+}
+
+function awsvariables() {
+    export securityGroup=AdNimbusUsWest2-CoreOSSecurityGroup-Y3ZSINO39RK5 
+    export s3bucket=s3://ad-nimbus-bucket/ad-nimbus
+    export imageIdFile="$adNimbusDir/aws/imageIdFile"
+    export stackNameFile=$adNimbusDir/aws/stackName
+}
+
+# This is needed when making a adnimbus image from a coreos image and .coreosProfile and .sharedProfile are there yet.
+if test "$adNimbusDir" == ""
+then
+    export adNimbusDir=/home/core/ad-nimbus
+    mkdir -p $adNimbusDir
+fi
+
+awsvariables
+
