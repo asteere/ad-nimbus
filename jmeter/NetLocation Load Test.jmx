@@ -9,12 +9,12 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="domain" elementType="Argument">
             <stringProp name="Argument.name">domain</stringProp>
-            <stringProp name="Argument.value">172.17.8.103</stringProp>
+            <stringProp name="Argument.value">localhost</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="port" elementType="Argument">
             <stringProp name="Argument.name">port</stringProp>
-            <stringProp name="Argument.value">49160</stringProp>
+            <stringProp name="Argument.value">8080</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="path" elementType="Argument">
@@ -36,9 +36,9 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">4</stringProp>
+          <stringProp name="LoopController.loops">1000</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">2</stringProp>
+        <stringProp name="ThreadGroup.num_threads">200</stringProp>
         <stringProp name="ThreadGroup.ramp_time">0</stringProp>
         <longProp name="ThreadGroup.start_time">1422653874000</longProp>
         <longProp name="ThreadGroup.end_time">1422653874000</longProp>
@@ -157,54 +157,14 @@
                 <threadCounts>true</threadCounts>
               </value>
             </objProp>
-            <stringProp name="filename">jmeterSimpleDataWriter.log</stringProp>
+            <stringProp name="filename">jmeter_client_SimpleDataWriter.log</stringProp>
           </ResultCollector>
-          <hashTree/>
-          <kg.apc.jmeter.vizualizers.CorrectedResultCollector guiclass="kg.apc.jmeter.vizualizers.LatenciesOverTimeGui" testclass="kg.apc.jmeter.vizualizers.CorrectedResultCollector" testname="jp@gc - Response Latencies Over Time" enabled="true">
-            <boolProp name="ResultCollector.error_logging">false</boolProp>
-            <objProp>
-              <name>saveConfig</name>
-              <value class="SampleSaveConfiguration">
-                <time>true</time>
-                <latency>true</latency>
-                <timestamp>true</timestamp>
-                <success>true</success>
-                <label>true</label>
-                <code>true</code>
-                <message>true</message>
-                <threadName>true</threadName>
-                <dataType>true</dataType>
-                <encoding>false</encoding>
-                <assertions>true</assertions>
-                <subresults>true</subresults>
-                <responseData>false</responseData>
-                <samplerData>false</samplerData>
-                <xml>false</xml>
-                <fieldNames>false</fieldNames>
-                <responseHeaders>false</responseHeaders>
-                <requestHeaders>false</requestHeaders>
-                <responseDataOnError>false</responseDataOnError>
-                <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
-                <assertionsResultsToSave>0</assertionsResultsToSave>
-                <bytes>true</bytes>
-                <threadCounts>true</threadCounts>
-              </value>
-            </objProp>
-            <stringProp name="filename"></stringProp>
-            <longProp name="interval_grouping">500</longProp>
-            <boolProp name="graph_aggregated">false</boolProp>
-            <stringProp name="include_sample_labels"></stringProp>
-            <stringProp name="exclude_sample_labels"></stringProp>
-            <stringProp name="start_offset"></stringProp>
-            <stringProp name="end_offset"></stringProp>
-            <boolProp name="include_checkbox_state">false</boolProp>
-            <boolProp name="exclude_checkbox_state">false</boolProp>
-          </kg.apc.jmeter.vizualizers.CorrectedResultCollector>
           <hashTree/>
           <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
             <stringProp name="JSON_PATH">isp</stringProp>
             <stringProp name="EXPECTED_VALUE">CenturyLink</stringProp>
             <boolProp name="JSONVALIDATION">true</boolProp>
+            <boolProp name="EXPECT_NULL">false</boolProp>
           </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
           <hashTree/>
         </hashTree>
