@@ -57,6 +57,6 @@ netlocation/go/bin
 netlocation/go/pkg
 
 # Files created when running bash in the JMeter container 
-LoadTests/JMeter/.java
-LoadTests/JMeter/.bash_history
-
+jmeter/.java
+jmeter/.bash_history
+jmeter/*.log 
