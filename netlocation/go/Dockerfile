@@ -1,4 +1,4 @@
-FROM asteere/empty:empty
+FROM asteere/scratch:scratch
 
 MAINTAINER hydrate.with.koolaid@echostar.com
 
