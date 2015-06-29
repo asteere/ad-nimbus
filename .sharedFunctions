@@ -142,7 +142,7 @@ function buildscratchimage() {
         return 0
     fi  
 
-    if test `d images | grep -c $DOCKER_USER/$imageName` -eq 0
+    if test `rundocker images | grep -c $DOCKER_USER/$imageName` -eq 0
     then
         tar cv --files-from /dev/null | docker import - $scratchImage
         adnimbus_registry/startAdNimbusRegistry.sh saveImage $imageName

@@ -6,7 +6,7 @@
 # Upon termination remove the consul key, send the signal to docker
 
 echo "==================== `basename $0` started args:$*: ======================="
-set -x
+#set -x
 
 function setup() {
     echo `basename $0` in setup

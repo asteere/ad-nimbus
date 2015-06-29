@@ -67,11 +67,13 @@ app.get('/api/v1/netlocation/*', function(request, response) {
                 appendIsp(geoData, ispData);
             }
 
-        if (true) {
-            response.send(geoData);
-        else {
-            causeDelayInResponse(geoData);
-        }
+            if (true) {
+                response.send(geoData);
+            }
+            else {
+                causeDelayInResponse(geoData);
+            }
+        });
     });
 });
 
