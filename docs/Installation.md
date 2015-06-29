@@ -7,10 +7,12 @@ Clone your ad-nimbus/develop
 
 Add the contents of the .exampleProfile to your .profile. The .*Profile files have a lot of helper aliases and functions to do the repetitive work and the nasty gotchas if you forget a step. In addition they handle getting the vagrant private key onto the vms to allow the fleetctl commands to work.
 
+Correct the .awsProfile awsVariables securityGroup and s3bucket to match your configuration.
+
 Starting and Using Vagrant/Docker/Coreos Cluster
 The remaining instructions assume you have familiarized yourself with the .hostProfile and .coreosProfile files.
 
-Open a mac terminal which will source your updated .profile. You should be in the $VAGRANT_CWD folder.
+Open a mac terminal which will source your updated .profile and source .hostProfile. You should be in the $VAGRANT_CWD folder.
 
 # The remaining instructions are written as if this was a shell script
 
@@ -21,7 +23,7 @@ cd "$VAGRANT_CWD"/netlocation/data
 unzip ~/Downloads/maxMind-ss.zip
 mv maxMind-ss maxMind
 
-# Build all the containers. This may take awhile. Ignore any errors push a docker image to dockerhub.
+# Build all the containers. This may take awhile. Ignore any errors about pushing a docker image to dockerhub.
 buildall
 
 # The next step will create, provision and start the coreos VMs. This can take a while the first time. 
@@ -45,3 +47,6 @@ fdestroy
 # If you want to destroy a specific service
 fdestroy netlocation@1.service
 
+# Instructions for regression testing the demo are in demo/RegressionTesting.md
+
+# Instructions for running the demo in AWS are in aws/README.md

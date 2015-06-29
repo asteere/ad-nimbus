@@ -67,34 +67,41 @@ app.get('/api/v1/netlocation/*', function(request, response) {
                 appendIsp(geoData, ispData);
             }
 
-            // HACK: look for the file for this service that indicates how long the response should be delayed
-            // HACK: This hack creates an external test failure since if delays the response time
-            var path = "/opt/tmp/external/netlocation@" + instance + ".service_" + hostAddress + ".cfg";
-            console.log("Attempting to read file: " + path);
-            var delay = 0;
-            try {
-                delay = fs.readFileSync(path, "utf8", function(err, data) {
-                    if (err) {
-                        console.log("Error reading file:" + path + " Err: " + err);
-                        return;
-                    }
-                });
-                delay = parseInt(delay) * 1000;
-            } catch (err) {
-                if (err.toString().indexOf("ENOENT, no such file or directory") <= -1) {
-                    console.log("Error reading file path: " + path + " Err: " + err);
-                }
-                delay=0;
-            }
-            
-            console.log("Delay this response by " + delay + " mSecs. Date: " + new Date());
-            setTimeout(function () {
-                console.log("Done waiting Date: " + new Date());
-                response.send(geoData);
-            }, delay);
-        });
+        if (true) {
+            response.send(geoData);
+        else {
+            causeDelayInResponse(geoData);
+        }
     });
 });
+
+function causeDelayInResponse() {
+    // HACK: look for the file for this service that indicates how long the response should be delayed
+    // HACK: This hack creates an external test failure since if delays the response time
+    var path = "/opt/tmp/external/netlocation@" + instance + ".service_" + hostAddress + ".cfg";
+    console.log("Attempting to read file: " + path);
+    var delay = 0;
+    try {
+        delay = fs.readFileSync(path, "utf8", function(err, data) {
+            if (err) {
+                console.log("Error reading file:" + path + " Err: " + err);
+                return;
+            }
+        });
+        delay = parseInt(delay) * 1000;
+    } catch (err) {
+        if (err.toString().indexOf("ENOENT, no such file or directory") <= -1) {
+            console.log("Error reading file path: " + path + " Err: " + err);
+        }
+        delay=0;
+    }
+    
+    console.log("Delay this response by " + delay + " mSecs. Date: " + new Date());
+    setTimeout(function () {
+        console.log("Done waiting Date: " + new Date());
+        response.send(geoData);
+    }, delay);
+}
 
 // Listen.
 app.listen(PORT);

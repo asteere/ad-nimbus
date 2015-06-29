@@ -47,6 +47,7 @@ registry-dev
 aws/stackName
 aws/imageIdFile
 aws/user-data-aws
+aws/AdNimbusUsWest2_CloudFormation.json
 
 # Temp script workaround to restore permissions on the ec2 instance
 bin/restorePermissions.sh

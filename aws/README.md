@@ -4,6 +4,7 @@
 # Andy's account with a security group that is properly defined.
 # On the Mac: 
 # Create one ec2 instance from the latest us-west-2 HVM coreos image. Here is the latest Ami as of 6/25/2015
+# URL: https://coreos.com/docs/running-coreos/cloud-providers/ec2/
 awscreatestack ami-5d4d486d 1
 
 # The ip address is available before the instance is ready. Monitor status using the browser. 
@@ -54,7 +55,7 @@ fstartall
 # MAC: Start a JMeter cluster
 awscreatestack
 
-# Follow instructions in LoadTests/JMeter/README.md
+# Follow instructions in jmeter/README.md
  
 # When you are done you can terminate the instances but leave the stack for future clusters 
 awsterminatecluster

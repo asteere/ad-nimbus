@@ -105,6 +105,25 @@ function myip() {
     curl -s ifconfig.me
 }
 
+function awscreatestacktemplate() {
+    cat -etv ~/.ssh/AdNimbusPrivateIPKeyPairUsWest2.pem | sed -e 's/^/"/' -e 's/..\$/\\n",/' -e '$ s/$/\\n"/' > /tmp/foo
+
+    sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' \
+        -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' \
+        -e 's/\(.*DesiredCapacity.: .\)./\1'$numInstances'/' \
+        -e '/PRIVATE_KEY_MARKER/r /tmp/foo' \
+        ${stackTemplate}.tmpl | \
+        sed '/PRIVATE_KEY_MARKER/d' > $stackTemplate
+
+    # TODO: Bring in the adnimbus cluster private key from user's .ssh folder using PRIVATE_KEY_MARKER
+
+    rm /tmp/foo
+
+    echo
+    echo diff ${stackTemplate}.tmpl $stackTemplate
+    diff ${stackTemplate}.tmpl $stackTemplate
+}
+
 function awscreatestack() {
     # Args: imageId numInstances
     if test -f "$stackNameFile"
@@ -141,15 +160,7 @@ function awscreatestack() {
     echo newToken $newToken
     curlNewToken $newToken
 
-    stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
-    sed -e 's|https://discovery.etcd.io/.*|'$newToken'\\n",|' \
-        -e 's/\(.*ImageId" : "\).*/\1'$imageId'",/' \
-        -e 's/\(.*DesiredCapacity.: .\)./\1'$numInstances'/' \
-        ${stackTemplate}.tmpl > $stackTemplate
-
-    echo
-    echo diff ${stackTemplate}.tmpl $stackTemplate
-    diff ${stackTemplate}.tmpl $stackTemplate
+    awscreatestacktemplate
 
     echo
     awsvalidatetemplate $stackTemplate
@@ -333,7 +344,7 @@ function awscreatetar() {
 
     daProject=ad-nimbus
     gzFile=aws_${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+    tar -zcvf $gzFile --exclude jmeter/jmeter*log \
         --exclude='.vagrant' \
         --exclude=.vagrant.d \
         --exclude='.git*' \
@@ -369,6 +380,7 @@ function awsvariables() {
     instanceType=t2.micro
     keyName=AdNimbusUsWest2
     userDataFile="$adNimbusDir/aws/user-data-aws"
+    stackTemplate=$adNimbusDir/aws/AdNimbusUsWest2_CloudFormation.json 
 
     set +a
 }

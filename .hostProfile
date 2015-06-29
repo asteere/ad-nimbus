@@ -92,6 +92,8 @@ function buildall() {
     buildimage aws cli
 
     buildimage devutils
+
+    buildimage jmeter
 }
 
 function prepnetlocationgo() {
@@ -358,7 +360,7 @@ function createtar() {
 
     daProject=ad-nimbus
     gzFile=${daProject}_`date +%Y%m%d_%H%M%S`.tar.gz
-    tar -zcvf $gzFile --exclude LoadTests/JMeter/jmeter*log \
+    tar -zcvf $gzFile --exclude jmeter/jmeter*log \
         --exclude='.vagrant' \
         --exclude=.vagrant.d \
         --exclude='.git' \

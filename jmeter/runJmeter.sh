@@ -7,7 +7,7 @@ os=`uname -s`
 if test "$os" = "Darwin"
 then
     JMETER_HOME=/usr/local/Cellar/jmeter/2.13/libexec
-    JMETER_TESTS="$VAGRANT_CWD/LoadTests/JMeter"
+    JMETER_TESTS="$adNimbusDir/jmeter"
 else
     JMETER_HOME=/d/3rdparty/apache-jmeter-2.13
     JMETER_TESTS=/d/raptor/Automation/JMeter/913_LoadTests
