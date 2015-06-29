@@ -97,6 +97,10 @@ function buildall() {
 function prepnetlocationgo() {
     buildscratchimage
 
+    # TODO: go get should get everything, build and install it
+    cd $GOPATH
+    go get github.com/oschwald/maxminddb-golang
+
     # Build netlocation statically
     rundocker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" \
         -v "$PWD":/go \
@@ -453,7 +457,8 @@ which go 2>&1 > /dev/null
 if test "$?" == "0"
 then
     export GOPATH="$adNimbusDir/netlocation/go"
-    export GOROOT=/usr/local/opt/go/libexec
-    PATH=$PATH:$GOROOT/bin
+    # TODO: Document why GOROOT shouldn't be defined
+    #export GOROOT=/usr/local/opt/go/libexec
+    #PATH=$PATH:$GOROOT/bin
 fi
 
