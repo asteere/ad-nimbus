@@ -178,3 +178,13 @@ function createnetlocationdatacontainer() {
     rundocker create -v "$adNimbusDir"/netlocation/data:/data --name $netLocationDataContainer $scratchImage .
 }
 
+function clearjmeterlogs() {
+    rm -rf "$adNimbusDir/jmeter/jmeter_*.log"
+}
+
+function countjmetererrors() {
+    logFile=$adNimbusDir/jmeter/jmeter_client_SimpleDataWriter.log
+    sed -e 's/,Thread Group.*//' -e 's/.*netLocation,//' $logFile | \
+        awk '{counts[$0]++}; END {for (i in counts) {printf("%d: %s\n", counts[i], i);}}'
+}
+

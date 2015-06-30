@@ -97,7 +97,7 @@ func openDb(dbPath string) (*maxminddb.Reader, error) {
 }
 
 func getInfo(ipAddress string) (*NetLocation) {
-	fmt.Println("ipAddress: " + ipAddress)
+	//fmt.Println("ipAddress: " + ipAddress)
 	netLocation := &NetLocation{
         IpAddress: ipAddress}
  	ip := net.ParseIP(ipAddress)

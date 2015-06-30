@@ -29,4 +29,7 @@ The behavior of developers (rapid edit/test/commit) vs ops (deploy with the smal
 1. Sharing the app and data from the host OS with the container eliminates the need to build the container every time the app changes. The container only has the technology (apps/utils) needed for the app to run (curl, libssl, etc).
 2. Bundling the app and the data inside the container makes these entities self-contained reducing opportunities for error. 
 
-This demo hasn''t explored how to automate the transition between the two modes. We will explore this issue once we get approval for a production version of this demo.
+This demo hasn''t explored how to automate the transition between the two modes (dev vs ops. We will explore this issue once we get approval for a production version of this demo.
+
+The functions that are expected to be used from the command line are all lower case. This is intentional to make shell completion of file names, functions, etc less ambiguous. For example: is it getIPAddress or getIpAddress.
+

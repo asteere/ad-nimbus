@@ -505,6 +505,10 @@ function drmf() {
     done
 }
 
+function dstats() {
+     rundocker stats `rundocker ps | awk '{print $NF}' | grep -v NAMES`
+}
+
 # If we are on coreos or centos (in the demo environment) then /home/core should be defined
 # If we are Darwin then a user is sourcing this file and adNimbusDir is defined and the .shareProfile have been sourced.
 if test "$adNimbusDir" == ""
