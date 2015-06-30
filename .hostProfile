@@ -91,7 +91,7 @@ function buildall() {
 
     buildimage aws cli
 
-    buildimage devutils
+    #buildimage devutils
 
     buildimage jmeter
 }

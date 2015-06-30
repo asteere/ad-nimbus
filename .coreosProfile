@@ -505,14 +505,6 @@ function drmf() {
     done
 }
 
-function dockerbash() {
-    cdad
-
-    echo NFS share $adNimbusDir will be located on /opt/ad-nimbus
-
-    rundocker run -v $adNimbusDir:/opt/ad-nimbus -it $DOCKER_USER/devutils:devutils /bin/bash 
-}
-
 # If we are on coreos or centos (in the demo environment) then /home/core should be defined
 # If we are Darwin then a user is sourcing this file and adNimbusDir is defined and the .shareProfile have been sourced.
 if test "$adNimbusDir" == ""
