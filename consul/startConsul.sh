@@ -65,7 +65,7 @@ function getBootStrapArg() {
     # 
     #numServers=`etcdctl ls -recursive _etcd/machines | wc -l`
     clusterPrivateIpAddrs=`curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-        "$adNimbusDir"/devutils/jq '.node.nodes[].value' | \
+        "$adNimbusDir"/bin/jq '.node.nodes[].value' | \
         sed -e 's/.*%2F//' -e 's/%3.*//'`
 
     numServers=`echo $clusterPrivateIpAddrs | wc -w`

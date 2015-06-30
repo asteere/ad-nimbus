@@ -516,14 +516,14 @@ fi
 
 cdad
 
-if test -x "$adNimbusDir/devutils/jq"
+if test -x "$adNimbusDir/bin/jq"
 then
     function jq() {
         if test "$1" == ""
         then
-            $adNimbusDir/devutils/jq .
+            $adNimbusDir/bin/jq .
         else
-            $adNimbusDir/devutils/jq $*
+            $adNimbusDir/bin/jq $*
         fi
     }
 fi

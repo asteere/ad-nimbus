@@ -448,7 +448,7 @@ function dumpCriticalFailures() {
 
 function getEtcdNodes() {
     curl -s http://127.0.0.1:4001/v2/keys/_etcd/machines 2>/dev/null | \
-        "$adNimbusDir"/devutils/jq '.node.nodes[].value' 
+        "$adNimbusDir"/bin/jq '.node.nodes[].value' 
 }
 
 function runOtherChecks() {

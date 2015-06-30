@@ -352,7 +352,6 @@ function awscreatetar() {
         --exclude='.*.swp' \
         --exclude='.DS_Store' \
         --exclude='.exampleProfile' \
-        --exclude='devutils' \
         --exclude='docs' \
         --exclude='aws' \
         --exclude='insecure_private_key' \
