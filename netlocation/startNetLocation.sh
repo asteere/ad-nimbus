@@ -135,11 +135,11 @@ function startDocker() {
 }
 
 function startDockerBash() {
-    dockerCmd="bash $*"
+    dockerCmd="/bin/bash $*"
 
     interactive="-it --privileged"
 
-    startDocker
+    start
 }
 
 function cleanup() {

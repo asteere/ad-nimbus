@@ -22,6 +22,9 @@ function setup() {
     
     dockerCmd="nginx -c $nginxConfFile"
 
+    svc=${nginxService}
+    containerName=${svc}_$instance
+
     set +a
 
     trap 'sendSignal stop' TERM
@@ -30,7 +33,16 @@ function setup() {
     trap 'sendSignal reopen' USR1
 }
 
+function loadContainers() {
+    docker rm -f ${containerName} > /dev/null 2>&1
+    $adNimbusDir/adnimbus_registry/startAdNimbusRegistry.sh startPre $svc
+
+    docker ps -a
+}
+
 function startDocker() {
+    loadContainers
+
     echo ${COREOS_PRIVATE_IPV4} > "$nginxCoreosIpAddrFile"
 
     if test -d "$webContentCoreosDir"
@@ -39,8 +51,7 @@ function startDocker() {
     fi
 
     /usr/bin/docker run \
-        --name=${nginxDockerTag}_${instance} $interactive \
-        --cidfile=${nginxCoreosCidFile} \
+        --name=$containerName $interactiveArg $cidFileArg \
         --rm=true $webContentVolArg \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         --volume="$adNimbusDir"/${nginxService}:${nginxDir} \
@@ -53,7 +64,7 @@ function startDocker() {
 function startDockerBash() {
     dockerCmd="/bin/bash $*"
 
-    interactive="-it"
+    interactiveArg="-it"
 
     startDocker
 }
@@ -61,7 +72,7 @@ function startDockerBash() {
 function runCmd() {
     cmd=$1
 
-    /usr/bin/docker exec ${nginxService}_$instance $nginxService -s $cmd -c $nginxConfFile
+    /usr/bin/docker exec $containerName $nginxService -s $cmd -c $nginxConfFile
 }
 
 function reload() {
@@ -93,6 +104,9 @@ function waitForNginxConf() {
 function start() {
     waitForNginxConf
 
+    # Allow other containers/services to communicate with niginx via the PID
+    cidFileArg="--cidfile=${nginxCoreosCidFile}"
+
     startDocker
 }
 
@@ -104,7 +118,7 @@ function stop() {
         instance=$1
     fi
 
-    docker kill -s KILL ${nginxService}_$instance
+    docker kill -s KILL $containerName
 }
 
 #set -x 
@@ -123,6 +137,10 @@ shift 1
 
 instance=$1
 shift 1
+if test "$instance" == ""
+then
+    instance=1
+fi
 
 setup 
 

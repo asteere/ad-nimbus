@@ -23,7 +23,6 @@ TimeoutStartSec=0
 
 ExecStartPre=-/usr/bin/docker rm -f ${nginxDockerTag}_%i
 ExecStartPre=-/usr/bin/docker ps -a
-ExecStartPre=/home/core/ad-nimbus/adnimbus_registry/startAdNimbusRegistry.sh startPre ${nginxService}
 
 ExecStartPre=/home/core/ad-nimbus/monitor/monitor.sh registerNginxService %i ${COREOS_PRIVATE_IPV4}
 

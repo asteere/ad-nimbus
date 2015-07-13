@@ -52,9 +52,14 @@ docker exec netlocation_1 ps -Ao pid,pcpu,args
 echo ps -Ao pid,pcpu,args
 ps -Ao pid,pcpu,args
 
-echo sudo ps -Ao pid,pcpu,args
-sudo ps -Ao pid,pcpu,args
+unset sudoCmd
+if test "`which sudo`" != ""
+then
+    sudoCmd=sudo
+fi
 
+echo $sudoCmd ps -Ao pid,pcpu,args
+$sudoCmd ps -Ao pid,pcpu,args
 
 processName=$(echo $serviceId | sed 's/@.*//')
 if [[ "$serviceId" == *"netlocation"* ]]

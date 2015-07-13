@@ -150,6 +150,11 @@ function frestartservice() {
 
 function fstart() {
     service=$1
+    if test "$service" == ""
+    then
+        fstartall
+    fi
+
     numServices=$2
     case "$numServices" in
     "")
@@ -572,3 +577,6 @@ then
     # Setup the tmp volume for use by containers
     mkdir -p tmp
 fi
+
+# Up the limit of file descriptors to the system limit
+ulimit -n `ulimit -H -n`

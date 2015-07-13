@@ -2,18 +2,36 @@
 # From: http://stackoverflow.com/questions/26314461/mac-os-x-vagrant-docker-nginx-node-how-do-ports-play-together
 # From: https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-and-use-nginx-as-a-proxy
 # From: https://www.digitalocean.com/community/tutorials/how-to-use-confd-and-etcd-to-dynamically-reconfigure-services-in-coreos
+# Performance tuning From: https://www.nginx.com/blog/tuning-nginx/
 
 daemon off;
 
-error_log /opt/tmp/nginx_error.log info;
+worker_processes auto;
+
+error_log /opt/tmp/nginx_error.log crit;
 
 events {
+    # TODO: Set upper bounds to limit DDOS. Load testing tools might hit these limits so not implementing them now.
+    # From: https://www.nginx.com/blog/tuning-nginx/
+
     # TODO: should we be using 1024 as 4096 might be overkill
     worker_connections 4096; # default is 1024
 }
 
 http {
-    log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
+    # don't buffer data-sends (disable Nagle algorithm). Good for sending frequent small bursts of data in real time.
+    tcp_nodelay on;
+
+    keepalive_requests 100000;
+    keepalive_timeout 10s;
+
+    # TODO: Enable caching once load test tools are not using the same IP address for netlocation
+    # See: https://www.nginx.com/resources/admin-guide/content-caching/
+
+    sendfile on;
+
+    #log_format upstreamlog '[$time_local] $remote_addr passed to: $upstream_addr: $request Upstream Response Time: $upstream_response_time Request time: $request_time';
+    log_format upstreamlog '[$time_local] $upstream_addr Upstream Response Time: $upstream_response_time total time: $request_time';
 
     # Quick solution for the 502 Gateway errors seen during initial JMeter testing
     # From: http://www.nginxtips.com/502-bad-gateway-using-nginx/
@@ -24,6 +42,8 @@ http {
     fastcgi_read_timeout 300;
 
     upstream raptor {
+        keepalive 1000;
+
         #least_conn;
 
         # Confd instructions to create a list of netlocation servers for nginx
@@ -33,10 +53,11 @@ http {
     }
 
     server {
-        access_log /opt/tmp/nginx_access.log upstreamlog;
+        # Uncomment if you want to see that each netlocation is getting used 
+        access_log /opt/tmp/nginx_access.log upstreamlog buffer=1M;
 
         # ports nginx server is listen to
-        listen 80;
+        listen 80 backlog=4096;
 
         server_name raptor.com www.raptor.com;
 
@@ -51,6 +72,22 @@ http {
             root /opt/WebContent;
 
             index index.html;
+        }
+
+        # Allow reporting of nginx metrics to IP addresses from Vagrant network, Troppus networks, Andy's common remote sites 
+        # From: https://www.datadoghq.com/blog/how-to-collect-nginx-metrics/
+        location /nginx_status {
+                stub_status on; 
+    
+                access_log off;
+                #allow 127.0.0.1;
+                #allow 192.168.0.0/24;
+                #allow 10.254.0.0/24;
+                #allow 172.17.0.0/24;
+                #allow 65.100.149.7/32;
+                #allow 65.101.220.89/32;
+                #allow 98.245.88.236/32;
+                #deny all;
         }
 
         location / {

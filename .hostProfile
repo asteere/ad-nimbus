@@ -462,3 +462,9 @@ then
     #PATH=$PATH:$GOROOT/bin
 fi
 
+if test "`uname -s`" == "Darwin"
+then
+    ulimit -n 65536
+    ulimit -u 2048
+fi
+

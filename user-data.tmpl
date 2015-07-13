@@ -32,8 +32,39 @@ coreos:
 
       [Install]
       WantedBy=sockets.target
-# Note: write_files is executed before the coreos section
+  # Note: sysctl.d is run before cloud-init,
+  - name: runsysctl.service
+    command: start
+    content: |
+      [Unit]
+      Description=Run sysctl
+  
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/sh -c "sysctl --system; sysctl -p /etc/sysctl.conf"
+# Note: Can't set ulimit -Hn > 4096. Coreos doesnt have PAM module to support changes to /etc/security/limits.conf. 
+# Coreos expects docker container to have PAM. Centos has ulimit of 1048576.
+# Note: write_files is executed before the coreos section, particularly the units
 write_files:
+  - path: /etc/sysctl.conf
+    owner: root:root
+    permissions: 644
+    content: |
+      fs.file-max = 200000
+  - path: /etc/sysctl.d/60-custom.conf
+    permissions: 644
+    owner: root:root
+    content: |
+      # Allow reusing sockets in TIME_WAIT state for new connections
+      net.ipv4.tcp_tw_reuse = 1
+
+      # Socket max connections waiting to get accepted; the listen() backlog.
+      # Default is 128.
+      net.core.somaxconn = 4096
+
+      # Decrease fin timeout. After telling the client we are closing, how long to wait for a FIN, ACK?
+      # Default is 60.
+      net.ipv4.tcp_fin_timeout = 10
   - path: /etc/ntp.conf
     permissions: 644
     owner: root
