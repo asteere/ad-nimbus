@@ -73,10 +73,6 @@ function vsh() {
     vagrant ssh core-0$1
 }
 
-function vssh() {
-    vsh $1
-}
-
 function buildall() {
     deletenetlocationcontainer
     rundocker rmi `rundocker images | grep $DOCKER_USER | awk '{print $3}'`
