@@ -9,10 +9,11 @@ if File.exists?('user-data.tmpl') && ( ARGV[0].eql?('up') )
  
   token = open($new_discovery_url).read
  
-  data = YAML.load(IO.readlines('user-data.tmpl')[1..-1].join)
-  data['coreos']['etcd']['discovery'] = token
-
-  yaml = YAML.dump(data)
+  fileContents= IO.readlines('user-data.tmpl')[1..-1].join
+  yaml = fileContents.gsub("DISCOVERY_URL", token)
+  #data = YAML.load(fileContents)
+  #data['coreos']['etcd']['discovery'] = token
+  #yaml = YAML.dump(data)
   File.open('user-data', 'w') { |file| file.write("#cloud-config\n\n#{yaml}") }
 end
 

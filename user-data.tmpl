@@ -5,7 +5,7 @@ coreos:
   update:
     reboot-strategy: 'off'
   etcd:
-    discovery: https://discovery.etcd.io/06ba7da0d69ee50b963604714f7ea022
+    discovery: DISCOVERY_URL
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
     peer-election-timeout: 2000
@@ -14,6 +14,15 @@ coreos:
     public-ip: $private_ipv4
     etcd_request_timeout: 3.0
   units:
+  - name: createEtcEnvironment.service
+    command: start
+    content: |
+      [Unit]
+      Description=Create /etc/environment if not there and make it editable when core logs in. sudo isnt sufficient.
+  
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/sh -c "/tmp/createEtcEnvironment.sh"
   - name: etcd.service
     command: start
   - name: fleet.service
@@ -32,7 +41,16 @@ coreos:
 
       [Install]
       WantedBy=sockets.target
-  # Note: sysctl.d is run before cloud-init,
+  - name: runsysctl.service
+    command: start
+    content: |
+      [Unit]
+      Description=Run sysctl
+  
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/sh -c "sysctl --system; sysctl -p /etc/sysctl.conf"
+  # Note: sysctl.d is started before cloud-init,
   - name: runsysctl.service
     command: start
     content: |
@@ -85,6 +103,41 @@ write_files:
       restrict default nomodify nopeer noquery limited kod
       restrict 127.0.0.1
       restrict [::1]
+  - path: /tmp/createEtcEnvironment.sh
+    permissions: 755
+    owner: root
+    content: |
+      #!/bin/bash
+
+      set -x
+      envFile=/etc/environment
+      if test ! -f "$envFile"
+      then
+           # Update the following items to reflect your VM image
+           publicIpFirstOctet=10.
+           privateIpFirstOctet=172.
+
+           public_ipv4=`ip -o addr | awk '/inet '$publicIpFirstOctet'/ {print substr($4,1,length($4)-3)}'`
+           private_ipv4=`ip -o addr | awk '/inet '$privateIpFirstOctet'/ {print substr($4,1,length($4)-3)}'`
+
+           echo -e "COREOS_PUBLIC_IPV4=$public_ipv4"'\n'"COREOS_PRIVATE_IPV4=$private_ipv4" >> "$envFile"
+
+           # Create the etcd file from HERE document. Whitespace in this cloud-init file has significance.
+           # "EOF" must start at the beginning of the .sh file once it has been written to disk.
+           # From: https://coreos.com/docs/cluster-management/setup/cloudinit-cloud-config/
+           cloudInitConfFile=/run/systemd/system/etcd.service.d/20-cloudinit.conf
+           if test ! -f "$cloudInitConfFile"
+           then
+               cat > "$cloudInitConfFile" << EOF
+      [Service]
+      Environment="ETCD_ADDR=$private_ipv4:4001"
+      Environment="ETCD_DISCOVERY=discoveryUrl=DISCOVERY_URL"
+      Environment="ETCD_PEER_ADDR=$private_ipv4:7001"
+      Environment="ETCD_PEER_ELECTION_TIMEOUT=2000"
+      Environment="ETCD_PEER_HEARTBEAT_INTERVAL=500"
+      EOF
+            fi 
+      fi
   - path: /home/core/.bash_profile
     permissions: 644
     owner: core
