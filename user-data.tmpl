@@ -123,20 +123,30 @@ write_files:
            echo -e "COREOS_PUBLIC_IPV4=$public_ipv4"'\n'"COREOS_PRIVATE_IPV4=$private_ipv4" >> "$envFile"
 
            # Create the etcd file from HERE document. Whitespace in this cloud-init file has significance.
-           # "EOF" must start at the beginning of the .sh file once it has been written to disk.
+           # "EOF_N" must start at the beginning of the .sh file once it has been written to disk.
            # From: https://coreos.com/docs/cluster-management/setup/cloudinit-cloud-config/
-           cloudInitConfFile=/run/systemd/system/etcd.service.d/20-cloudinit.conf
-           if test ! -f "$cloudInitConfFile"
+           etcdConfFile=/run/systemd/system/etcd.service.d/20-cloudinit.conf
+           if test ! -f "$etcdConfFile"
            then
-               cat > "$cloudInitConfFile" << EOF
+               cat > "$etcdConfFile" << EOF_1
       [Service]
       Environment="ETCD_ADDR=$private_ipv4:4001"
       Environment="ETCD_DISCOVERY=discoveryUrl=DISCOVERY_URL"
       Environment="ETCD_PEER_ADDR=$private_ipv4:7001"
       Environment="ETCD_PEER_ELECTION_TIMEOUT=2000"
       Environment="ETCD_PEER_HEARTBEAT_INTERVAL=500"
-      EOF
+      EOF_1
             fi 
+
+            fleetConfFile=/run/systemd/system/fleet.service.d/20-cloudinit.conf1
+            if test ! -f "$fleetConfFile"
+            then
+                cat > "$fleetConfFile" << EOF_2
+      [Service]
+      Environment="FLEET_ETCD_REQUEST_TIMEOUT=3"
+      Environment="FLEET_PUBLIC_IP=$private_ipv4"
+      EOF_2
+            fi
       fi
   - path: /home/core/.bash_profile
     permissions: 644
