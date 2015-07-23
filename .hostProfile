@@ -437,11 +437,12 @@ then
     ssh-add "$VAGRANT_HOME"/insecure_private_key > /dev/null 2>&1 
 fi
 
-# If you want to make the WebContent Research available clone the repo into ~/Research/WebContent. 
-# Or, define webContentDir separately.
-if test -d "$HOME/Research/WebContent"
+# If you want to make the searchable-web-content project available clone the repo 
+# https://github.com/asteere/searchable-web-content.git into ~/Research/searchable-web-content. 
+# Or, set webContentDir separately.
+if test -d "$HOME/Research/searchable-web-content"
 then
-    export webContentDir="$HOME/Research/WebContent"
+    export webContentDir="$HOME/Research/searchable-web-content"
 fi
 
 if test -x `which aws`
