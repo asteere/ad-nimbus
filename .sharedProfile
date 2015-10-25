@@ -3,6 +3,7 @@
 # For foolish consistency use lowercase for function names
 function show() {
     numLines=`typeset -f $1 | wc -l`
+
     if test $numLines -gt 0
     then
         typeset -f $1
@@ -22,7 +23,14 @@ function show() {
         return
     fi
 
-    echo $1 is not a function, environment variable or file in $PATH
+    alias $1 > /dev/null 2>&1
+    if test $? == 0
+    then
+        alias $1
+        return
+    fi
+
+    echo $1 is not a function, alias, environment variable or file in $PATH
 
 }
 
@@ -32,6 +40,16 @@ function cdad() {
 
 function runDate() {
     date +%Y/%m/%d_%H:%M:%S
+}
+
+showhiddenfiles () 
+{ 
+    defaults write com.apple.finder AppleShowAllFiles YES 
+}
+
+hidehiddenfiles () 
+{ 
+    defaults write com.apple.finder AppleShowAllFiles NO
 }
 
 function checknetlocation() {
